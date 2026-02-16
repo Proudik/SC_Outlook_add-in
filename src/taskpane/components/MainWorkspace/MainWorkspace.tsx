@@ -2124,7 +2124,8 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
   React.useEffect(() => {
     if (!composeMode) {
       setChatStep("idle");
-      setQuickActions([]);
+      // Don't clear quick actions in read mode - they're managed by evaluateItemForRead
+      // and button click handlers (e.g., dismiss, file anyway, etc.)
       return;
     }
 
