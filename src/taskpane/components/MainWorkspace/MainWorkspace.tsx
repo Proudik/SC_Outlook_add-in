@@ -2425,6 +2425,7 @@ React.useEffect(() => {
         setViewMode("prompt");
         setPickStep("case");
         setIsUploadingNewVersion(false);
+        setQuickActions([]); // Clear quick actions - YES/NO buttons will be shown instead
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
@@ -2476,6 +2477,7 @@ React.useEffect(() => {
       setViewMode("prompt");
       setPickStep("case");
       setIsUploadingNewVersion(false);
+      setQuickActions([]); // Clear quick actions for initial unfiled state
 
       // In read mode, show loading briefly while internal detection runs
       // The detection effect will replace this with the correct message
