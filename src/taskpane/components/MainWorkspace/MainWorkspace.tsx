@@ -706,6 +706,26 @@ async function getDraftRecipientsEmailsAsync(): Promise<string[]> {
 }
 
 /**
+ * Read recipients (To + Cc) from an opened email in read mode.
+ * In read mode these are plain arrays, not async getters like compose mode.
+ * BCC is not available in read mode.
+ */
+function getReadModeRecipientEmails(): string[] {
+  try {
+    const item = Office?.context?.mailbox?.item as any;
+    if (!item) return [];
+    const toArr = Array.isArray(item.to) ? item.to : [];
+    const ccArr = Array.isArray(item.cc) ? item.cc : [];
+    const all = [...toArr, ...ccArr]
+      .map((r: any) => normEmail(r?.emailAddress || r?.address || ""))
+      .filter(Boolean);
+    return Array.from(new Set(all));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Extract case keys from SingleCase submail addresses in recipients
  * Example: "2023-0006@valfor-demo.singlecase.ch" -> ["2023-0006"]
  */
@@ -1666,47 +1686,65 @@ const attachmentIds = React.useMemo(
   ]);
 
   // Effect: Detect internal emails (all recipients are same company domain)
+  // Runs in BOTH compose and read mode.
   React.useEffect(() => {
-    if (!composeMode) {
-      // Clear detection when not in compose mode
-      if (isInternalEmailDetected) {
-        setIsInternalEmailDetected(false);
+    if (composeMode) {
+      // COMPOSE MODE: use live-polled recipients
+      const emails = composeRecipientsLive || [];
+
+      if (emails.length === 0) {
+        if (isInternalEmailDetected) {
+          setIsInternalEmailDetected(false);
+        }
+        return;
       }
+
+      const senderEmail = Office?.context?.mailbox?.userProfile?.emailAddress || "";
+      if (!senderEmail) {
+        setIsInternalEmailDetected(false);
+        return;
+      }
+
+      const isInternal = isInternalEmail(senderEmail, emails);
+      setIsInternalEmailDetected(isInternal);
       return;
     }
 
-    const emails = composeRecipientsLive || [];
-
-    // If no recipients, not internal yet
-    if (emails.length === 0) {
-      if (isInternalEmailDetected) {
-        setIsInternalEmailDetected(false);
-        console.log("[internal-guard] No recipients, clearing internal detection");
-      }
+    // READ MODE: detect internal email from item.from + item.to + item.cc
+    if (!activeItemId) {
+      if (isInternalEmailDetected) setIsInternalEmailDetected(false);
       return;
     }
 
-    // Get sender email from Office user profile
-    const senderEmail = Office?.context?.mailbox?.userProfile?.emailAddress || "";
-    if (!senderEmail) {
-      console.warn("[internal-guard] Could not determine sender email");
+    const userEmail = Office?.context?.mailbox?.userProfile?.emailAddress || "";
+    if (!userEmail) {
       setIsInternalEmailDetected(false);
       return;
     }
 
-    // Check if all recipients are internal
-    const isInternal = isInternalEmail(senderEmail, emails);
+    const fromEmail = getOutlookFromEmail();
+    const recipientEmails = getReadModeRecipientEmails();
 
-    console.log("[internal-guard] Detection result:", {
-      senderEmail,
-      recipientCount: emails.length,
-      recipients: emails,
+    // Collect all participants (from + to + cc), deduplicated
+    const allParticipants = Array.from(new Set(
+      [fromEmail, ...recipientEmails].map(e => normEmail(e)).filter(Boolean)
+    ));
+
+    if (allParticipants.length === 0) {
+      setIsInternalEmailDetected(false);
+      return;
+    }
+
+    const isInternal = isInternalEmail(userEmail, allParticipants);
+    console.log("[internal-guard][read] Detection:", {
+      userEmail,
+      fromEmail,
+      recipientEmails,
+      allParticipants,
       isInternal,
-      overrideActive: overrideInternalGuard,
     });
-
     setIsInternalEmailDetected(isInternal);
-  }, [composeMode, composeRecipientsLive, isInternalEmailDetected, overrideInternalGuard]);
+  }, [composeMode, composeRecipientsLive, activeItemId, activeItemKey]);
 
   // Effect: Reset internal guard overrides when email item changes
   React.useEffect(() => {
@@ -2064,7 +2102,10 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
   React.useEffect(() => {
     if (!composeMode) {
       setChatStep("idle");
-      setQuickActions([]);
+      // Don't clear quickActions when the internal guard is managing them
+      if (!isInternalEmailDetected && !doNotFileThisEmail) {
+        setQuickActions([]);
+      }
       return;
     }
 
@@ -2197,7 +2238,6 @@ React.useEffect(() => {
     setPickStep("case");
     setQuickActions([
       { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
-      { id: "ig2", label: "Don't file", intent: "internal_guard_dont_file" },
     ]);
     setPrompt({
       itemId: activeItemId,
@@ -2257,6 +2297,52 @@ React.useEffect(() => {
   overrideInternalGuard,
   doNotFileThisEmail,
 ]);
+
+  // Effect: Internal email guard for READ mode
+  // Mirrors the compose-mode guard above, but triggers on read-mode unfiled/deleted prompts.
+  React.useEffect(() => {
+    if (composeMode) return;
+    if (viewMode !== "prompt") return;
+    if (prompt.kind !== "unfiled" && prompt.kind !== "deleted") return;
+
+    const shouldShowInternalGuard =
+      isInternalEmailDetected &&
+      !overrideInternalGuard &&
+      !doNotFileThisEmail;
+
+    if (shouldShowInternalGuard) {
+      setQuickActions([
+        { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
+        { id: "ig2", label: "Don't file", intent: "internal_guard_dont_file" },
+      ]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "I've detected an internal email. This conversation won't be filed.",
+      });
+      return;
+    }
+
+    if (doNotFileThisEmail) {
+      setQuickActions([]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "This email will not be filed.",
+      });
+      return;
+    }
+
+    // User overrode the guard — restore normal unfiled prompt
+    if (overrideInternalGuard && isInternalEmailDetected) {
+      setQuickActions([]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "This email is not filed. Do you want to file it?",
+      });
+    }
+  }, [composeMode, viewMode, prompt.kind, isInternalEmailDetected, overrideInternalGuard, doNotFileThisEmail, activeItemId]);
 
   // MainWorkspace.tsx (part 5 of 5)
 
@@ -3340,7 +3426,7 @@ setSelectedSource("manual"); // important
             <PromptBubble
               text={prompt.text}
               isUnfiled={prompt.kind === "unfiled" || prompt.kind === "deleted"}
-              tone={composeMode && selectedCaseId && autoFileOnSend ? "success" : "default"}
+              tone={(composeMode && selectedCaseId && autoFileOnSend) || (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) ? "success" : "default"}
              actions={(quickActions || []).map((a) => ({
     id: a.id,
     label: a.label,
@@ -3437,8 +3523,8 @@ setSelectedSource("manual"); // important
           <div ref={chatEndRef} />
         </div>
 
-        {/* RECEIVED MODE ACTIONS */}
-        {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode ? (
+        {/* RECEIVED MODE ACTIONS (hidden when internal guard is showing its own buttons) */}
+        {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !(isInternalEmailDetected && !overrideInternalGuard) && !doNotFileThisEmail ? (
           <div className="mwActionsBar">
             <button
               className="mwGhostBtn"
