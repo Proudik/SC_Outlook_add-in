@@ -97,7 +97,9 @@ type QuickAction = {
     | "cancel_compose"
     | "view_in_singlecase"
     | "internal_guard_file_anyway"
-    | "internal_guard_dont_file";
+    | "internal_guard_dont_file"
+    | "file_manually"
+    | "show_suggestions";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -897,15 +899,21 @@ async function clearLocalFiling(itemKey: string) {
 }
 
 async function hasAnyRealDocuments(pill: SentPillData | null, itemKey: string): Promise<boolean> {
+  // Check pill's document ID first
   const docId = String((pill as any)?.documentId || "").trim();
   if (docId) {
     const meta = await getDocumentMeta(docId);
     return Boolean(meta?.id);
   }
 
+  // Check uploaded links
   const raw = (await loadUploadedLinks(itemKey).catch(() => [])) as any[];
   const links = Array.isArray(raw) ? raw : [];
-  if (links.length === 0) return false;
+
+  // No local record of any document ID — we can't confirm deletion.
+  // This happens when email was filed on another device/session.
+  // Return true (assume documents exist) to avoid false "deleted" message.
+  if (links.length === 0) return true;
 
   for (const it of links.slice(0, 5)) {
     const id = String(it?.id || "").trim();
@@ -1744,6 +1752,20 @@ const attachmentIds = React.useMemo(
       isInternal,
     });
     setIsInternalEmailDetected(isInternal);
+
+    // Update prompt text immediately after detection completes
+    setPrompt(prev => {
+      // Only update if showing loading message or generic unfiled prompt
+      if (prev.kind === "unfiled" && (prev.text === "Checking..." || prev.text.includes("isn't filed yet"))) {
+        return {
+          ...prev,
+          text: isInternal
+            ? "This looks like an internal email. Do you want to file it to a case?"
+            : "This email isn't filed yet. Would you like me to file it to a case?",
+        };
+      }
+      return prev;
+    });
   }, [composeMode, composeRecipientsLive, activeItemId, activeItemKey]);
 
   // Effect: Reset internal guard overrides when email item changes
@@ -2102,10 +2124,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
   React.useEffect(() => {
     if (!composeMode) {
       setChatStep("idle");
-      // Don't clear quickActions when the internal guard is managing them
-      if (!isInternalEmailDetected && !doNotFileThisEmail) {
-        setQuickActions([]);
-      }
+      setQuickActions([]);
       return;
     }
 
@@ -2242,7 +2261,7 @@ React.useEffect(() => {
     setPrompt({
       itemId: activeItemId,
       kind: "unfiled",
-      text: "I've detected an internal email. This conversation won't be filed.",
+      text: "This looks internal. Do you want to file this email when you send it?",
     });
     return;
   }
@@ -2297,52 +2316,6 @@ React.useEffect(() => {
   overrideInternalGuard,
   doNotFileThisEmail,
 ]);
-
-  // Effect: Internal email guard for READ mode
-  // Mirrors the compose-mode guard above, but triggers on read-mode unfiled/deleted prompts.
-  React.useEffect(() => {
-    if (composeMode) return;
-    if (viewMode !== "prompt") return;
-    if (prompt.kind !== "unfiled" && prompt.kind !== "deleted") return;
-
-    const shouldShowInternalGuard =
-      isInternalEmailDetected &&
-      !overrideInternalGuard &&
-      !doNotFileThisEmail;
-
-    if (shouldShowInternalGuard) {
-      setQuickActions([
-        { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
-        { id: "ig2", label: "Don't file", intent: "internal_guard_dont_file" },
-      ]);
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: "I've detected an internal email. This conversation won't be filed.",
-      });
-      return;
-    }
-
-    if (doNotFileThisEmail) {
-      setQuickActions([]);
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: "This email will not be filed.",
-      });
-      return;
-    }
-
-    // User overrode the guard — restore normal unfiled prompt
-    if (overrideInternalGuard && isInternalEmailDetected) {
-      setQuickActions([]);
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: "This email is not filed. Do you want to file it?",
-      });
-    }
-  }, [composeMode, viewMode, prompt.kind, isInternalEmailDetected, overrideInternalGuard, doNotFileThisEmail, activeItemId]);
 
   // MainWorkspace.tsx (part 5 of 5)
 
@@ -2403,13 +2376,14 @@ React.useEffect(() => {
         setPrompt({
           itemId: itemKey,
           kind: "filed",
-          text: `✅ Already filed in: ${alreadyFiledCaseLabel}`,
+          text: `You're all set. This email is already filed in SingleCase.`,
         });
 
         return;
       }
 
       if (dismissedRef.current.has(itemKey)) {
+        // User previously dismissed — show dismissal message with manual filing option
         setViewMode("prompt");
         setSelectedCaseId("");
         setSelectedSource("");
@@ -2417,10 +2391,16 @@ React.useEffect(() => {
         setPickStep("case");
         setSelectedAttachments([]);
         setIsUploadingNewVersion(false);
+        setQuickActions([
+          { id: "fm1", label: "File manually", intent: "file_manually" },
+          { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
+        ]);
         setPrompt({
           itemId: itemKey,
-          kind: "none",
-          text: "Select an email and I’ll show you relevant suggestions.",
+          kind: "unfiled",
+          text: isInternalEmailDetected
+            ? "No problem. I'll hide suggestions for this email, but you can still file it anytime."
+            : "Got it. I'll step back for this email, but you can still file it later.",
         });
         return;
       }
@@ -2446,7 +2426,7 @@ React.useEffect(() => {
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
-          text: "This email is not filed. Do you want to file it?",
+          text: "This email isn't filed yet. Would you like me to file it to a case?",
         });
         return;
       }
@@ -2494,11 +2474,22 @@ React.useEffect(() => {
       setViewMode("prompt");
       setPickStep("case");
       setIsUploadingNewVersion(false);
-      setPrompt({
-        itemId: itemKey,
-        kind: "unfiled",
-        text: "This email is not filed. Do you want to file it?",
-      });
+
+      // In read mode, show loading briefly while internal detection runs
+      // The detection effect will replace this with the correct message
+      if (!isComposeMode()) {
+        setPrompt({
+          itemId: itemKey,
+          kind: "unfiled",
+          text: "Checking...",
+        });
+      } else {
+        setPrompt({
+          itemId: itemKey,
+          kind: "unfiled",
+          text: "This email isn't filed yet. Would you like me to file it to a case?",
+        });
+      }
     } catch {
       setViewMode("prompt");
       setPickStep("case");
@@ -2787,6 +2778,32 @@ const handleQuickAction = React.useCallback((intent) => {
 
       if (intent === "internal_guard_dont_file") {
   handleDontFile();
+  return;
+}
+
+      if (intent === "file_manually") {
+  if (isInternalEmailDetected) setOverrideInternalGuard(true);
+  setViewMode("pickCase");
+  setPickStep("case");
+  setSelectedCaseId("");
+  setSelectedSource("");
+  setSelectedAttachments([]);
+  setIsUploadingNewVersion(false);
+  return;
+}
+
+      if (intent === "show_suggestions") {
+  dismissedRef.current.delete(storeKey);
+  dismissedRef.current.delete(activeItemKey);
+  dismissedRef.current.delete(activeItemId);
+  setQuickActions([]);
+  setPrompt({
+    itemId: activeItemId,
+    kind: "unfiled",
+    text: isInternalEmailDetected
+      ? "This looks like an internal email. Do you want to file it to a case?"
+      : "This email isn't filed yet. Would you like me to file it to a case?",
+  });
   return;
 }
 
@@ -3380,7 +3397,7 @@ setSelectedSource("manual"); // important
       </div>
 
       {submitError ? (
-        <div className="mwChatBubble" style={{ marginBottom: 12 }}>
+        <div className="mwChatBubble mwChatBubbleError">
           {submitError}
         </div>
       ) : null}
@@ -3523,8 +3540,8 @@ setSelectedSource("manual"); // important
           <div ref={chatEndRef} />
         </div>
 
-        {/* RECEIVED MODE ACTIONS (hidden when internal guard is showing its own buttons) */}
-        {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !(isInternalEmailDetected && !overrideInternalGuard) && !doNotFileThisEmail ? (
+        {/* RECEIVED MODE ACTIONS (hidden when dismissed — dismissal shows its own inline actions) */}
+        {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !dismissedRef.current.has(prompt.itemId) ? (
           <div className="mwActionsBar">
             <button
               className="mwGhostBtn"
@@ -3532,7 +3549,7 @@ setSelectedSource("manual"); // important
               onClick={() => {
                 dismissedRef.current.add(prompt.itemId);
 
-                // set Outlook category immediately
+                // Apply SC: Unfiled category
                 void (async () => {
                   try {
                     await applyUnfiledCategoryToCurrentEmailOfficeJs();
@@ -3541,10 +3558,20 @@ setSelectedSource("manual"); // important
                     console.warn("applyUnfiledCategory failed:", e);
                   }
                 })();
+
+                // Show dismissal message with manual filing option
+                const dismissMsg = isInternalEmailDetected
+                  ? "No problem. I'll hide suggestions for this email, but you can still file it anytime."
+                  : "Got it. I'll step back for this email, but you can still file it later.";
+
+                setQuickActions([
+                  { id: "fm1", label: "File manually", intent: "file_manually" },
+                  { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
+                ]);
                 setPrompt({
                   itemId: prompt.itemId,
-                  kind: "none",
-                  text: "Select an email and I’ll show you relevant suggestions.",
+                  kind: "unfiled",
+                  text: dismissMsg,
                 });
               }}
             >
@@ -3555,6 +3582,8 @@ setSelectedSource("manual"); // important
               className="mwPrimaryBtn"
               type="button"
               onClick={() => {
+                // If internal email, override guard so doSubmit won't block
+                if (isInternalEmailDetected) setOverrideInternalGuard(true);
                 setViewMode("pickCase");
                 setPickStep("case");
                 setSelectedCaseId("");
@@ -3601,6 +3630,9 @@ setSelectedSource("manual"); // important
                     return;
                   }
 
+                  // Clear dismiss so suggestions re-appear
+                  dismissedRef.current.delete(storeKey);
+
                   setViewMode("prompt");
                   setPickStep("case");
                   setSelectedCaseId("");
@@ -3609,7 +3641,7 @@ setSelectedSource("manual"); // important
                   setPrompt({
                     itemId: storeKey,
                     kind: "unfiled",
-                    text: "This email is not filed. Do you want to file it?",
+                    text: "This email isn't filed yet. Would you like me to file it to a case?",
                   });
                 }}
               >
@@ -3814,9 +3846,16 @@ setSelectedSource("manual"); // important
             <div className="mwRenameTitle">Přejmenovat dokument</div>
 
             <input
+              type="text"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !renameSaving && String(renameValue || "").trim()) {
+                  void confirmRename();
+                }
+              }}
               className="mwRenameInput"
+              aria-label="Název dokumentu"
               autoFocus
             />
 
