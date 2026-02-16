@@ -2274,7 +2274,6 @@ React.useEffect(() => {
     setPickStep("case");
     setQuickActions([
       { id: "fm1", label: "File manually", intent: "file_manually" },
-      { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
     ]);
     setPrompt({
       itemId: activeItemId,
@@ -2397,7 +2396,6 @@ React.useEffect(() => {
         setIsUploadingNewVersion(false);
         setQuickActions([
           { id: "fm1", label: "File manually", intent: "file_manually" },
-          { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
         ]);
         setPrompt({
           itemId: itemKey,
@@ -3601,7 +3599,6 @@ setSelectedSource("manual"); // important
 
                     setQuickActions([
                       { id: "fm1", label: "File manually", intent: "file_manually" },
-                      { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
                     ]);
                     setPrompt({
                       itemId: prompt.itemId,
