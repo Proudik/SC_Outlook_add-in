@@ -1,4 +1,4 @@
-export const sidekick = {
+export const theme = {
     bg: "#f6f1e8",
     surface: "rgba(255, 255, 255, 0.7)",
     border: "rgba(0, 0, 0, 0.08)",

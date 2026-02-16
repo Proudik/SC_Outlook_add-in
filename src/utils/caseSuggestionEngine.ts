@@ -1,5 +1,5 @@
 import { CaseOption } from "../services/singlecase";
-import { getSuggestStats, getThreadMappedCaseId } from "./caseSuggestStorage";
+import { getSuggestStats, getThreadMappedCaseId } from "./suggestionStorage";
 
 export type CaseSuggestion = {
   caseId: string;

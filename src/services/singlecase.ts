@@ -16,33 +16,6 @@ export type CaseOption = {
   isMine?: boolean;
 };
 
-const MOCK_CASES: CaseOption[] = [
-  {
-    id: "case_1",
-    title: "Contract review - Acme Corp",
-    client: "Acme",
-    status: "Open",
-    isFavourite: true,
-    isMine: true,
-  },
-  {
-    id: "case_2",
-    title: "Discovery Response - Johnson",
-    client: "Johnson",
-    status: "In progress",
-    isFavourite: true,
-    isMine: false,
-  },
-  {
-    id: "case_3",
-    title: "Merger - TechVision Inc.",
-    client: "TechVision",
-    status: "Open",
-    isFavourite: false,
-    isMine: true,
-  },
-];
-
 // Dev fallback: calls the localhost proxy path.
 // Your webpack devServer proxy currently forwards /singlecase/* to a fixed upstream.
 

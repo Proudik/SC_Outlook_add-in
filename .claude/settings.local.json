@@ -5,7 +5,9 @@
       "Bash(kill:*)",
       "Bash(lsof:*)",
       "Bash(curl:*)",
-      "Bash(npx webpack:*)"
+      "Bash(npx webpack:*)",
+      "Bash(ls:*)",
+      "Bash(npm run build:dev:*)"
     ]
   }
 }

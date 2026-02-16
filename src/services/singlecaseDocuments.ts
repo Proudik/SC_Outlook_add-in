@@ -639,7 +639,6 @@ export async function findDocumentBySubject(
   ];
 
   let documents: any[] = [];
-  let lastError: Error | null = null;
 
   for (const url of candidates) {
     try {
@@ -658,8 +657,6 @@ export async function findDocumentBySubject(
       }
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        lastError = new Error(`List documents failed (${res.status}): ${text || res.statusText}`);
         continue;
       }
 
@@ -677,8 +674,8 @@ export async function findDocumentBySubject(
         console.log("[findDocumentBySubject] Found", documents.length, "documents in case");
         break; // Success
       }
-    } catch (e) {
-      lastError = e instanceof Error ? e : new Error(String(e));
+    } catch {
+      // Try next endpoint
     }
   }
 

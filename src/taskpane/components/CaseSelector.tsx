@@ -1,14 +1,14 @@
 import * as React from "react";
 import { CaseOption } from "../../services/singlecase";
-import { CaseIntakeSettings } from "./CaseIntakeSettingsModal";
-import type { CaseSuggestion } from "../../utils/caseSuggestionLocal";
+import { AddinSettings } from "./SettingsModal";
+import type { CaseSuggestion } from "../../utils/caseSuggestionEngine";
 import "./CaseSelector.css";
 
 type Props = {
   title?: string;
 
-  scope: CaseIntakeSettings["caseListScope"];
-  onScopeChange: (scope: CaseIntakeSettings["caseListScope"]) => void;
+  scope: AddinSettings["caseListScope"];
+  onScopeChange: (scope: AddinSettings["caseListScope"]) => void;
 
   selectedCaseId: string;
   onSelectCaseId: (caseId: string) => void;

@@ -6,37 +6,6 @@ const VERBOSE_LOGGING = false;
 
 // Debug log that persists across sessions
 const DEBUG_LOG_KEY = "sc:debugLog";
-const MAX_DEBUG_LOG_SIZE = 50000; // chars
-
-async function appendDebugLog(message: string): Promise<void> {
-  try {
-    const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${message}\n`;
-
-    let existingLog = "";
-    if (hasRoamingSettings()) {
-      existingLog = String(Office.context.roamingSettings.get(DEBUG_LOG_KEY) || "");
-    } else if (typeof localStorage !== "undefined") {
-      existingLog = localStorage.getItem(DEBUG_LOG_KEY) || "";
-    }
-
-    // Keep only recent logs (trim if too large)
-    let newLog = existingLog + logEntry;
-    if (newLog.length > MAX_DEBUG_LOG_SIZE) {
-      newLog = newLog.substring(newLog.length - MAX_DEBUG_LOG_SIZE);
-    }
-
-    if (hasRoamingSettings()) {
-      Office.context.roamingSettings.set(DEBUG_LOG_KEY, newLog);
-      // Don't await saveAsync here - fire and forget
-      Office.context.roamingSettings.saveAsync(() => {});
-    } else if (typeof localStorage !== "undefined") {
-      localStorage.setItem(DEBUG_LOG_KEY, newLog);
-    }
-  } catch (e) {
-    // Silent fail - don't break the app
-  }
-}
 
 export async function getDebugLog(): Promise<string> {
   try {

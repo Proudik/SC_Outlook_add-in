@@ -1,4 +1,4 @@
-// src/utils/caseSuggestStorage.ts
+// src/utils/suggestionStorage.ts
 
 export type CaseStats = { count: number; lastSeenAt: number };
 export type PerEntityCaseStats = Record<string, Record<string, CaseStats>>;

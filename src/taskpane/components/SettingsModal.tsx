@@ -2,7 +2,7 @@ import * as React from "react";
 
 export type CaseListScope = "favourites" | "my" | "all";
 
-export type CaseIntakeSettings = {
+export type AddinSettings = {
   autoSuggestCase: boolean;
   caseListScope: CaseListScope;
   preventDuplicates: boolean;
@@ -13,16 +13,16 @@ export type CaseIntakeSettings = {
 
 type Props = {
   isOpen: boolean;
-  settings: CaseIntakeSettings;
+  settings: AddinSettings;
   onClose: () => void;
-  onChange: (s: CaseIntakeSettings) => void;
+  onChange: (s: AddinSettings) => void;
   onReset: () => void;
 
   onSignOut?: () => void;
 };
 
 
-export default function CaseIntakeSettingsModal(props: Props) {
+export default function SettingsModal(props: Props) {
   const { isOpen, settings, onClose, onChange, onReset } = props;
 
   React.useEffect(() => {

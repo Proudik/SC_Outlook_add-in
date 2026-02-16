@@ -173,7 +173,7 @@ export default function DialogAuth() {
   const [workspaceHost, setWorkspaceHost] = React.useState("");
   const [token, setToken] = React.useState("");
   const [selectedWorkspace, setSelectedWorkspace] = React.useState<Workspace | null>(null);
-  const [authedEmail, setAuthedEmail] = React.useState<string>("");
+  const [authedEmail] = React.useState<string>("");
   const [agreed, setAgreed] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

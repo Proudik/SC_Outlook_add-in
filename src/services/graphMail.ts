@@ -9,8 +9,7 @@ const CATEGORY_NAME = "SC: Filed";
 const CATEGORY_NAME_UNFILED = "SC: Unfiled";
 
 // Graph preset colour (for master category creation via Graph)
-const CATEGORY_COLOR_FILED = "preset4";     // green
-const CATEGORY_COLOR_UNFILED = "preset7";   // neutral/grey
+const CATEGORY_COLOR_FILED = "preset4"; // green
 
 /* =========================================================
    =============== OFFICE.JS (Immediate UI) =================

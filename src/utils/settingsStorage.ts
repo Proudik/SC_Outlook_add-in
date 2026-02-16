@@ -1,4 +1,4 @@
-import { CaseIntakeSettings } from "../taskpane/components/CaseIntakeSettingsModal";
+import { AddinSettings } from "../taskpane/components/SettingsModal";
 
 export type DuplicateCache = Record<string, string[]>; // caseId -> itemId list
 
@@ -24,7 +24,7 @@ function duplicateCacheKey(): string {
   return `sc_case_intake_attached_cache:${getMailboxKeySafe()}`;
 }
 
-export function loadSettings(defaultSettings: CaseIntakeSettings): CaseIntakeSettings {
+export function loadSettings(defaultSettings: AddinSettings): AddinSettings {
   try {
     const raw = localStorage.getItem(settingsStorageKey());
     if (!raw) return defaultSettings;
@@ -73,7 +73,7 @@ export function markEverFiled(emailItemId: string): void {
 }
 
 
-export function saveSettings(s: CaseIntakeSettings) {
+export function saveSettings(s: AddinSettings) {
   try {
     localStorage.setItem(settingsStorageKey(), JSON.stringify(s));
   } catch {

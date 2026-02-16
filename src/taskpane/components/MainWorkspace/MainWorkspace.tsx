@@ -1,9 +1,9 @@
 // MainWorkspace.tsx (part 1 of 5)
 
 import * as React from "react";
-import { hasEverFiled, markEverFiled } from "../../../utils/caseIntakeStorage";
+import { markEverFiled } from "../../../utils/settingsStorage";
 import { loadSentPill, saveSentPill, SentPillData } from "../../../utils/sentPillStore";
-import type { CaseIntakeSettings } from "../CaseIntakeSettingsModal";
+import type { AddinSettings } from "../SettingsModal";
 import CaseSelector from "../CaseSelector";
 import {
   listCases,
@@ -12,7 +12,7 @@ import {
   CaseOption,
 } from "../../../services/singlecase";
 import { useCaseSuggestions } from "../../../hooks/useCaseSuggestions";
-import { suggestCasesByContent } from "../../../utils/caseSuggestionLocal";
+import { suggestCasesByContent } from "../../../utils/caseSuggestionEngine";
 import { isInternalEmail } from "../../../utils/internalEmailGuard";
 import {
   uploadDocumentToCase,
@@ -30,7 +30,6 @@ import {
   applyUnfiledCategoryToCurrentEmailOfficeJs,
   getCurrentEmailCategoriesGraph,
 } from "../../../services/graphMail";
-import { runDiagnostics, formatDiagnosticResults } from "../../../services/diagnostics";
 
 import "./MainWorkspace.css";
 
@@ -45,8 +44,8 @@ type TabId = "cases" | "quick" | "timesheets" | "tasks";
 type Props = {
   email: string;
   token: string;
-  settings: CaseIntakeSettings;
-  onChangeSettings: React.Dispatch<React.SetStateAction<CaseIntakeSettings>>;
+  settings: AddinSettings;
+  onChangeSettings: React.Dispatch<React.SetStateAction<AddinSettings>>;
   onSignOut: () => Promise<void> | void;
   onOpenTab: (tab: TabId) => void;
 };
@@ -131,24 +130,6 @@ async function saveConversationFiledCtx(conversationKey: string, ctx: LastFiledC
   await setStored(`${CONV_CTX_KEY_PREFIX}${ck}`, JSON.stringify({ caseId, emailDocId }));
 }
 
-async function loadConversationFiledCtx(conversationKey: string): Promise<LastFiledCtx | null> {
-  try {
-    const ck = String(conversationKey || "").trim();
-    if (!ck) return null;
-    const raw = await getStored(`${CONV_CTX_KEY_PREFIX}${ck}`);
-    if (!raw) return null;
-
-    const obj = JSON.parse(String(raw));
-    const caseId = String(obj?.caseId || "").trim();
-    const emailDocId = String(obj?.emailDocId || "").trim();
-    if (!caseId || !emailDocId) return null;
-
-    return { caseId, emailDocId };
-  } catch {
-    return null;
-  }
-}
-
 type LastFiledCtx = {
   caseId: string;
   emailDocId: string;
@@ -159,20 +140,6 @@ async function saveLastFiledCtx(ctx: LastFiledCtx) {
   const emailDocId = String(ctx.emailDocId || "").trim();
   if (!caseId || !emailDocId) return;
   await setStored(LAST_FILED_CTX_KEY, JSON.stringify({ caseId, emailDocId }));
-}
-
-async function loadLastFiledCtx(): Promise<LastFiledCtx | null> {
-  try {
-    const raw = await getStored(LAST_FILED_CTX_KEY);
-    if (!raw) return null;
-    const obj = JSON.parse(String(raw));
-    const caseId = String(obj?.caseId || "").trim();
-    const emailDocId = String(obj?.emailDocId || "").trim();
-    if (!caseId || !emailDocId) return null;
-    return { caseId, emailDocId };
-  } catch {
-    return null;
-  }
 }
 
 async function saveLastFiledCase(caseId: string) {
@@ -671,15 +638,6 @@ async function getEmailBodySnippet(maxLen: number): Promise<string> {
   }
 }
 
-function getOutlookSubject(): string {
-  try {
-    const item = Office?.context?.mailbox?.item as any;
-    return String(item?.subject || "");
-  } catch {
-    return "";
-  }
-}
-
 function getOutlookFromEmail(): string {
   try {
     const item = Office?.context?.mailbox?.item as any;
@@ -1094,7 +1052,7 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
 
   // Content-based suggestions (triggered when user clicks "Vybrat jiný spis")
   const [contentBasedSuggestions, setContentBasedSuggestions] = React.useState<any[]>([]);
-  const [isLoadingContentSuggestions, setIsLoadingContentSuggestions] = React.useState(false);
+  const [isLoadingContentSuggestions] = React.useState(false);
 
   // Internal email guardrail (prevent filing internal-only emails)
   const [isInternalEmailDetected, setIsInternalEmailDetected] = React.useState(false);
@@ -1123,23 +1081,6 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
   const [renameSaving, setRenameSaving] = React.useState(false);
 
   const [subjectText, setSubjectText] = React.useState<string>("");
-  const [showDiagnostics, setShowDiagnostics] = React.useState(false);
-
-  const runDiagnosticsHandler = React.useCallback(async () => {
-    setShowDiagnostics(true);
-    console.log("=== Starting SingleCase Diagnostics ===");
-    try {
-      const results = await runDiagnostics();
-      const formatted = formatDiagnosticResults(results);
-      console.log(formatted);
-      alert(formatted);
-    } catch (e) {
-      console.error("Diagnostics failed:", e);
-      alert(`Diagnostics failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setShowDiagnostics(false);
-    }
-  }, []);
 
   React.useEffect(() => {
     let alive = true;

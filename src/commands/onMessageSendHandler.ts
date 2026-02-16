@@ -17,8 +17,6 @@ const T_BODY_MS = 2500;
 const CONV_CTX_KEY_PREFIX = "sc_conv_ctx:";
 const LAST_FILED_CTX_KEY = "sc_last_filed_ctx";
 
-type LastFiledCtx = { caseId: string; emailDocId: string };
-
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error("timeout")), ms);
@@ -63,19 +61,6 @@ function getConversationIdSafe(): string {
     return String(item?.conversationId || item?.conversationKey || "").trim();
   } catch {
     return "";
-  }
-}
-
-function parseLastFiledCtx(raw: string | null): LastFiledCtx | null {
-  try {
-    if (!raw) return null;
-    const obj = JSON.parse(String(raw));
-    const caseId = String(obj?.caseId || "").trim();
-    const emailDocId = String(obj?.emailDocId || "").trim();
-    if (!caseId || !emailDocId) return null;
-    return { caseId, emailDocId };
-  } catch {
-    return null;
   }
 }
 

@@ -1,5 +1,5 @@
 import * as React from "react";
-import SideKickCard from "./SideKickCard";
+import PanelCard from "./PanelCard";
 import CaseSelector from "./CaseSelector";
 import {
   listCases,
@@ -19,7 +19,7 @@ import { useOutlookSuggestions } from "../../hooks/useOutlookSuggestions";
 import { useCaseSuggestions } from "../../hooks/useCaseSuggestions";
 import { loadSentPill } from "../../utils/sentPillStore";
 import "./TimesheetsPanel.css";
-import { getThreadMappedCaseId } from "../../utils/caseSuggestStorage";
+import { getThreadMappedCaseId } from "../../utils/suggestionStorage";
 
 type Props = {
   token: string;
@@ -279,7 +279,7 @@ export default function TimesheetsPanel({ token, onBack }: Props) {
   const billedHm = secondsToHm(totals.billed);
 
   return (
-    <SideKickCard>
+    <PanelCard>
       <div className="ts-root">
         <div className="ts-body">
           <div className="ts-topbar">
@@ -396,7 +396,7 @@ export default function TimesheetsPanel({ token, onBack }: Props) {
           />
         ) : null}
       </div>
-    </SideKickCard>
+    </PanelCard>
   );
 }
 

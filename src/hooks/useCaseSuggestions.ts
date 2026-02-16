@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { CaseOption } from "../services/singlecase";
-import { suggestCasesLocal } from "../utils/caseSuggestionLocal";
-import type { CaseSuggestion } from "../utils/caseSuggestionLocal";
+import { suggestCasesLocal } from "../utils/caseSuggestionEngine";
+import type { CaseSuggestion } from "../utils/caseSuggestionEngine";
 
 type AttachmentLike = { name: string; isInline?: boolean };
 

@@ -2,22 +2,21 @@ import * as React from "react";
 import { makeStyles } from "@fluentui/react-components";
 
 import AuthScreen from "./AuthScreen";
-import CaseIntakePanel from "./CaseIntakePanel";
 import MainWorkspace from "./MainWorkspace/MainWorkspace";
 import WorkspaceSelectView from "./WorkspaceSelectView";
 import TimesheetsPanel from "./TimesheetsPanel";
-import CaseIntakeSettingsModal, { CaseIntakeSettings } from "./CaseIntakeSettingsModal";
+import SettingsModal, { AddinSettings } from "./SettingsModal";
 import { getAuth, clearAuth, clearAuthIfExpired, setAuth } from "../../services/auth";
 import { getStored, setStored } from "../../utils/storage";
 import { STORAGE_KEYS } from "../../utils/constants";
-import { loadSettings } from "../../utils/caseIntakeStorage";
+import { loadSettings } from "../../utils/settingsStorage";
 import QuickActionsPanel from "./QuickActionsPanel";
 
 interface AppProps {
   title: string;
 }
 
-const DEFAULT_SETTINGS: CaseIntakeSettings = {
+const DEFAULT_SETTINGS: AddinSettings = {
   autoSuggestCase: true,
   caseListScope: "my",
   preventDuplicates: true,
@@ -286,7 +285,7 @@ const App: React.FC<AppProps> = (props) => {
 
   const [bootstrapped, setBootstrapped] = React.useState(false);
 
-  const [settings, setSettings] = React.useState<CaseIntakeSettings>(() =>
+  const [settings, setSettings] = React.useState<AddinSettings>(() =>
     loadSettings(DEFAULT_SETTINGS)
   );
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
@@ -485,12 +484,6 @@ setAuth(payload.token, payload.email);
     setBootstrapped(true);
   };
 
-  const onContinue = async () => {
-    await setStored(STORAGE_KEYS.onboardingDone, "true");
-    setPostLoginStep("app");
-    setActiveTab("cases");
-  };
-
   const showShell = Boolean(auth.token) && Boolean(workspaceId);
 
   // Show global back button whenever you are in the "app" shell.
@@ -513,7 +506,7 @@ setAuth(payload.token, payload.email);
         />
       ) : (
         <>
-          <CaseIntakeSettingsModal
+          <SettingsModal
             isOpen={isSettingsOpen}
             settings={settings}
             onClose={() => setIsSettingsOpen(false)}
@@ -600,15 +593,7 @@ setAuth(payload.token, payload.email);
                     setActiveTab(tab as any);
                   }}
                 />
-              ) : (
-              <CaseIntakePanel
-                token={auth.token as string}
-                onBack={() => setPostLoginStep("home")}
-                onSignOut={onSignOut}
-                settings={settings}
-                onChangeSettings={setSettings}
-              />
-            )}
+              ) : null}
           </div>
 
           {showShell ? (
