@@ -283,11 +283,20 @@ export default function CaseSelector({
     return filtered.slice(0, 20);
   }, [expandedListBase, query]);
 
-  const selectedLabel = React.useMemo(() => {
-    if (!selectedCaseId) return "";
+  const selectedCaseDetails = React.useMemo(() => {
+    if (!selectedCaseId) return null;
     const anyFound = (cases as any[]).find((c) => String((c as any)?.id || "") === selectedCaseId);
-    return anyFound ? buildCaseLabel(anyFound) : "";
-  }, [cases, selectedCaseId]);
+    if (!anyFound) return null;
+
+    const clientKey = getClientKey(anyFound);
+    const clientLabel = buildClientLabel(clientKey, clientNamesById);
+
+    return {
+      caseId: selectedCaseId,
+      label: buildCaseLabel(anyFound),
+      clientLabel,
+    };
+  }, [cases, selectedCaseId, clientNamesById]);
 
   const pick = (caseId: string) => {
     onSelectCaseId(caseId);
@@ -331,7 +340,7 @@ export default function CaseSelector({
     },
     variant: "primary" | "secondary"
   ) => {
-    const isActive = selectedCaseId === s.caseId;
+    const isSelected = selectedCaseId === s.caseId;
 
     return (
       <button
@@ -339,14 +348,17 @@ export default function CaseSelector({
         className={[
           "case-selector-suggested-btn",
           variant === "secondary" ? "case-selector-suggested-btn--secondary" : "",
-          isActive ? "case-selector-suggested-btn--active" : "",
+          isSelected ? "case-selector-suggested-btn--selected" : "",
         ]
           .filter(Boolean)
           .join(" ")}
         onClick={() => pick(s.caseId)}
       >
         <div className="case-selector-suggested-topline">
-          <div className="case-selector-suggested-primary">{s.label}</div>
+          <div className="case-selector-suggested-primary">
+            {isSelected && <span className="case-selector-checkmark">✓ </span>}
+            {s.label}
+          </div>
           <div className={confidencePillClassName(s.confidencePct)}>{s.confidencePct}%</div>
         </div>
 
@@ -354,6 +366,7 @@ export default function CaseSelector({
         {s.reasons?.length ? (
           <div className="case-selector-suggested-reason">{s.reasons[0]}</div>
         ) : null}
+        {isSelected && <div className="case-selector-selected-badge">Selected</div>}
       </button>
     );
   };
@@ -382,19 +395,28 @@ export default function CaseSelector({
         </div>
       </div>
 
-      {selectedLabel ? (
-        <div className="case-selector-selected-hint">
-          I’ve noticed that this email or its attachments were deleted from SingleCase.{" "}
-          {selectedLabel}
-        </div>
-      ) : null}
-
       {isLoadingCases ? (
         <div className="case-selector-loading">Loading…</div>
       ) : !hasAnyCases ? (
         <div className="case-selector-empty">No cases available.</div>
       ) : (
         <div className="case-selector-suggested-card">
+          {/* SELECTED CASE - Always show prominently when a case is selected */}
+          {selectedCaseDetails && (
+            <div className="case-selector-selected-section">
+          
+              <div className="case-selector-selected-card">
+                <div className="case-selector-selected-card-content">
+                  <div className="case-selector-checkmark-icon">✓</div>
+                  <div className="case-selector-selected-info">
+                    <div className="case-selector-selected-primary">{selectedCaseDetails.label}</div>
+                    <div className="case-selector-selected-secondary">{selectedCaseDetails.clientLabel}</div>
+                  </div>
+                </div>
+                <div className="case-selector-selected-badge-large">SELECTED</div>
+              </div>
+            </div>
+          )}
           {/* Loading state for content-based suggestions */}
           {isLoadingContentSuggestions ? (
             <div className="case-selector-loading" style={{ marginBottom: 12 }}>
@@ -423,12 +445,13 @@ export default function CaseSelector({
             </div>
           ) : null}
 
-          {topSuggestion ? (
+          {/* Only show suggestions if they're not already selected (to avoid duplication with Selected Case section) */}
+          {topSuggestion && topSuggestion.caseId !== selectedCaseId ? (
             <>
               {renderSuggestionButton(topSuggestion, "primary")}
-              {secondSuggestion ? renderSuggestionButton(secondSuggestion, "secondary") : null}
+              {secondSuggestion && secondSuggestion.caseId !== selectedCaseId ? renderSuggestionButton(secondSuggestion, "secondary") : null}
             </>
-          ) : !isLoadingContentSuggestions && contentSuggestionRows.length === 0 ? (
+          ) : !isLoadingContentSuggestions && contentSuggestionRows.length === 0 && !selectedCaseId ? (
             <div className="case-selector-empty" style={{ marginBottom: 8 }}>
               I couldn’t find a good match yet. Try searching for a case below.
             </div>
@@ -460,6 +483,7 @@ export default function CaseSelector({
                   const label = String(x.label || "");
                   const clientLabel = String(x.clientLabel || "");
                   const pct = typeof x.confidencePct === "number" ? x.confidencePct : 0;
+                  const isSelected = selectedCaseId === caseId;
 
                   return (
                     <button
@@ -467,19 +491,24 @@ export default function CaseSelector({
                       type="button"
                       className={[
                         "case-selector-other-item",
-                        selectedCaseId === caseId ? "case-selector-other-item--active" : "",
+                        isSelected ? "case-selector-other-item--selected" : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                       onClick={() => pick(caseId)}
                     >
                       <div className="case-selector-other-left">
-                        <div className="case-selector-other-primary">{label}</div>
+                        <div className="case-selector-other-primary">
+                          {isSelected && <span className="case-selector-checkmark">✓ </span>}
+                          {label}
+                        </div>
                         <div className="case-selector-other-secondary">{clientLabel}</div>
                       </div>
 
                       {pct > 0 ? (
                         <div className={confidencePillClassName(pct)}>{pct}%</div>
+                      ) : isSelected ? (
+                        <div className="case-selector-selected-badge">Selected</div>
                       ) : (
                         <div className="case-selector-other-spacer" />
                       )}
