@@ -1760,7 +1760,7 @@ const attachmentIds = React.useMemo(
         return {
           ...prev,
           text: isInternal
-            ? "This looks like an internal email. Do you want to file it to a case?"
+            ? "This looks like an internal email."
             : "This email isn't filed yet. Would you like me to file it to a case?",
         };
       }
@@ -2261,7 +2261,7 @@ React.useEffect(() => {
     setPrompt({
       itemId: activeItemId,
       kind: "unfiled",
-      text: "This looks internal. Do you want to file this email when you send it?",
+      text: "This looks like an internal email.",
     });
     return;
   }
@@ -2271,11 +2271,14 @@ React.useEffect(() => {
     console.log("[internal-guard] Email marked as do-not-file, showing confirmation");
     setViewMode("prompt");
     setPickStep("case");
-    setQuickActions([]);
+    setQuickActions([
+      { id: "fm1", label: "File manually", intent: "file_manually" },
+      { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
+    ]);
     setPrompt({
       itemId: activeItemId,
       kind: "unfiled",
-      text: "This email will not be filed.",
+      text: "No problem. I'll hide suggestions for this email, but you can still file it anytime.",
     });
     return;
   }
@@ -2796,12 +2799,14 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(storeKey);
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
-  setQuickActions([]);
+  setQuickActions(isInternalEmailDetected
+    ? [{ id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" }]
+    : []);
   setPrompt({
     itemId: activeItemId,
     kind: "unfiled",
     text: isInternalEmailDetected
-      ? "This looks like an internal email. Do you want to file it to a case?"
+      ? "This looks like an internal email."
       : "This email isn't filed yet. Would you like me to file it to a case?",
   });
   return;
@@ -3543,57 +3548,77 @@ setSelectedSource("manual"); // important
         {/* RECEIVED MODE ACTIONS (hidden when dismissed — dismissal shows its own inline actions) */}
         {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !dismissedRef.current.has(prompt.itemId) ? (
           <div className="mwActionsBar">
-            <button
-              className="mwGhostBtn"
-              type="button"
-              onClick={() => {
-                dismissedRef.current.add(prompt.itemId);
+            {/* For internal emails, show only "File anyway" button */}
+            {isInternalEmailDetected && !overrideInternalGuard ? (
+              <button
+                className="mwPrimaryBtn"
+                type="button"
+                onClick={() => {
+                  // Override guard and proceed to file
+                  setOverrideInternalGuard(true);
+                  setDoNotFileThisEmail(false);
+                  setViewMode("pickCase");
+                  setPickStep("case");
+                  setSelectedCaseId("");
+                  setSelectedSource("");
+                  setSelectedAttachments([]);
+                  setIsUploadingNewVersion(false);
+                }}
+              >
+                File anyway
+              </button>
+            ) : (
+              <>
+                {/* For normal emails, show "No" and "Yes, file it" buttons */}
+                <button
+                  className="mwGhostBtn"
+                  type="button"
+                  onClick={() => {
+                    dismissedRef.current.add(prompt.itemId);
 
-                // Apply SC: Unfiled category
-                void (async () => {
-                  try {
-                    await applyUnfiledCategoryToCurrentEmailOfficeJs();
-                    setForceUnfiledLabel(true);
-                  } catch (e) {
-                    console.warn("applyUnfiledCategory failed:", e);
-                  }
-                })();
+                    // Apply SC: Unfiled category
+                    void (async () => {
+                      try {
+                        await applyUnfiledCategoryToCurrentEmailOfficeJs();
+                        setForceUnfiledLabel(true);
+                      } catch (e) {
+                        console.warn("applyUnfiledCategory failed:", e);
+                      }
+                    })();
 
-                // Show dismissal message with manual filing option
-                const dismissMsg = isInternalEmailDetected
-                  ? "No problem. I'll hide suggestions for this email, but you can still file it anytime."
-                  : "Got it. I'll step back for this email, but you can still file it later.";
+                    // Show dismissal message with manual filing option
+                    const dismissMsg = "Got it. I'll step back for this email, but you can still file it later.";
 
-                setQuickActions([
-                  { id: "fm1", label: "File manually", intent: "file_manually" },
-                  { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
-                ]);
-                setPrompt({
-                  itemId: prompt.itemId,
-                  kind: "unfiled",
-                  text: dismissMsg,
-                });
-              }}
-            >
-              No
-            </button>
+                    setQuickActions([
+                      { id: "fm1", label: "File manually", intent: "file_manually" },
+                      { id: "fm2", label: "Show suggestions", intent: "show_suggestions" },
+                    ]);
+                    setPrompt({
+                      itemId: prompt.itemId,
+                      kind: "unfiled",
+                      text: dismissMsg,
+                    });
+                  }}
+                >
+                  No
+                </button>
 
-            <button
-              className="mwPrimaryBtn"
-              type="button"
-              onClick={() => {
-                // If internal email, override guard so doSubmit won't block
-                if (isInternalEmailDetected) setOverrideInternalGuard(true);
-                setViewMode("pickCase");
-                setPickStep("case");
-                setSelectedCaseId("");
-                setSelectedSource("");
-                setSelectedAttachments([]);
-                setIsUploadingNewVersion(false);
-              }}
-            >
-              Yes, file it
-            </button>
+                <button
+                  className="mwPrimaryBtn"
+                  type="button"
+                  onClick={() => {
+                    setViewMode("pickCase");
+                    setPickStep("case");
+                    setSelectedCaseId("");
+                    setSelectedSource("");
+                    setSelectedAttachments([]);
+                    setIsUploadingNewVersion(false);
+                  }}
+                >
+                  Yes, file it
+                </button>
+              </>
+            )}
           </div>
         ) : null}
 
