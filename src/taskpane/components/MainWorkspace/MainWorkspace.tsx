@@ -2800,16 +2800,25 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(storeKey);
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
-  setQuickActions(isInternalEmailDetected
-    ? [{ id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" }]
-    : []);
-  setPrompt({
-    itemId: activeItemId,
-    kind: "unfiled",
-    text: isInternalEmailDetected
-      ? "This looks like an internal email."
-      : "This email isn't filed yet. Would you like me to file it to a case?",
-  });
+
+  // For internal emails, show the guard prompt
+  if (isInternalEmailDetected) {
+    setQuickActions([{ id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" }]);
+    setPrompt({
+      itemId: activeItemId,
+      kind: "unfiled",
+      text: "This looks like an internal email.",
+    });
+    return;
+  }
+
+  // For normal emails, go directly to case picker
+  setViewMode("pickCase");
+  setPickStep("case");
+  setSelectedCaseId("");
+  setSelectedSource("");
+  setSelectedAttachments([]);
+  setIsUploadingNewVersion(false);
   return;
 }
 
