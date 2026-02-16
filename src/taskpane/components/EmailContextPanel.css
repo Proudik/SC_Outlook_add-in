@@ -1,0 +1,68 @@
+.email-context-panel-error {
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(220, 38, 38, 0.08);
+  color: rgb(153, 27, 27);
+  font-size: 13px;
+}
+
+.email-context-panel-empty {
+  opacity: 0.8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.email-context-compact {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(246, 246, 246, 0.85);
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.email-context-compact-left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.email-context-compact-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.email-context-compact-row--secondary {
+  opacity: 0.85;
+}
+
+.email-context-compact-label {
+  opacity: 0.7;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.email-context-compact-value {
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email-context-compact-chevron {
+  opacity: 0.6;
+  font-size: 16px;
+  line-height: 1;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}

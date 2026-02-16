@@ -1,0 +1,358 @@
+.ts-root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    gap: 14px;
+  }
+  
+  .ts-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 90px;
+  }
+  
+  /* Top bar */
+  
+  .ts-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .ts-back {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  
+  .ts-title {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: rgba(17,24,39,0.95);
+  }
+  
+  .ts-spacer {
+    width: 64px;
+  }
+  
+  /* Sections */
+  
+  .ts-section {
+    margin-top: 12px;
+  }
+  
+  .ts-label {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: rgba(17,24,39,0.9);
+  }
+  
+  .ts-select,
+  .ts-input,
+  .ts-textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.12);
+    padding: 8px 10px;
+    font-size: 13px;
+    padding-right: 16px;
+
+    background: white;
+    outline: none;
+  }
+  
+  .ts-textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  
+  /* Date range */
+  
+  .ts-range {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  /* Summary */
+  
+  .ts-summary {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .ts-summary-title {
+    font-size: 14px;
+    font-weight: 800;
+  }
+  
+  .ts-summary-sub {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+  
+  .ts-add {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: none;
+    background: #00204A;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .ts-add:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  
+  /* List */
+  
+  .ts-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .ts-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.85);
+    cursor: pointer;
+  }
+  
+  .ts-row:hover {
+    background: rgba(255,255,255,1);
+  }
+  
+  .ts-row-left {
+    min-width: 0;
+  }
+  
+  .ts-row-date {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .ts-row-note {
+    font-size: 12px;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  
+  .ts-row-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  
+  .ts-row-time {
+    font-size: 13px;
+    font-weight: 700;
+  }
+  
+  .ts-row-billed {
+    font-size: 11px;
+    opacity: 0.6;
+  }
+  
+  /* Footer */
+  
+  .ts-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: white;
+    padding: 14px 0;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  
+  .ts-primary {
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: #00204A;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  
+  /* Errors */
+  
+  .ts-error {
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(220, 38, 38, 0.08);
+    color: rgb(153, 27, 27);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  
+  .ts-muted {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-top: 6px;
+  }
+  
+  /* Modal */
+  
+  .ts-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  
+  .ts-modal {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* Add right-side breathing room for full-width fields */
+.ts-modal .ts-input[type="date"],
+.ts-modal .ts-textarea {
+  padding-right: 16px;
+}
+  
+  .ts-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .ts-modal-title {
+    font-size: 16px;
+    font-weight: 800;
+  }
+  
+  .ts-x {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  .ts-modal-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .ts-time-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* Narrow Hours / Minutes inputs */
+.ts-time-row .ts-input[type="number"] {
+    width: 96px;
+    padding-right: 6px;
+  }
+  
+  .ts-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  
+  .ts-note {
+    margin-top: 4px;
+  }
+  
+  .ts-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .ts-secondary {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  /* ===== Modal input width & padding fixes ===== */
+
+/* Keep original input height */
+.ts-input,
+.ts-select {
+  height: 36px;
+}
+
+/* Right-side breathing room for date + details */
+.ts-modal .ts-input[type="date"],
+.ts-modal .ts-textarea {
+  padding-right: 16px;
+}
+
+/* Hours / Minutes layout */
+.ts-time-row {
+  display: flex;
+  gap: 12px;
+}
+
+/* Narrow number inputs */
+.ts-time-row .ts-input[type="number"] {
+  width: 96px;
+  padding-right: 6px;
+}
+
+/* Textarea comfort */
+.ts-textarea {
+  min-height: 110px;
+  padding-right: 16px;
+}
+
+/* ===== Force a right gutter for Date + Details (outside the field) ===== */
+
+.ts-modal .ts-input[type="date"],
+.ts-modal .ts-textarea {
+  display: block;
+  width: calc(100% - 14px);
+  margin-right: 14px;
+}
+
+/* Keep your original input height */
+.ts-modal .ts-input,
+.ts-modal .ts-select {
+  height: 36px;
+}
+
+/* Keep textarea comfortable */
+.ts-modal .ts-textarea {
+  min-height: 110px;
+}

@@ -1,0 +1,79 @@
+I'll provide the fixed handler code that you can copy-paste to replace lines 2670-2726 in MainWorkspace.tsx:
+
+```typescript
+      if (intent === "pick_another_case") {
+        // Check if we should trigger content-based suggestions
+        const wasAutoSelected = selectedSource === "suggested" || selectedSource === "remembered";
+        const hasContent = subjectText.trim() || suggestBodySnippet.trim();
+
+        console.log("[pick_another_case] 🔵 Button clicked", {
+          wasAutoSelected,
+          hasContent,
+          selectedSource,
+          subjectLength: subjectText.length,
+          bodyLength: suggestBodySnippet.length,
+          visibleCasesCount: visibleCases.length,
+        });
+
+        if (composeMode) {
+          setSelectedCaseId("");
+          setSelectedSource("manual"); // important
+
+          // Trigger content-based suggestions if case was auto-selected and we have content
+          if (wasAutoSelected && hasContent) {
+            console.log("[pick_another_case] ✅ Triggering content analysis");
+
+            try {
+              const result = suggestCasesByContent({
+                subject: subjectText,
+                bodySnippet: suggestBodySnippet,
+                cases: visibleCases,
+                topK: 5,
+              });
+
+              console.log("[pick_another_case] 📊 Analysis complete:", {
+                foundCount: result.suggestions.length,
+                suggestions: result.suggestions.map(s => ({
+                  caseId: s.caseId,
+                  pct: s.confidencePct,
+                  score: s.score,
+                  reasons: s.reasons,
+                })),
+              });
+
+              setContentBasedSuggestions(result.suggestions);
+
+              if (result.suggestions.length === 0) {
+                console.log("[pick_another_case] ❌ No suggestions found");
+                setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Žádné návrhy podle obsahu. Vyberte spis ručně." });
+              } else {
+                console.log("[pick_another_case] ✅ Set", result.suggestions.length, "suggestions in state");
+                setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis podle obsahu emailu." });
+              }
+            } catch (error) {
+              console.error("[pick_another_case] ❌ Analysis failed:", error);
+              setContentBasedSuggestions([]);
+              setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis." });
+            }
+          } else {
+            console.log("[pick_another_case] ⏭️ Skipping analysis:", {
+              reason: !wasAutoSelected ? "not auto-selected" : "no content",
+            });
+            setContentBasedSuggestions([]);
+            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis." });
+          }
+        }
+
+        setViewMode("pickCase");
+        setPickStep("case");
+        setChatStep("compose_choose_case");
+        setQuickActions([]);
+        return;
+      }
+```
+
+KEY CHANGES:
+1. Removed setTimeout - run analysis synchronously
+2. Removed loading state (since it's now instant)
+3. Added comprehensive console logs at every step
+4. Fixed stale closure issue from setTimeout

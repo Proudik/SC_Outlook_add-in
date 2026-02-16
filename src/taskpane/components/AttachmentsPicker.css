@@ -1,0 +1,93 @@
+.attachments-picker-wrap {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachments-picker-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.attachments-picker-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.attachments-picker-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.attachments-picker-small-btn {
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  cursor: pointer;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.attachments-picker-loading {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.attachments-picker-empty {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.attachments-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachments-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255,  255,  255, 0.75);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.attachments-picker-item-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.attachments-picker-item-name {
+  font-size: 12px;
+  line-height: 1.2;
+
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachments-picker-item-meta {
+  font-size: 11px;
+  line-height: 1.2;
+
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(npx webpack:*)"
+    ]
+  }
+}

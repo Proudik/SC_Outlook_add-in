@@ -1,0 +1,659 @@
+/* MainWorkspace - all classes prefixed with mw to avoid global collisions */
+
+@keyframes mwBounce {
+  0% { transform: translateY(0px); opacity: 0.35; }
+  50% { transform: translateY(-3px); opacity: 0.9; }
+  100% { transform: translateY(0px); opacity: 0.35; }
+}
+
+.mwPage {
+  height: calc(100vh - 160px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.mwHero {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 8px;
+  text-align: left;
+}
+
+.mwGreeting {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: rgba(17, 24, 39, 0.94);
+}
+
+.mwQuestion {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.25;
+  font-weight: 600;
+  color: rgba(17, 24, 39, 0.5);
+}
+
+/* ---- Filed summary card (compact IW3-style) ---- */
+.mwFiledSummaryCard {
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  overflow: visible;
+}
+
+.mwFiledSummaryHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-height: 0;
+}
+
+.mwFiledSummaryHeaderLeft {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mwFiledSummaryLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(17, 24, 39, 0.55);
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.mwFiledSummaryTitleWrap {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-height: 1.18;
+}
+
+.mwFiledCaseLink {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: rgba(0, 32, 74, 0.95);
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.mwFiledCaseName {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: rgba(17, 24, 39, 0.92);
+  display: block;
+  min-width: 0;
+}
+
+.mwFiledPill {
+  padding: 3px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.08);
+  color: rgba(6, 95, 70, 0.95);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  align-self: start;
+  flex-shrink: 0;
+}
+
+.mwFiledSummaryMeta {
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(17, 24, 39, 0.55);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.25;
+}
+
+.mwFiledSummaryMetaItem {
+  white-space: nowrap;
+}
+
+.mwFiledSummaryMetaItem + .mwFiledSummaryMetaItem::before {
+  content: "· ";
+  margin-right: 2px;
+}
+
+.mwFiledDocsMini {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* HARDENED: ensure actions never disappear */
+.mwFiledDocMiniRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mwFiledDocMiniName {
+  min-width: 0;
+  flex: 1 1 auto;            /* force shrink instead of pushing actions away */
+  font-size: 11.5px;
+  font-weight: 700;
+  color: rgba(17, 24, 39, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mwFiledDocMiniActions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.mwMiniIconBtn {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;            /* lock sizing */
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  color: rgba(17, 24, 39, 0.9);
+}
+
+.mwMiniIconBtnPrimary {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;            /* lock sizing */
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #00204a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  box-shadow: 0 4px 12px rgba(0, 32, 74, 0.15);
+  color: #ffffff;
+}
+
+.mwIconSvg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.mwIconSvgPrimary {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+/* Document row wrapper + hover card */
+.mwFiledDocMiniRowWrapper {
+  position: relative;
+}
+
+.mwDocRowTrigger {
+  cursor: help;
+}
+
+.mwDocRowTrigger:focus {
+  outline: 1px solid rgba(0, 32, 74, 0.25);
+  outline-offset: 1px;
+}
+
+.mwDocRowTrigger .mwFiledDocMiniName {
+  min-width: 0;
+}
+
+
+/* ---- Chat card ---- */
+.mwChatCard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.mwChatBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mwChatBubble {
+  align-self: flex-start;
+  max-width: 92%;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background-color: rgba(0, 32, 74, 0.06);
+  border: 1px solid rgba(0, 32, 74, 0.1);
+  color: rgba(17, 24, 39, 0.92);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.mwChatBubbleSuccess {
+  align-self: flex-start;
+  max-width: 92%;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: rgba(6, 95, 70, 0.95);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.mwChatMuted {
+  align-self: flex-start;
+  max-width: 92%;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: rgba(17, 24, 39, 0.6);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.mwFilingBtn {
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: rgba(17, 24, 39, 0.82);
+  outline: none;
+}
+
+.mwFilingBtnActive {
+  background-color: rgba(0, 32, 74, 0.08);
+  border: 1px solid rgba(0, 32, 74, 0.22);
+  color: rgba(17, 24, 39, 0.92);
+  box-shadow: 0 6px 14px rgba(0, 32, 74, 0.1);
+}
+
+.mwActionsBar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 8px 10px 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background-color: rgba(255, 255, 255, 0.62);
+}
+
+.mwGhostBtn {
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: rgba(17, 24, 39, 0.82);
+}
+
+.mwGhostBtn2 {
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #00204a;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255);
+}
+
+.mwPrimaryBtn {
+  height: 34px;
+  border-radius: 999px;
+  border: none;
+  background-color: #00204a;
+  padding: 0 14px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  line-height: 34px;
+}
+
+.mwPrimaryBtnDisabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mwThinking {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.mwDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.35);
+}
+
+.mwAttachmentsStep {
+  margin-top: 10px;
+}
+
+.mwAttachmentsStepTitle {
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.mwAttachmentsStepButtons {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.mwAttachmentsStepList {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mwAttachmentsStepLabel {
+  display: flex;
+  gap: 6px;
+}
+
+.mwRenameOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.mwRenameDialog {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
+.mwRenameTitle {
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.mwRenameInput {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  padding: 0 10px;
+  font-size: 12px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.mwRenameActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.mwDotBounce1 { animation: mwBounce 900ms infinite; }
+.mwDotBounce2 { animation: mwBounce 900ms infinite 120ms; }
+.mwDotBounce3 { animation: mwBounce 900ms infinite 240ms; }
+
+/* Compact height: tighten further on short viewports */
+@media (max-height: 700px) {
+  .mwPage {
+    padding: 6px 10px 8px;
+    height: calc(100vh - 140px);
+  }
+
+  .mwHero {
+    padding: 2px 0 4px;
+    gap: 0;
+  }
+
+  .mwGreeting {
+    font-size: 15px;
+    line-height: 1.1;
+  }
+
+  .mwQuestion {
+    font-size: 10.5px;
+  }
+
+  .mwFiledSummaryCard {
+    padding: 5px 6px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+  }
+
+  .mwFiledSummaryMeta {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .mwFiledDocsMini {
+    margin-top: 4px;
+    gap: 3px;
+  }
+
+  .mwFiledDocMiniRow {
+    padding: 5px 6px;
+    min-height: 28px;
+  }
+
+  .mwChatBody {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .mwChatBubble,
+  .mwChatMuted {
+    padding: 6px 8px;
+    font-size: 11.5px;
+  }
+
+  .mwActionsBar {
+    padding: 6px 8px 8px;
+  }
+
+  .mwGhostBtn,
+  .mwPrimaryBtn {
+    height: 30px;
+    font-size: 11px;
+    line-height: 30px;
+  }
+}
+.mwFiledDocMiniText {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mwFiledDocMiniMeta {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(17, 24, 39, 0.5);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.mwDetectedCard {
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.07);
+  padding: 10px;
+  margin-bottom: 8px;
+}.mwDetectedTitle {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: rgba(6, 95, 70, 0.9);
+  margin-bottom: 8px;
+}
+
+.mwDetectedCaseRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  padding: 8px 10px;
+}
+
+.mwDetectedCaseName {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(17, 24, 39, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mwDetectedUseBtn {
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 11.5px;
+}
+
+.mwDetectedActions {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.mwDetectedToggle {
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: rgba(6, 95, 70, 0.95);
+  text-align: left;
+}
+
+.mwDetectedToggleOn {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.mwDetectedCancel {
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.mwQuickReplies {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mwQuickReplyBtn {
+  border: 1px solid rgba(0,0,0,0.15);
+  background: white;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mwQuickReplyBtn:hover {
+  background: rgba(0,0,0,0.05);
+}
