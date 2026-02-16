@@ -11,7 +11,7 @@
   <DefaultLocale>en-US</DefaultLocale>
 
   <DisplayName DefaultValue="SingleCase"/>
-  <Description DefaultValue="Připojujte emaily a přílohy z Outlooku přímo ke spisům v SingleCase."/>
+  <Description DefaultValue="Attach emails and attachments from Outlook directly to cases in SingleCase."/>
 
   <IconUrl DefaultValue="https://localhost:3000/assets/sc.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/sc.png"/>
