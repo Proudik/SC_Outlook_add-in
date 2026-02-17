@@ -15,7 +15,7 @@
 
   <IconUrl DefaultValue="https://localhost:3000/assets/sc.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/sc.png"/>
-  <SupportUrl DefaultValue="https://www.singlecase.com/contact?_gl=1*1pdu2s7*_up*MQ..*_gs*MQ..&gclid=CjwKCAiAwNDMBhBfEiwAd7ti1DRfioHoBJqNnKyl2mPIrbQlHcysJmrbwFtHX8AoKgA1NfDkTQf7YBoCseYQAvD_BwE&gbraid=0AAAABBjwgwPto9f5dRuJrZVa6e1zGN_QC"/>
+  <SupportUrl DefaultValue="https://www.contoso.com/help"/>
 
   <AppDomains>
     <AppDomain>https://localhost:3000</AppDomain>
