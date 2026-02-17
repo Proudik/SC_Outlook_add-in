@@ -155,7 +155,8 @@ console.log(
     if (already) return;
 
     lastAutoPickRef.current = { emailItemId: String(emailItemId), caseId: nextId };
-    onAutoSelectRef.current?.(nextId);
+    // DISABLED: Auto-selection of high-confidence suggestions
+    // onAutoSelectRef.current?.(nextId);
   }, [
     enabled,
     emailItemId,

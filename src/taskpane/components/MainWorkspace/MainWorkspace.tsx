@@ -1512,6 +1512,9 @@ const attachmentIds = React.useMemo(
     if (!detectedFrequentCaseId) return;
     if (selectedSource === "manual" || selectedSource === "remembered") return;
 
+    // IMPORTANT: Only auto-select frequent cases in compose mode
+    if (!isComposeMode()) return;
+
     // Skip frequent case auto-selection if submail is detected (highest priority)
     if (submailDetectedCaseId) return;
 
@@ -2073,11 +2076,12 @@ const attachmentIds = React.useMemo(
     }
 
     // 2) Fallback to last filed case only after recipients exist
-    if (!remembered && hasRecipients) {
-      remembered = await loadLastFiledCase();
-      rememberedSource = remembered ? "last" : "";
-      if (cancelled) return;
-    }
+    // DISABLED: Auto-selection of last filed case
+    // if (!remembered && hasRecipients) {
+    //   remembered = await loadLastFiledCase();
+    //   rememberedSource = remembered ? "last" : "";
+    //   if (cancelled) return;
+    // }
 
     if (!remembered) return;
 
