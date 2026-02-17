@@ -3335,7 +3335,17 @@ setSelectedSource("manual"); // important
           stack: e instanceof Error ? e.stack : undefined,
         });
 
-        const msg = e instanceof Error ? e.message : String(e);
+        // Properly extract error message
+        let msg = "Unknown error";
+        if (e instanceof Error) {
+          msg = e.message;
+        } else if (typeof e === "string") {
+          msg = e;
+        } else if (e && typeof e === "object") {
+          // Try to extract message from object
+          msg = (e as any).message || (e as any).error || JSON.stringify(e);
+        }
+
         setSubmitError(`Chyba při ukládání: ${msg}`);
         setViewMode(composeMode ? "prompt" : "pickCase");
         setTimeout(() => {
