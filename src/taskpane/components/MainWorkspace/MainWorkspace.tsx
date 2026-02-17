@@ -99,7 +99,9 @@ type QuickAction = {
     | "internal_guard_file_anyway"
     | "internal_guard_dont_file"
     | "file_manually"
-    | "show_suggestions";
+    | "show_suggestions"
+    | "refresh_filing_status"
+    | "mark_as_unfiled";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -1208,10 +1210,13 @@ const attachmentIds = React.useMemo(
   const [autoFileUserSet, setAutoFileUserSet] = React.useState(false);
 
   const showFiledSummary = React.useMemo(() => {
-    if (viewMode === "sent") return true;
+    // Only show FiledSummary if we have actual data (sentPill or uploaded documents)
+    const hasData = sentPill?.caseId || uploadedLinksValidated.length > 0;
+
+    if (viewMode === "sent" && hasData) return true;
     if (viewMode === "prompt" && prompt.kind === "filed" && sentPill?.caseId) return true;
     return false;
-  }, [viewMode, prompt.kind, sentPill?.caseId]);
+  }, [viewMode, prompt.kind, sentPill?.caseId, uploadedLinksValidated.length]);
 
   const visibleCases = React.useMemo(() => {
     if (settings.caseListScope === "all") return cases;
@@ -1230,12 +1235,15 @@ const attachmentIds = React.useMemo(
   const [submailDetectedCaseKey, setSubmailDetectedCaseKey] = React.useState<string>("");
   const [submailDetectedCaseName, setSubmailDetectedCaseName] = React.useState<string>("");
 
-  // Already filed detection state (read mode, MVP using conversationId)
+  // Already filed detection state (read mode, server-authoritative)
   const [filedStatusChecked, setFiledStatusChecked] = React.useState(false);
   const [alreadyFiled, setAlreadyFiled] = React.useState(false);
   const [alreadyFiledCaseId, setAlreadyFiledCaseId] = React.useState("");
   const [alreadyFiledCaseLabel, setAlreadyFiledCaseLabel] = React.useState("");
   const [alreadyFiledDocumentId, setAlreadyFiledDocumentId] = React.useState("");
+
+  // Divergence: Outlook category says "SC: Filed" but server says not filed
+  const [filingDivergenceDetected, setFilingDivergenceDetected] = React.useState(false);
 
   const suggestionEmail = React.useMemo(() => {
     if (!composeMode) return fromEmail;
@@ -1778,7 +1786,7 @@ const attachmentIds = React.useMemo(
     console.log("[internal-guard] Reset overrides for new email item:", activeItemKey);
   }, [activeItemKey]);
 
-  // Effect: Check if email is already filed (read mode only, using internetMessageId)
+  // Effect: Check if email is already filed (read mode only, using conversationId + subject)
   React.useEffect(() => {
     // Only run in read mode
     if (composeMode || !activeItemId) {
@@ -1792,9 +1800,19 @@ const attachmentIds = React.useMemo(
       return;
     }
 
-    // Only check once per email
-    if (filedStatusChecked) {
+    // Skip if we just filed (viewMode === "sent") - we already have the correct data
+    if (viewMode === "sent") {
+      console.log("[checkIfFiled] Skipping check - viewMode is 'sent', using current filing data");
       return;
+    }
+
+    // Reset filed status check for new email
+    if (filedStatusChecked) {
+      setFiledStatusChecked(false);
+      setAlreadyFiled(false);
+      setAlreadyFiledCaseId("");
+      setAlreadyFiledCaseLabel("");
+      setAlreadyFiledDocumentId("");
     }
 
     // Only check if authenticated
@@ -1804,175 +1822,144 @@ const attachmentIds = React.useMemo(
 
     const checkIfFiled = async () => {
       try {
-        console.log("[checkIfFiled] Starting filed status check (using conversationId + subject)");
+        console.log("[checkIfFiled] Starting CACHE-BASED filed status check");
 
-        // Step 1: Get conversationId and subject
+        // Step 1: Get email identifiers from Office API
         const item = Office?.context?.mailbox?.item as any;
         const conversationId = String(item?.conversationId || "").trim();
-        const emailSubject = String(item?.subject || "").trim();
-
-        if (!conversationId) {
-          console.log("[checkIfFiled] No conversationId available, cannot check filed status");
-          setFiledStatusChecked(true);
-          setAlreadyFiled(false);
-          return;
-        }
-
-        if (!emailSubject) {
-          console.log("[checkIfFiled] No subject available, cannot check filed status");
-          setFiledStatusChecked(true);
-          setAlreadyFiled(false);
-          return;
-        }
-
-        // Platform detection
-        const platform = {
-          host: (Office as any)?.context?.mailbox?.diagnostics?.hostName,
-          hostVersion: (Office as any)?.context?.mailbox?.diagnostics?.hostVersion,
-          platform: (Office as any)?.context?.platform,
-        };
-        console.log("[checkIfFiled] Platform info:", platform);
+        const subject = String(item?.subject || "").trim();
 
         console.log("[checkIfFiled] Email identifiers:", {
-          conversationId: conversationId.substring(0, 30) + "...",
-          subject: emailSubject,
-          timestamp: new Date().toISOString(),
+          activeItemId,
+          conversationId: conversationId ? conversationId.substring(0, 30) + "..." : "MISSING",
+          subject: subject || "MISSING",
         });
 
-        // Step 2: Check local cache for filed status
-        console.log("[checkIfFiled] Checking local cache for conversationId");
+        // Step 2: Check local cache (conversationId-based and subject-based)
+        const { getFiledEmailFromCache, findFiledEmailBySubject } = await import("../../../utils/filedCache");
 
-        const { getFiledEmailFromCache, findFiledEmailBySubject, cacheFiledEmail } = await import("../../../utils/filedCache");
-        const { normalizeSubject, checkFiledStatusByConversationAndSubject } = await import("../../../services/singlecaseDocuments");
+        let cacheEntry = null;
 
-        // Try 1: Lookup by conversationId (fast path for previously-opened emails)
-        console.log("[checkIfFiled] Attempting conversationId lookup...");
-        let cached = await getFiledEmailFromCache(conversationId);
-        console.log("[checkIfFiled] ConversationId lookup result:", cached ? "FOUND" : "NOT FOUND");
-
-        // Try 2: Fallback to subject lookup (for newly-filed emails where conversationId wasn't available at send time)
-        if (!cached) {
-          console.log("[checkIfFiled] ConversationId lookup failed, trying subject lookup");
-          cached = await findFiledEmailBySubject(emailSubject, conversationId);
-          console.log("[checkIfFiled] Subject lookup result:", cached ? "FOUND" : "NOT FOUND");
+        // Try conversationId lookup first
+        if (conversationId) {
+          cacheEntry = await getFiledEmailFromCache(conversationId);
+          console.log("[checkIfFiled] Cache lookup by conversationId:", cacheEntry ? "FOUND" : "NOT FOUND");
         }
 
-        let filedInfo = null;
-        if (cached) {
-          // Verify subject matches (normalized comparison)
-          const cachedSubjectNormalized = normalizeSubject(cached.subject);
-          const currentSubjectNormalized = normalizeSubject(emailSubject);
-
-          if (cachedSubjectNormalized === currentSubjectNormalized) {
-            console.log("[checkIfFiled] Found in cache", {
-              documentId: cached.documentId,
-              caseId: cached.caseId,
-              caseName: cached.caseName,
-              caseKey: cached.caseKey,
-            });
-
-            filedInfo = {
-              documentId: cached.documentId,
-              caseId: cached.caseId,
-              caseName: cached.caseName,
-              caseKey: cached.caseKey,
-              subject: cached.subject,
-            };
-          } else {
-            console.log("[checkIfFiled] Cache entry found but subject mismatch", {
-              cached: cachedSubjectNormalized,
-              current: currentSubjectNormalized,
-            });
-          }
+        // Fallback to subject lookup
+        if (!cacheEntry && subject) {
+          cacheEntry = await findFiledEmailBySubject(subject, conversationId);
+          console.log("[checkIfFiled] Cache lookup by subject:", cacheEntry ? "FOUND" : "NOT FOUND");
         }
 
-        // Step 2.5: If not in cache, query SingleCase API directly (definitive check)
-        if (!filedInfo) {
-          console.log("[checkIfFiled] Not found in cache, querying SingleCase API...");
-
-          try {
-            const apiResult = await checkFiledStatusByConversationAndSubject(conversationId, emailSubject);
-
-            if (apiResult) {
-              console.log("[checkIfFiled] ✅ Found on SingleCase platform!", {
-                documentId: apiResult.documentId,
-                caseId: apiResult.caseId,
-                caseName: apiResult.caseName,
-                caseKey: apiResult.caseKey,
-              });
-
-              // Update local cache for faster future lookups
-              await cacheFiledEmail(
-                conversationId,
-                apiResult.caseId,
-                apiResult.documentId,
-                apiResult.subject || emailSubject,
-                apiResult.caseName,
-                apiResult.caseKey
-              );
-
-              filedInfo = {
-                documentId: apiResult.documentId,
-                caseId: apiResult.caseId,
-                caseName: apiResult.caseName,
-                caseKey: apiResult.caseKey,
-                subject: apiResult.subject || emailSubject,
-              };
-            } else {
-              console.log("[checkIfFiled] ❌ Not found on SingleCase platform (definitive)");
-              setFiledStatusChecked(true);
-              setAlreadyFiled(false);
-              return;
-            }
-          } catch (apiError) {
-            console.warn("[checkIfFiled] API query failed, assuming not filed:", apiError);
-            setFiledStatusChecked(true);
-            setAlreadyFiled(false);
-            return;
-          }
-        }
-
-        // If we reach here, filedInfo is populated (either from cache or API)
-        if (!filedInfo) {
-          // Safety check - should never happen
-          console.log("[checkIfFiled] Unexpected: filedInfo is null after all checks");
+        // Step 3: Process cache result
+        if (!cacheEntry) {
+          console.log("[checkIfFiled] ❌ Not found in cache");
           setFiledStatusChecked(true);
           setAlreadyFiled(false);
+          setAlreadyFiledCaseId("");
+          setAlreadyFiledCaseLabel("");
+          setAlreadyFiledDocumentId("");
           return;
         }
 
-        // Step 3: Email is already filed!
-        setAlreadyFiled(true);
-        setAlreadyFiledCaseId(filedInfo.caseId);
-        setAlreadyFiledCaseLabel(
-          filedInfo.caseKey && filedInfo.caseName
-            ? `${filedInfo.caseKey} · ${filedInfo.caseName}`
-            : filedInfo.caseName || filedInfo.caseKey || "Unknown case"
-        );
-        setAlreadyFiledDocumentId(filedInfo.documentId);
+        // Email is filed!
+        console.log("[checkIfFiled] ✅ Found in cache:", cacheEntry);
 
-        // Step 4: Apply category to this mailbox's copy via Office.js
+        const caseLabel = cacheEntry.caseKey && cacheEntry.caseName
+          ? `${cacheEntry.caseKey} · ${cacheEntry.caseName}`
+          : cacheEntry.caseName || cacheEntry.caseKey || cacheEntry.caseId || "Unknown case";
+
+        // Step 4: Update state for FiledSummary rendering
+        setAlreadyFiled(true);
+        setAlreadyFiledCaseId(cacheEntry.caseId);
+        setAlreadyFiledCaseLabel(caseLabel);
+        setAlreadyFiledDocumentId(cacheEntry.documentId);
+
+        // Update sentPill (for FiledSummary which expects it)
+        const filedAtIso = new Date(cacheEntry.filedAt).toISOString();
+        console.log("[checkIfFiled] Updating sentPill for FiledSummary rendering");
+        setSentPill({
+          sent: true,
+          caseId: cacheEntry.caseId,
+          documentId: cacheEntry.documentId,
+          atIso: filedAtIso,
+        });
+
+        // Persist sentPill for future loads (optional cache)
+        try {
+          await saveSentPill(activeItemId, {
+            sent: true,
+            caseId: cacheEntry.caseId,
+            documentId: cacheEntry.documentId,
+            atIso: filedAtIso,
+          });
+          console.log("[checkIfFiled] Persisted sentPill to storage");
+        } catch (e) {
+          console.warn("[checkIfFiled] Failed to persist sentPill (non-critical):", e);
+        }
+
+        // Step 5: Build document list for FiledSummary (without Graph API)
+        if (workspaceHost && cacheEntry.documentId) {
+          console.log("[checkIfFiled] Building document list for documentId:", cacheEntry.documentId);
+
+          // Build document URL (no API call needed)
+          const docUrl = `https://${workspaceHost}/documents/${cacheEntry.documentId}`;
+
+          // Create document item with minimal data (name from server or default)
+          const docItem: UploadedItem = {
+            id: cacheEntry.documentId,
+            name: cacheEntry.caseName ? `Email - ${cacheEntry.caseName}` : "Email",
+            url: docUrl,
+            kind: "email",
+            atIso: filedAtIso,
+          };
+
+          console.log("[checkIfFiled] Document item created:", docItem);
+
+          // Load existing links and merge (don't replace - user may have just filed attachments)
+          try {
+            const existing = await loadUploadedLinks(activeItemId);
+            console.log("[checkIfFiled] Existing uploaded links:", existing.length);
+
+            // Merge: Keep email document + any attachments
+            const merged = [
+              docItem,
+              ...existing.filter((x: any) => String(x?.id) !== String(docItem.id) && x?.kind !== "email"),
+            ].slice(0, 25);
+
+            console.log("[checkIfFiled] Merged document list:", merged.length, "items");
+            setUploadedLinksValidated(merged as any);
+
+            await saveUploadedLinks(activeItemId, merged as any);
+            console.log("[checkIfFiled] Persisted merged document links to storage");
+          } catch (e) {
+            console.warn("[checkIfFiled] Failed to load/merge document links:", e);
+            // Fallback: just set the email
+            setUploadedLinksValidated([docItem]);
+          }
+        }
+
+        // Step 6: Apply category via Office.js (not Graph API)
         try {
           console.log("[checkIfFiled] Applying filed category via Office.js");
-
           const { applyFiledCategoryToCurrentEmailOfficeJs } = await import("../../../services/graphMail");
           await applyFiledCategoryToCurrentEmailOfficeJs();
           console.log("[checkIfFiled] Category applied successfully");
         } catch (e) {
-          console.warn("[checkIfFiled] Failed to apply category:", e);
-          // Non-critical, continue
+          console.warn("[checkIfFiled] Failed to apply category (non-critical):", e);
         }
 
         setFiledStatusChecked(true);
       } catch (e) {
-        console.error("[checkIfFiled] Failed to check filed status:", e);
+        console.error("[checkIfFiled] Unexpected error:", e);
         setFiledStatusChecked(true);
         setAlreadyFiled(false);
       }
     };
 
     checkIfFiled();
-  }, [composeMode, activeItemId, filedStatusChecked, token]);
+  }, [composeMode, activeItemId, token, workspaceHost, viewMode]);
 
   // Update UI when filed status is detected
   React.useEffect(() => {
@@ -1998,6 +1985,56 @@ const attachmentIds = React.useMemo(
       });
     }
   }, [alreadyFiled, alreadyFiledCaseLabel, alreadyFiledDocumentId, composeMode, activeItemId]);
+
+  // Effect: Check for divergence after filing status is determined
+  React.useEffect(() => {
+    // Only run in read mode after filing status check completes
+    if (composeMode || !filedStatusChecked || !activeItemId) {
+      return;
+    }
+
+    // DISABLED: Divergence detection was causing false positives for old filed emails
+    // If an email has "SC: Filed" category, trust it (even without cache entry)
+    // Cache-based approach isn't reliable due to storage limits and old filings
+    /*
+    void (async () => {
+      try {
+        const filedCatNorm = normaliseCat(FILED_CATEGORY);
+        const unfiledCatNorm = normaliseCat(UNFILED_CATEGORY);
+        const cats = await getCurrentMailCategoriesNorm(filedCatNorm, unfiledCatNorm);
+        const hasFiledCategory = cats.includes(filedCatNorm);
+
+        console.log("[divergence-check] Checking for divergence:", {
+          hasFiledCategory,
+          alreadyFiled,
+          filedStatusChecked,
+        });
+
+        if (hasFiledCategory && !alreadyFiled) {
+          console.warn("[divergence-check] DIVERGENCE DETECTED");
+          setFilingDivergenceDetected(true);
+          setViewMode("prompt");
+          setPrompt({
+            itemId: activeItemId,
+            kind: "unfiled",
+            text: "This email is marked as filed in Outlook, but no filing record was found in SingleCase.",
+          });
+          setQuickActions([
+            { id: "refresh", label: "Refresh", intent: "refresh_filing_status" },
+            { id: "mark_unfiled", label: "Mark as Unfiled", intent: "mark_as_unfiled" },
+          ]);
+        } else {
+          setFilingDivergenceDetected(false);
+        }
+      } catch (e) {
+        console.error("[divergence-check] Error checking divergence:", e);
+      }
+    })();
+    */
+
+    // Instead, just clear divergence flag
+    setFilingDivergenceDetected(false);
+  }, [composeMode, filedStatusChecked, alreadyFiled, activeItemId]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -2412,22 +2449,27 @@ React.useEffect(() => {
       const pill = await loadSentPill(itemKey);
       setSentPill(pill || null);
 
-      // Check Outlook category FIRST - it's the source of truth
+      // Check Outlook categories
       const filedCatNorm = normaliseCat(FILED_CATEGORY);
       const unfiledCatNorm = normaliseCat(UNFILED_CATEGORY);
       const cats = await getCurrentMailCategoriesNorm(filedCatNorm, unfiledCatNorm);
       const hasFiledCategory = cats.includes(filedCatNorm);
       const hasUnfiledCategory = cats.includes(unfiledCatNorm);
 
-      // If Outlook says filed, treat as filed even if pill is missing
-      const isFiled = hasFiledCategory || Boolean(pill?.sent);
+      console.log("[evaluateItem] Category check:", {
+        hasFiledCategory,
+        hasUnfiledCategory,
+        filedStatusChecked,
+        alreadyFiled,
+      });
 
-      // But if explicitly marked unfiled, respect that
+      // If explicitly marked unfiled, respect that
       if (hasUnfiledCategory) {
         setViewMode("prompt");
         setPickStep("case");
         setIsUploadingNewVersion(false);
-        setQuickActions([]); // Clear quick actions - YES/NO buttons will be shown instead
+        setQuickActions([]);
+        setFilingDivergenceDetected(false);
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
@@ -2435,6 +2477,10 @@ React.useEffect(() => {
         });
         return;
       }
+
+      // Trust the Outlook category - if it says filed, treat as filed
+      // Even if we don't have cache data (e.g., old filings before caching was added)
+      const isFiled = hasFiledCategory || alreadyFiled;
 
       if (isFiled) {
         const ok = await hasAnyRealDocuments(pill || null, itemKey);
@@ -3003,6 +3049,33 @@ setSelectedSource("manual"); // important
         }
         return;
       }
+
+      if (intent === "refresh_filing_status") {
+        console.log("[handleQuickAction] Refreshing filing status");
+        // Reset filed status check so it runs again
+        setFiledStatusChecked(false);
+        setFilingDivergenceDetected(false);
+        // Trigger re-evaluation of the item
+        void evaluateItem(activeItemKey);
+        return;
+      }
+
+      if (intent === "mark_as_unfiled") {
+        console.log("[handleQuickAction] Marking as unfiled (category only)");
+        setFilingDivergenceDetected(false);
+        // Apply unfiled category to remove the "SC: Filed" category
+        void (async () => {
+          try {
+            await applyUnfiledCategoryToCurrentEmailOfficeJs();
+            console.log("[handleQuickAction] Unfiled category applied");
+            // Trigger re-evaluation
+            void evaluateItem(activeItemKey);
+          } catch (e) {
+            console.error("[handleQuickAction] Failed to apply unfiled category:", e);
+          }
+        })();
+        return;
+      }
     },
     [
       activeItemId,
@@ -3192,16 +3265,27 @@ setSelectedSource("manual"); // important
               setUploadedLinksValidated(merged as any);
             }
           } else {
+            // Get conversationId for metadata (needed for server-authoritative filing detection)
+            const item = Office?.context?.mailbox?.item as any;
+            const conversationId = String(item?.conversationId || "").trim();
+
             console.log("[doSubmit] Creating new email document", {
               caseId,
               fileName: `${baseName}.eml`,
               mimeType: "message/rfc822",
+              conversationId: conversationId ? conversationId.substring(0, 30) + "..." : "MISSING",
             });
             const createdEmail = await uploadDocumentToCase({
               caseId,
               fileName: `${baseName}.eml`,
               mimeType: "message/rfc822",
               dataBase64: emailBase64,
+              metadata: {
+                subject: subjectText,
+                fromEmail,
+                fromName,
+                conversationId: conversationId || undefined,
+              },
             });
 
             console.log("[doSubmit] Email document created", { response: createdEmail });
@@ -3318,6 +3402,31 @@ setSelectedSource("manual"); // important
           console.warn("Office category apply failed:", err);
         }
         setForceUnfiledLabel(false);
+
+        // Cache filed email for "already filed" detection
+        try {
+          const { cacheFiledEmail, cacheFiledEmailBySubject } = await import("../../../utils/filedCache");
+          const item = Office?.context?.mailbox?.item as any;
+          const conversationId = String(item?.conversationId || "").trim();
+
+          const selectedCase = cases.find((c) => String(c.id) === String(caseId));
+          const caseTitle = selectedCase?.title || "";
+
+          // Parse caseName and caseKey from title (format: "KEY · Name" or just "Name")
+          const parts = caseTitle.split(" · ");
+          const caseName = parts.length > 1 ? parts[1] : caseTitle;
+          const caseKey = parts.length > 1 ? parts[0] : undefined;
+
+          if (conversationId && emailDocId) {
+            await cacheFiledEmail(conversationId, caseId, emailDocId, subjectText, caseName, caseKey);
+            console.log("[doSubmit] Cached filed email by conversationId");
+          } else if (subjectText && emailDocId) {
+            await cacheFiledEmailBySubject(subjectText, caseId, emailDocId, caseName, caseKey);
+            console.log("[doSubmit] Cached filed email by subject (fallback)");
+          }
+        } catch (err) {
+          console.warn("[doSubmit] Failed to cache filed email:", err);
+        }
 
         if (composeMode) {
           setPrompt({
@@ -3559,7 +3668,16 @@ setSelectedSource("manual"); // important
 
           {viewMode === "sent" ? (
             <>
-              <div className="mwChatBubble">Done</div>
+              {showFiledSummary ? (
+                <div className="mwChatBubble">Done</div>
+              ) : (
+                <PromptBubble
+                  text={prompt.text || "Tento email je již zařazen."}
+                  isUnfiled={false}
+                  tone="default"
+                  actions={[]}
+                />
+              )}
               <div ref={chatEndRef} />
             </>
           ) : null}

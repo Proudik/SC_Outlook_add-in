@@ -57,17 +57,17 @@ export async function cacheFiledEmail(
       filedAt: Date.now(),
     };
 
-    // Clean old entries (keep last 100 filed emails)
+    // Clean old entries (keep last 20 filed emails - reduced to stay under 32KB limit)
     const entries = Object.entries(cache);
-    if (entries.length > 100) {
+    if (entries.length > 20) {
       entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
-      const keep = entries.slice(0, 100);
+      const keep = entries.slice(0, 20);
       const newCache: FiledEmailCache = {};
       keep.forEach(([key, val]) => {
         newCache[key] = val;
       });
       await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
-      console.log("[cacheFiledEmail] Cleaned cache, kept 100 most recent entries");
+      console.log("[cacheFiledEmail] Cleaned cache, kept 20 most recent entries");
     } else {
       await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
     }
@@ -190,17 +190,17 @@ export async function cacheFiledEmailBySubject(
       filedAt: Date.now(),
     };
 
-    // Clean old entries
+    // Clean old entries (keep last 20 - reduced to stay under 32KB limit)
     const entries = Object.entries(cache);
-    if (entries.length > 100) {
+    if (entries.length > 20) {
       entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
-      const keep = entries.slice(0, 100);
+      const keep = entries.slice(0, 20);
       const newCache: FiledEmailCache = {};
       keep.forEach(([key, val]) => {
         newCache[key] = val;
       });
       await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
-      console.log("[cacheFiledEmailBySubject] Cleaned cache, kept 100 most recent entries");
+      console.log("[cacheFiledEmailBySubject] Cleaned cache, kept 20 most recent entries");
     } else {
       await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
     }
