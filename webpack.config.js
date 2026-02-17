@@ -72,6 +72,10 @@ module.exports = async (env, options) => {
       ],
     },
     plugins: [
+      new webpack.DefinePlugin({
+        "process.env.SINGLECASE_PUBLIC_TOKEN": JSON.stringify(process.env.SINGLECASE_PUBLIC_TOKEN),
+        "process.env.SINGLECASE_BASE_URL": JSON.stringify(process.env.SINGLECASE_BASE_URL),
+      }),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: "./src/taskpane/taskpane.html",

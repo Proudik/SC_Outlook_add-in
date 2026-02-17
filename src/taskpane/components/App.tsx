@@ -304,8 +304,12 @@ const App: React.FC<AppProps> = (props) => {
 
   React.useEffect(() => {
     (async () => {
-      const newToken =
-        "b8115f370a53b1e35e83d93a18fe4ba820aafb3decf3139b29c149a6c464a2435495ebb11224b62f";
+      const newToken = process.env.SINGLECASE_PUBLIC_TOKEN;
+
+      if (!newToken) {
+        console.error("SINGLECASE_PUBLIC_TOKEN is not defined in environment variables");
+        return;
+      }
 
       await setStored(STORAGE_KEYS.publicToken, newToken);
 
