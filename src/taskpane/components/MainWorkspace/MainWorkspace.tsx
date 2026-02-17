@@ -670,7 +670,6 @@ function getOutlookFromName(): string {
   }
 }
 
-// MainWorkspace.tsx (part 2 of 5)
 
 async function getDraftRecipientsEmailsAsync(): Promise<string[]> {
   try {
@@ -2320,7 +2319,6 @@ React.useEffect(() => {
   doNotFileThisEmail,
 ]);
 
-  // MainWorkspace.tsx (part 5 of 5)
 
   const evaluateItem = React.useCallback(async (itemKey: string) => {
     try {

@@ -298,6 +298,11 @@ export default function CaseSelector({
     };
   }, [cases, selectedCaseId, clientNamesById]);
 
+  // Demo favourites: take first 5 cases
+  const favouriteCases = React.useMemo(() => {
+    return allCaseRows.slice(0, 5);
+  }, [allCaseRows]);
+
   const pick = (caseId: string) => {
     onSelectCaseId(caseId);
     setQuery("");
@@ -399,12 +404,41 @@ export default function CaseSelector({
         <div className="case-selector-loading">Loading…</div>
       ) : !hasAnyCases ? (
         <div className="case-selector-empty">No cases available.</div>
+      ) : scope === "favourites" ? (
+        // FAVOURITES MODE: Show only favourite cases list
+        <div className="case-selector-favourites-list">
+          {favouriteCases.map((fav) => {
+            const isSelected = selectedCaseId === fav.caseId;
+            return (
+              <button
+                key={`fav-${fav.caseId}`}
+                type="button"
+                className={[
+                  "case-selector-other-item",
+                  isSelected ? "case-selector-other-item--selected" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => pick(fav.caseId)}
+              >
+                <div className="case-selector-other-left">
+                  <div className="case-selector-other-primary">
+                    {isSelected && <span className="case-selector-checkmark">✓ </span>}
+                    {fav.label}
+                  </div>
+                  <div className="case-selector-other-secondary">{fav.clientLabel}</div>
+                </div>
+                {isSelected && <div className="case-selector-selected-badge">Selected</div>}
+              </button>
+            );
+          })}
+        </div>
       ) : (
         <div className="case-selector-suggested-card">
           {/* SELECTED CASE - Always show prominently when a case is selected */}
           {selectedCaseDetails && (
             <div className="case-selector-selected-section">
-          
+
               <div className="case-selector-selected-card">
                 <div className="case-selector-selected-card-content">
                   <div className="case-selector-checkmark-icon">✓</div>
