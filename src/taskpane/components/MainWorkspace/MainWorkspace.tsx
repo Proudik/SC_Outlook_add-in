@@ -1971,10 +1971,14 @@ const attachmentIds = React.useMemo(
           // Build document URL (no API call needed)
           const docUrl = `https://${workspaceHost}/documents/${cacheEntry.documentId}`;
 
-          // Create document item with minimal data (name from server or default)
+          // Create document item — use the stored subject as the document name
           const docItem: UploadedItem = {
             id: cacheEntry.documentId,
-            name: cacheEntry.caseName ? `Email - ${cacheEntry.caseName}` : "Email",
+            name: cacheEntry.subject
+              ? `${cacheEntry.subject}.eml`
+              : cacheEntry.caseName
+                ? `Email - ${cacheEntry.caseName}`
+                : "Email",
             url: docUrl,
             kind: "email",
             atIso: filedAtIso,
@@ -3460,7 +3464,10 @@ setSelectedSource("manual"); // important
           (bodySnippetFull || suggestBodySnippet || "").trim() ||
           "[No body content available from Outlook]";
 
-        const baseName = safeFileName(subjectText || "email");
+        // Read the subject fresh at filing time — the subjectText state may not yet be
+        // populated if the user filed quickly after selecting the email.
+        const freshSubject = await getOutlookSubjectAsync().catch(() => "");
+        const baseName = safeFileName(freshSubject || subjectText || "email");
 
         const emailText =
           `From: ${fromName} <${fromEmail}>\r\n` +
