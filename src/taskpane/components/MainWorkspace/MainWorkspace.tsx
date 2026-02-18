@@ -2776,20 +2776,7 @@ React.useEffect(() => {
       setIsUploadingNewVersion(false);
       setQuickActions([]);
 
-      // Compute the final read-mode message inline.
-      // We must NOT use a "Checking…" placeholder here: the internal-detection
-      // effect fires during the React re-render that is triggered by the
-      // activeItemId state update, which happens BEFORE evaluateItem's first
-      // await resolves.  By the time we reach this line the detection effect has
-      // already run and set isInternalEmailDetected — but its own setPrompt()
-      // guard only applies when prev.kind === "unfiled", which is often false
-      // (the previous email may have had kind "filed").  The net result is that
-      // the detection effect does nothing useful here, and "Checking…" would
-      // then stay on screen forever because the detection effect doesn't re-run
-      // (activeItemId hasn't changed since its last run).
-      //
-      // Fix: read the participants fresh (same logic as the detection effect)
-      // and set the definitive message immediately.
+
       if (!isComposeMode()) {
         const userEmailNow = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
         const fromEmailNow = getOutlookFromEmail();
@@ -3235,7 +3222,7 @@ setSelectedSource("manual"); // important
           if (!hasContent) {
             console.log("[pick_another_case] ⏭️ Skipping analysis: no content");
             setContentBasedSuggestions([]);
-            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis." });
+            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Select case." });
             return;
           }
 
@@ -3262,21 +3249,21 @@ setSelectedSource("manual"); // important
 
           if (result.suggestions.length === 0) {
             console.log("[pick_another_case] ❌ No suggestions found");
-            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Žádné návrhy podle obsahu. Vyberte spis ručně." });
+            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "No suggestions based on content. Select case manually." });
           } else {
             console.log("[pick_another_case] ✅ Set", result.suggestions.length, "suggestions in state");
-            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis podle obsahu emailu." });
+            setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Select case based on email content." });
           }
         } catch (error) {
           console.error("[pick_another_case] ❌ Analysis failed:", error);
           setContentBasedSuggestions([]);
-          setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis." });
+          setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Select case." });
         }
       })();
     } else {
       console.log("[pick_another_case] ⏭️ Skipping analysis: not auto-selected");
       setContentBasedSuggestions([]);
-      setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Vyberte spis." });
+      setPrompt({ itemId: activeItemId, kind: "unfiled", text: "Select case." });
     }
   }
 
@@ -3407,7 +3394,7 @@ setSelectedSource("manual"); // important
       // Check internal email guard
       if (doNotFileThisEmail) {
         console.log("[doSubmit] Email marked as do-not-file, skipping filing");
-        setSubmitError("Email nebude zařazen (označen jako interní).");
+        setSubmitError("Email will not be filed (marked as internal).");
         return;
       }
 
@@ -3743,10 +3730,10 @@ setSelectedSource("manual"); // important
           setPrompt({
             itemId: storeKey,
             kind: "filed",
-            text: "Zařazeno do SingleCase. Teď můžete email normálně odeslat v Outlooku.",
+            text: "Filed into SingleCase. You can now send the email normally in Outlook.",
           });
         } else {
-          setPrompt({ itemId: storeKey, kind: "filed", text: "Tento email je již zařazen." });
+          setPrompt({ itemId: storeKey, kind: "filed", text: "This email is already filed." });
         }
 
         setViewMode("sent");
@@ -3770,7 +3757,7 @@ setSelectedSource("manual"); // important
           msg = (e as any).message || (e as any).error || JSON.stringify(e);
         }
 
-        setSubmitError(`Chyba při ukládání: ${msg}`);
+        setSubmitError(`Error while saving: ${msg}`);
         setViewMode(composeMode ? "prompt" : "pickCase");
         setTimeout(() => {
           try {
@@ -3827,20 +3814,6 @@ setSelectedSource("manual"); // important
           {greeting}, {userLabel}
         </h1>
         <p className="mwQuestion">What can I do for you?</p>
-        {/*   <button
-          type="button"
-          onClick={runDiagnosticsHandler}
-          disabled={showDiagnostics}
-          style={{
-            fontSize: "10px",
-            padding: "4px 8px",
-            marginTop: "8px",
-            opacity: 0.6,
-            cursor: "pointer",
-          }}
-        >
-          {showDiagnostics ? "Running diagnostics..." : "🔧 Run Diagnostics"}
-        </button>*/}
       </div>
 
       {submitError ? (
