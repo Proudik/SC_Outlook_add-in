@@ -232,6 +232,27 @@ export async function getCurrentEmailCategoriesGraph(): Promise<string[]> {
   }
 }
 
+// Apply "Unfiled" category via Graph (reliable on Mac / OWA — persists to Exchange)
+export async function applyUnfiledCategoryToCurrentEmailGraph(): Promise<void> {
+  const restId = getRestIdForCurrentItem();
+  if (!restId) throw new Error("Cannot resolve REST id.");
+
+  const token = await getGraphAccessToken();
+  if (!token) throw new Error("Cannot get Graph access token.");
+
+  await ensureMasterCategory(token, CATEGORY_NAME_UNFILED, "preset7");
+
+  const patchRes = await graphFetch(token, `/me/messages/${encodeURIComponent(restId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ categories: [CATEGORY_NAME_UNFILED] }),
+  });
+
+  if (!patchRes.ok) {
+    const err = await readJsonSafe(patchRes);
+    throw new Error(err?.error?.message || `Failed to apply Unfiled category (${patchRes.status})`);
+  }
+}
+
 // Apply Filed via Graph (caller provides accessToken)
 export async function applyFiledCategoryToCurrentEmail(accessToken: string): Promise<void> {
   const restId = getRestIdForCurrentItem();

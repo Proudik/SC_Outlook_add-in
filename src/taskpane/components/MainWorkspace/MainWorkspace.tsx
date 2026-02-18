@@ -28,6 +28,7 @@ import PromptBubble from "./components/PromptBubble";
 import {
   applyFiledCategoryToCurrentEmailOfficeJs,
   applyUnfiledCategoryToCurrentEmailOfficeJs,
+  applyUnfiledCategoryToCurrentEmailGraph,
   getCurrentEmailCategoriesGraph,
 } from "../../../services/graphMail";
 
@@ -2577,6 +2578,26 @@ React.useEffect(() => {
 
       // If explicitly marked unfiled, respect that
       if (hasUnfiledCategory) {
+        // Exchange changes the item ID when a category is applied, so dismissedRef keyed by
+        // item ID won't match here. Check the conversation-based key instead.
+        const convIdForDismiss = String(Office?.context?.mailbox?.item?.conversationId || "").trim();
+        const convDismissed = convIdForDismiss && dismissedRef.current.has(`conv:${convIdForDismiss}`);
+
+        if (convDismissed) {
+          // User already said "No" this session — show the post-dismissal state, not the prompt.
+          setViewMode("prompt");
+          setPickStep("case");
+          setIsUploadingNewVersion(false);
+          setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
+          setFilingDivergenceDetected(false);
+          setPrompt({
+            itemId: itemKey,
+            kind: "unfiled",
+            text: "Got it. I'll step back for this email, but you can still file it later.",
+          });
+          return;
+        }
+
         setViewMode("prompt");
         setPickStep("case");
         setIsUploadingNewVersion(false);
@@ -3999,15 +4020,27 @@ setSelectedSource("manual"); // important
                   type="button"
                   onClick={() => {
                     dismissedRef.current.add(prompt.itemId);
+                    // Exchange changes the item ID after the category is applied,
+                    // so also key by conversation so the dismissal survives the ID change.
+                    if (conversationKey) {
+                      dismissedRef.current.add(`conv:${conversationKey}`);
+                    }
 
-                    // Apply SC: Unfiled category
+                    // Apply SC: Unfiled category.
+                    // Office.js: updates Outlook UI immediately (best-effort).
+                    // Graph: persists to Exchange — reliable on Mac Desktop and OWA.
                     void (async () => {
                       try {
                         await applyUnfiledCategoryToCurrentEmailOfficeJs();
-                        setForceUnfiledLabel(true);
                       } catch (e) {
-                        console.warn("applyUnfiledCategory failed:", e);
+                        console.warn("[No] Office.js applyUnfiledCategory failed:", e);
                       }
+                      try {
+                        await applyUnfiledCategoryToCurrentEmailGraph();
+                      } catch (e) {
+                        console.warn("[No] Graph applyUnfiledCategory failed:", e);
+                      }
+                      setForceUnfiledLabel(true);
                     })();
 
                     // Show dismissal message with manual filing option
