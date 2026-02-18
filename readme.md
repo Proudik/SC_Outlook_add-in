@@ -85,7 +85,16 @@ Expected output: `The developer certificates are installed and trusted.`
 > **Windows**: If verification fails, run PowerShell as Administrator and try again.
 > **macOS**: If verification fails, open Keychain Access, find the `localhost` certificate, and set it to "Always Trust".
 
-### 4. Start the development server
+### 4. Set up the environment file
+
+The add-in requires a `.env` file in the project root with API keys and configuration. This file is **not included in the repository** for security reasons.
+
+Request the `.env` file from:
+- **Martin Polasek** — [github.com/Proudik](https://github.com/Proudik)
+
+Once you have the file, place it in the root of the project (next to `package.json`).
+
+### 5. Start the development server
 
 ```bash
 npm start
@@ -257,15 +266,19 @@ The On Send handler requires event-based activation support:
 
 ## Authentication
 
-The add-in uses **Microsoft Authentication Library (MSAL)** for secure login using Office credentials. Users authenticate via Microsoft 365 SSO — no separate password is needed.
+The add-in has two separate authentication layers:
 
-You will need a **SingleCase workspace URL** configured in the add-in settings on first use.
+**1. SingleCase login**
+You log in with your SingleCase credentials at your workspace URL. For the demo environment:
+```
+https://valfor-demo.singlecase.ch
+```
+Enter this URL in the add-in settings on first use.
 
----
+**2. Microsoft 365 login**
+A Microsoft 365 sign-in is also required, but only to enable Microsoft Graph functionality (e.g. applying email categories in Outlook). This is a separate step from the SingleCase login.
 
-## License
-
-MIT
+If you don't have access to the SingleCase workspace, contact [Martin Polasek](https://github.com/Proudik).
 
 ---
 
