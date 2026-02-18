@@ -18,7 +18,7 @@ A Microsoft Outlook add-in that lets you file emails and attachments directly in
 ## Features
 
 - **File emails to cases** — attach received or outgoing emails to SingleCase cases in one click
-- **Smart case suggestions** — AI-powered suggestions based on email content, participants, and history
+- **Smart case suggestions** — None AI-powered suggestions based on email content, participants, and history
 - **Attachment selection** — choose which attachments to include when filing
 - **Auto-file on send** — optionally file outgoing emails automatically when you click Send
 - **BCC detection** — add a SingleCase submail address as BCC to auto-select the case
@@ -270,3 +270,4 @@ MIT
 ---
 
 **Built with React, TypeScript, and Office.js**
+/
