@@ -101,7 +101,8 @@ type QuickAction = {
     | "file_manually"
     | "show_suggestions"
     | "refresh_filing_status"
-    | "mark_as_unfiled";
+    | "mark_as_unfiled"
+    | "file_now_from_weak_signal";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -899,12 +900,29 @@ async function clearLocalFiling(itemKey: string) {
   }
 }
 
-async function hasAnyRealDocuments(pill: SentPillData | null, itemKey: string): Promise<boolean> {
+/**
+ * Checks whether the documents referenced by this pill/links still exist in SingleCase.
+ * Returns:
+ *   true  — at least one document confirmed present (API returned 200)
+ *   false — document confirmed absent (API returned 404, document genuinely deleted)
+ *   null  — cannot determine; API threw (auth/network error, temporary outage)
+ *
+ * Callers must treat null as "uncertain" and avoid showing a "deleted" message.
+ */
+async function hasAnyRealDocuments(pill: SentPillData | null, itemKey: string): Promise<boolean | null> {
   // Check pill's document ID first
   const docId = String((pill as any)?.documentId || "").trim();
   if (docId) {
-    const meta = await getDocumentMeta(docId);
-    return Boolean(meta?.id);
+    try {
+      const meta = await getDocumentMeta(docId);
+      // meta === null means 404 (document confirmed gone)
+      // meta with .id means document exists
+      return meta !== null;
+    } catch {
+      // API threw — auth expired, network error, server error.
+      // We cannot confirm whether the document exists.
+      return null;
+    }
   }
 
   // Check uploaded links
@@ -913,16 +931,23 @@ async function hasAnyRealDocuments(pill: SentPillData | null, itemKey: string): 
 
   // No local record of any document ID — we can't confirm deletion.
   // This happens when email was filed on another device/session.
-  // Return true (assume documents exist) to avoid false "deleted" message.
-  if (links.length === 0) return true;
+  // Return null (uncertain) to avoid false "deleted" message.
+  if (links.length === 0) return null;
 
   for (const it of links.slice(0, 5)) {
     const id = String(it?.id || "").trim();
     if (!id) continue;
-    const meta = await getDocumentMeta(id).catch(() => null);
-    if (meta?.id) return true;
+    try {
+      const meta = await getDocumentMeta(id);
+      if (meta?.id) return true;
+      // meta === null → this link is 404, continue checking others
+    } catch {
+      // API error → can't determine
+      return null;
+    }
   }
 
+  // All links checked, all returned 404
   return false;
 }
 
@@ -1241,6 +1266,7 @@ const attachmentIds = React.useMemo(
   const [alreadyFiledCaseId, setAlreadyFiledCaseId] = React.useState("");
   const [alreadyFiledCaseLabel, setAlreadyFiledCaseLabel] = React.useState("");
   const [alreadyFiledDocumentId, setAlreadyFiledDocumentId] = React.useState("");
+  const [allowRefilingOverride, setAllowRefilingOverride] = React.useState(false);
 
   // Divergence: Outlook category says "SC: Filed" but server says not filed
   const [filingDivergenceDetected, setFilingDivergenceDetected] = React.useState(false);
@@ -1287,11 +1313,12 @@ const attachmentIds = React.useMemo(
   }, []);
 
   React.useEffect(() => {
+    // Compose mode is handled by the polling effect below; skip here to avoid a one-shot
+    // fetch that would immediately go stale when the user keeps typing.
+    if (composeMode) return () => {};
     let mounted = true;
     void (async () => {
-      // In compose mode, activeItemId might be empty but we still want to fetch body
-      const hasItem = composeMode || !!activeItemId;
-      if (!hasItem) {
+      if (!activeItemId) {
         if (mounted) setSuggestBodySnippet("");
         return;
       }
@@ -1302,6 +1329,39 @@ const attachmentIds = React.useMemo(
       mounted = false;
     };
   }, [activeItemId, composeMode]);
+
+  // Compose mode only: poll subject + body every 400 ms so case suggestions stay
+  // live while the user is typing (activeItemId does not change in compose mode).
+  React.useEffect(() => {
+    if (!composeMode) return () => {};
+
+    let mounted = true;
+    let lastSubj = "";
+    let lastBody = "";
+    let inFlight = false;
+
+    const tick = async () => {
+      if (!mounted || inFlight) return;
+      inFlight = true;
+      try {
+        const s = String(await getOutlookSubjectAsync()).trim();
+        const b = String(await getEmailBodySnippet(600)).trim();
+        if (!mounted) return;
+        if (s !== lastSubj) { lastSubj = s; setSubjectText(s); }
+        if (b !== lastBody) { lastBody = b; setSuggestBodySnippet(b); }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const id = window.setInterval(() => void tick(), 400);
+    void tick(); // run immediately so the first render already has values
+
+    return () => {
+      mounted = false;
+      window.clearInterval(id);
+    };
+  }, [composeMode, activeItemKey]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -1703,38 +1763,44 @@ const attachmentIds = React.useMemo(
     selectedCaseId,
   ]);
 
-  // Effect: Detect internal emails (all recipients are same company domain)
-  // Runs in BOTH compose and read mode.
+  // Effect: Detect internal emails in COMPOSE mode.
+  // Keyed only on live recipients so it never re-runs on read-mode item changes.
   React.useEffect(() => {
-    if (composeMode) {
-      // COMPOSE MODE: use live-polled recipients
-      const emails = composeRecipientsLive || [];
+    if (!composeMode) return;
 
-      if (emails.length === 0) {
-        if (isInternalEmailDetected) {
-          setIsInternalEmailDetected(false);
-        }
-        return;
-      }
+    const emails = composeRecipientsLive || [];
 
-      const senderEmail = Office?.context?.mailbox?.userProfile?.emailAddress || "";
-      if (!senderEmail) {
-        setIsInternalEmailDetected(false);
-        return;
-      }
-
-      const isInternal = isInternalEmail(senderEmail, emails);
-      setIsInternalEmailDetected(isInternal);
+    if (emails.length === 0) {
+      setIsInternalEmailDetected(false);
       return;
     }
 
-    // READ MODE: detect internal email from item.from + item.to + item.cc
+    const senderEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+    if (!senderEmail) {
+      setIsInternalEmailDetected(false);
+      return;
+    }
+
+    const isInternal = isInternalEmail(senderEmail, emails);
+    console.log("[internal-detect] compose", {
+      senderEmail,
+      recipientCount: emails.length,
+      isInternal,
+    });
+    setIsInternalEmailDetected(isInternal);
+  }, [composeMode, composeRecipientsLive]);
+
+  // Effect: Detect internal emails in READ mode.
+  // Keyed on activeItemId / activeItemKey so it runs whenever a new message is opened.
+  React.useEffect(() => {
+    if (composeMode) return;
+
     if (!activeItemId) {
-      if (isInternalEmailDetected) setIsInternalEmailDetected(false);
+      setIsInternalEmailDetected(false);
       return;
     }
 
-    const userEmail = Office?.context?.mailbox?.userProfile?.emailAddress || "";
+    const userEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
     if (!userEmail) {
       setIsInternalEmailDetected(false);
       return;
@@ -1743,7 +1809,6 @@ const attachmentIds = React.useMemo(
     const fromEmail = getOutlookFromEmail();
     const recipientEmails = getReadModeRecipientEmails();
 
-    // Collect all participants (from + to + cc), deduplicated
     const allParticipants = Array.from(new Set(
       [fromEmail, ...recipientEmails].map(e => normEmail(e)).filter(Boolean)
     ));
@@ -1754,18 +1819,15 @@ const attachmentIds = React.useMemo(
     }
 
     const isInternal = isInternalEmail(userEmail, allParticipants);
-    console.log("[internal-guard][read] Detection:", {
+    console.log("[internal-detect] read", {
       userEmail,
-      fromEmail,
-      recipientEmails,
-      allParticipants,
+      participantCount: allParticipants.length,
       isInternal,
     });
     setIsInternalEmailDetected(isInternal);
 
-    // Update prompt text immediately after detection completes
+    // Immediately update a "Checking…" or generic unfiled prompt to reflect internal status
     setPrompt(prev => {
-      // Only update if showing loading message or generic unfiled prompt
       if (prev.kind === "unfiled" && (prev.text === "Checking..." || prev.text.includes("isn't filed yet"))) {
         return {
           ...prev,
@@ -1776,7 +1838,7 @@ const attachmentIds = React.useMemo(
       }
       return prev;
     });
-  }, [composeMode, composeRecipientsLive, activeItemId, activeItemKey]);
+  }, [composeMode, activeItemId, activeItemKey]);
 
   // Effect: Reset internal guard overrides when email item changes
   React.useEffect(() => {
@@ -1800,9 +1862,11 @@ const attachmentIds = React.useMemo(
       return;
     }
 
-    // Skip if we just filed (viewMode === "sent") - we already have the correct data
-    if (viewMode === "sent") {
-      console.log("[checkIfFiled] Skipping check - viewMode is 'sent', using current filing data");
+    // Skip only if viewMode is "sent" AND we've already completed a fresh check for this email.
+    // Do NOT skip if filedStatusChecked is false (means a new email was selected and evaluateItem
+    // may have set viewMode="sent" with stale storage data before checkIfFiled had a chance to run).
+    if (viewMode === "sent" && filedStatusChecked) {
+      console.log("[checkIfFiled] Skipping check - already verified for this email");
       return;
     }
 
@@ -1963,6 +2027,9 @@ const attachmentIds = React.useMemo(
 
   // Update UI when filed status is detected
   React.useEffect(() => {
+    // GATE: Don't show filed UI while still loading
+    if (isItemLoading) return;
+
     if (alreadyFiled && alreadyFiledCaseLabel && !composeMode && activeItemId) {
       console.log("[useEffect:alreadyFiled] Updating UI for filed email", {
         caseLabel: alreadyFiledCaseLabel,
@@ -1972,19 +2039,15 @@ const attachmentIds = React.useMemo(
       setViewMode("prompt");
       setPickStep("case");
       setQuickActions([
-        {
-          id: "view_in_singlecase",
-          label: "View in SingleCase",
-          intent: "view_in_singlecase",
-        },
+        { id: "mark_unfiled", label: "Mark as SC: Unfiled", intent: "mark_as_unfiled" },
       ]);
       setPrompt({
         itemId: activeItemId,
         kind: "filed",
-        text: `✅ Filed`,
+        text: "",
       });
     }
-  }, [alreadyFiled, alreadyFiledCaseLabel, alreadyFiledDocumentId, composeMode, activeItemId]);
+  }, [alreadyFiled, alreadyFiledCaseLabel, alreadyFiledDocumentId, composeMode, activeItemId, isItemLoading]);
 
   // Effect: Check for divergence after filing status is determined
   React.useEffect(() => {
@@ -2169,13 +2232,16 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       return;
     }
 
-    if (selectedCaseId) return;
-
     const recips = Array.isArray(composeRecipientsLive) ? composeRecipientsLive : [];
 
     if (recips.length === 0) {
+      // Guard: if submail is already detected, keep that state stable
+      // (composeRecipientsLive can briefly be [] before the first poll resolves)
+      if (submailDetectedCaseId) return;
+
       setChatStep("compose_wait_recipients");
       setQuickActions([]);
+      console.log("[prompt:set] reason=wait_recipients");
       setPrompt({
         itemId: activeItemId,
         kind: "unfiled",
@@ -2201,13 +2267,14 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       setChatStep("compose_ready");
 
       const statusText = autoFileOnSend
-        ? "Email se zařadí při odeslání."
-        : "Email se nezařadí při odeslání.";
+        ? "Email will be filed on send."
+        : "Email will not be filed on send.";
 
+      console.log("[prompt:set] reason=submail", { submailDetectedCaseId, submailDetectedCaseKey });
       setPrompt({
         itemId: activeItemId,
-        kind: "filed",
-        text: `Spis detekován z BCC: ${submailDetectedCaseKey} · ${submailDetectedCaseName}. ${statusText}`,
+        kind: "unfiled",
+        text: `I've matched this email to ${submailDetectedCaseKey} · ${submailDetectedCaseName} based on the BCC address. ${statusText}`,
       });
 
       setQuickActions([
@@ -2218,6 +2285,40 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
           intent: "toggle_auto_file",
         },
       ]);
+      return;
+    }
+
+    // PRIORITY 2: Internal email guard.
+    // Must be checked BEFORE frequent case / selectedCaseId so it fires even
+    // when no case is selected yet (chatStep would otherwise land on
+    // "compose_choose_case" which the old guard effect never watched).
+    if (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) {
+      console.log("[compose-flow] Internal email detected — showing guard prompt");
+      setChatStep("compose_ready"); // allows compose_ready effect to keep guard active
+      setViewMode("prompt");
+      setPickStep("case");
+      setQuickActions([
+        { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
+      ]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "This looks like an internal email.",
+      });
+      return;
+    }
+
+    // PRIORITY 3: User has explicitly said "don't file this email"
+    if (doNotFileThisEmail) {
+      setChatStep("compose_ready");
+      setViewMode("prompt");
+      setPickStep("case");
+      setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "No problem. I'll hide suggestions for this email, but you can still file it anytime.",
+      });
       return;
     }
 
@@ -2237,13 +2338,13 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       setChatStep("compose_offer_frequent");
 
       const statusText = autoFileOnSend
-        ? "Email se zařadí při odeslání."
-        : "Email se nezařadí při odeslání.";
+        ? "Email will be filed on send."
+        : "Email will not be filed on send.";
 
       setPrompt({
         itemId: activeItemId,
         kind: "unfiled",
-        text: `Podle historie to obvykle patří do spisu: ${detectedFrequentCaseName}. ${statusText}`,
+        text: `I've matched this email to ${detectedFrequentCaseName} based on previous interactions. ${statusText}`,
       });
 
       setQuickActions([
@@ -2256,6 +2357,9 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       ]);
       return;
     }
+
+    // If a case is already selected (but not from submail/frequent), don't show "Select a case" message
+    if (selectedCaseId) return;
 
     setChatStep("compose_choose_case");
     setQuickActions([
@@ -2280,11 +2384,21 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     detectedFrequentCaseId,
     detectedFrequentCaseName,
     autoFileOnSend,
+    submailDetectedCaseId,
+    submailDetectedCaseKey,
+    submailDetectedCaseName,
+    storeKey,
+    isInternalEmailDetected,
+    overrideInternalGuard,
+    doNotFileThisEmail,
   ]);
 
 React.useEffect(() => {
   if (!composeMode) return;
   if (chatStep !== "compose_ready") return;
+
+  // Submail has highest priority — the chat-step effect already set the correct prompt
+  if (submailDetectedCaseId) return;
 
   // Check for internal email guard FIRST (highest priority)
   const shouldShowInternalGuard =
@@ -2343,10 +2457,11 @@ React.useEffect(() => {
     },
   ]);
 
+  console.log("[prompt:set] reason=compose_ready/frequent", { selectedCaseId, chatStep });
   setPrompt({
     itemId: activeItemId,
     kind: "unfiled",
-    text: `I’ve matched this email to ${name} based on previous interactions.`,
+    text: `I've matched this email to ${name} based on previous interactions.`,
   });
 }, [
   composeMode,
@@ -2358,6 +2473,7 @@ React.useEffect(() => {
   isInternalEmailDetected,
   overrideInternalGuard,
   doNotFileThisEmail,
+  submailDetectedCaseId,
 ]);
 
 
@@ -2392,7 +2508,7 @@ React.useEffect(() => {
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
-          text: "Vyberte spis a potom použijte Zařadit teď.",
+          text: "Select a case and then use File Now.",
         });
         return;
       }
@@ -2408,17 +2524,13 @@ React.useEffect(() => {
         setPickStep("case");
 
         setQuickActions([
-          {
-            id: "af1",
-            label: "View in SingleCase",
-            intent: "view_in_singlecase",
-          },
+          { id: "mark_unfiled", label: "Mark as SC: Unfiled", intent: "mark_as_unfiled" },
         ]);
 
         setPrompt({
           itemId: itemKey,
           kind: "filed",
-          text: `You're all set. This email is already filed in SingleCase.`,
+          text: "",
         });
 
         return;
@@ -2478,30 +2590,63 @@ React.useEffect(() => {
         return;
       }
 
-      // Trust the Outlook category - if it says filed, treat as filed
-      // Even if we don't have cache data (e.g., old filings before caching was added)
-      const isFiled = hasFiledCategory || alreadyFiled;
+      // Check local storage for filing data
+      const hasLocalFilingData =
+        (pill?.caseId && String(pill.caseId).trim() !== "") ||
+        uploadedLinksValidated.length > 0 ||
+        (alreadyFiled && alreadyFiledCaseId);
 
-      if (isFiled) {
+      // State A: Has local storage data - show as filed
+      if (hasLocalFilingData) {
         const ok = await hasAnyRealDocuments(pill || null, itemKey);
 
-        if (!ok) {
-          // Documents were deleted from SingleCase
+        if (ok === null) {
+          // API unavailable (auth/network error) — cannot verify the document.
+          // Trust the local sentPill data (same logic as State B ok===null) and show
+          // FiledSummaryCard. If the data were wrong the user can mark as unfiled manually.
+          try {
+            const caseId = String(pill?.caseId || "").trim();
+            const emailDocId = String(pill?.documentId || "").trim();
+            if (caseId && emailDocId) await saveLastFiledCtx({ caseId, emailDocId });
+          } catch { /* ignore */ }
+          try {
+            if (pill?.caseId) await saveLastFiledCase(String(pill.caseId));
+          } catch { /* ignore */ }
+          setViewMode("sent");
+          setPickStep("case");
+          setIsUploadingNewVersion(false);
+          setPrompt({ itemId: itemKey, kind: "filed", text: "This email has been filed." });
+          return;
+        }
+
+        if (ok === false) {
+          // Document confirmed gone (404). Clear local filing data.
           await clearLocalFiling(itemKey);
           setSentPill(null);
           setUploadedLinksRaw([]);
           setUploadedLinksValidated([]);
-
           setViewMode("prompt");
           setPickStep("case");
           setIsUploadingNewVersion(false);
-          setPrompt({
-            itemId: itemKey,
-            kind: "deleted",
-            text: "I’ve noticed that this email or its attachments were deleted from SingleCase. Do you want to re-file it?",
-          });
+          if (hasFiledCategory) {
+            // Email is still marked as filed in Outlook but its document no longer exists.
+            setPrompt({
+              itemId: itemKey,
+              kind: "deleted",
+              text: "This email and its documents have been removed from the SingleCase platform. Do you want to file it again?",
+            });
+          } else {
+            // No Outlook category either — standard deleted message.
+            setPrompt({
+              itemId: itemKey,
+              kind: "deleted",
+              text: "I've noticed that this email or its attachments were deleted from SingleCase. Do you want to re-file it?",
+            });
+          }
           return;
         }
+
+        // ok === true: document verified present
         try {
           const caseId = String(pill?.caseId || "").trim();
           const emailDocId = String(pill?.documentId || "").trim();
@@ -2509,7 +2654,6 @@ React.useEffect(() => {
         } catch {
           // ignore
         }
-        // Remember last filed case as a fallback for Reply compose mode
         try {
           if (pill?.caseId) await saveLastFiledCase(String(pill.caseId));
         } catch {
@@ -2518,22 +2662,152 @@ React.useEffect(() => {
         setViewMode("sent");
         setPickStep("case");
         setIsUploadingNewVersion(false);
-        setPrompt({ itemId: itemKey, kind: "filed", text: "Tento email je již zařazen." });
+        setPrompt({ itemId: itemKey, kind: "filed", text: "This email has been filed." });
         return;
       }
+
+      // State B: Has category but NO local data — try recovery before giving up
+      if (hasFiledCategory) {
+        let recoveredPill: SentPillData | null = null;
+        try {
+          const outlookItem = Office?.context?.mailbox?.item as any;
+          const convId = String(outlookItem?.conversationId || "").trim();
+          if (convId) {
+            // 1. Try draft key (email may have been filed from compose)
+            const draftPill = await loadSentPill(`draft:${convId}`);
+            if (draftPill?.caseId && String(draftPill.caseId).trim() !== "") {
+              recoveredPill = draftPill;
+              console.log("[evaluateItem] State B recovery: found via draft key");
+            }
+
+            // 2. Try conv_ctx (saved at file time for the whole thread)
+            if (!recoveredPill) {
+              const ctxRaw = await getStored(`${CONV_CTX_KEY_PREFIX}${convId}`);
+              if (ctxRaw) {
+                const ctx = JSON.parse(String(ctxRaw));
+                if (ctx?.caseId && ctx?.emailDocId) {
+                  recoveredPill = { sent: true, caseId: ctx.caseId, documentId: ctx.emailDocId, atIso: new Date().toISOString() };
+                  console.log("[evaluateItem] State B recovery: found via conv_ctx");
+                }
+              }
+            }
+
+            // 3. Try filedCache lookup directly (bypasses stale checkIfFiled state)
+            if (!recoveredPill) {
+              const { getFiledEmailFromCache, findFiledEmailBySubject } = await import("../../../utils/filedCache");
+              const cacheEntry = await getFiledEmailFromCache(convId);
+              if (cacheEntry?.caseId) {
+                recoveredPill = { sent: true, caseId: cacheEntry.caseId, documentId: cacheEntry.documentId, atIso: new Date(cacheEntry.filedAt).toISOString() };
+                console.log("[evaluateItem] State B recovery: found via filedCache by conversationId");
+              }
+              // 4. Subject-based cache lookup as last cache attempt
+              if (!recoveredPill) {
+                const subject = String(outlookItem?.subject || "").trim();
+                if (subject) {
+                  const subjectEntry = await findFiledEmailBySubject(subject, convId);
+                  if (subjectEntry?.caseId) {
+                    recoveredPill = { sent: true, caseId: subjectEntry.caseId, documentId: subjectEntry.documentId, atIso: new Date(subjectEntry.filedAt).toISOString() };
+                    console.log("[evaluateItem] State B recovery: found via filedCache by subject");
+                  }
+                }
+              }
+            }
+
+            // 5. Try conv_case key — saved at file time with caseId only (no emailDocId needed)
+            if (!recoveredPill) {
+              const convCaseId = await loadConversationFiledCase(convId);
+              if (convCaseId) {
+                recoveredPill = { sent: true, caseId: convCaseId };
+                console.log("[evaluateItem] State B recovery: found via conv_case key (caseId only)");
+              }
+            }
+
+            // 6. Try conv:${convId} backup key saved during filing (handles item ID change after category apply)
+            if (!recoveredPill) {
+              const convPill = await loadSentPill(`conv:${convId}`);
+              if (convPill?.caseId && String(convPill.caseId).trim() !== "") {
+                recoveredPill = convPill;
+                console.log("[evaluateItem] State B recovery: found via conv: backup key");
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("[evaluateItem] State B recovery error:", e);
+        }
+
+        if (recoveredPill) {
+          // Persist so future loads use the correct key
+          await saveSentPill(itemKey, recoveredPill);
+          setSentPill(recoveredPill);
+          // Do NOT verify documents in State B: the SC API can return 404 for valid documents
+          // when the OWA token lacks the right scope, causing false "removed from platform" messages.
+          // Recovery data is sourced from data saved at filing time (conv_ctx, conv_case, conv: key)
+          // and the email has the SC:Filed category — trust it unconditionally.
+          try {
+            const caseId = String(recoveredPill.caseId || "").trim();
+            const emailDocId = String(recoveredPill.documentId || "").trim();
+            if (caseId && emailDocId) await saveLastFiledCtx({ caseId, emailDocId });
+          } catch { /* ignore */ }
+          setViewMode("sent");
+          setPickStep("case");
+          setIsUploadingNewVersion(false);
+          setPrompt({ itemId: itemKey, kind: "filed", text: "This email has been filed." });
+          return;
+        }
+
+        // All recovery paths exhausted — filing details could not be recovered.
+        // Show the standard filing UI so the user can re-file and restore the data.
+        setViewMode("prompt");
+        setPickStep("case");
+        setIsUploadingNewVersion(false);
+        setPrompt({
+          itemId: itemKey,
+          kind: "deleted",
+          text: "This email and its documents have been removed from the SingleCase platform. Do you want to file it again?",
+        });
+        setQuickActions([]);
+        return;
+      }
+
+      // State C: Not filed - normal filing UI
 
       setViewMode("prompt");
       setPickStep("case");
       setIsUploadingNewVersion(false);
-      setQuickActions([]); // Clear quick actions for initial unfiled state
+      setQuickActions([]);
 
-      // In read mode, show loading briefly while internal detection runs
-      // The detection effect will replace this with the correct message
+      // Compute the final read-mode message inline.
+      // We must NOT use a "Checking…" placeholder here: the internal-detection
+      // effect fires during the React re-render that is triggered by the
+      // activeItemId state update, which happens BEFORE evaluateItem's first
+      // await resolves.  By the time we reach this line the detection effect has
+      // already run and set isInternalEmailDetected — but its own setPrompt()
+      // guard only applies when prev.kind === "unfiled", which is often false
+      // (the previous email may have had kind "filed").  The net result is that
+      // the detection effect does nothing useful here, and "Checking…" would
+      // then stay on screen forever because the detection effect doesn't re-run
+      // (activeItemId hasn't changed since its last run).
+      //
+      // Fix: read the participants fresh (same logic as the detection effect)
+      // and set the definitive message immediately.
       if (!isComposeMode()) {
+        const userEmailNow = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+        const fromEmailNow = getOutlookFromEmail();
+        const recipientsNow = getReadModeRecipientEmails();
+        const participantsNow = Array.from(new Set(
+          [fromEmailNow, ...recipientsNow].map(e => normEmail(e)).filter(Boolean)
+        ));
+        const internalNow =
+          userEmailNow && participantsNow.length > 0
+            ? isInternalEmail(userEmailNow, participantsNow)
+            : false;
+
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
-          text: "Checking...",
+          text: internalNow
+            ? "This looks like an internal email."
+            : "This email isn't filed yet. Would you like me to file it to a case?",
         });
       } else {
         setPrompt({
@@ -2583,19 +2857,11 @@ const activeChanged =
   String(nextActiveId || "") !== String(activeItemId || "") ||
   String(nextActiveKey || "") !== String(activeItemKey || "");
 
-  console.log("[sync] activeChanged", {
-  activeChanged,
-  nextActiveId,
-  nextActiveKey,
-});
 if (itemKey && activeChanged) {
-
-  console.log("[sync] APPLY switch", {
-  nextActiveId,
-  nextActiveKey,
-  modeNow,
-  nextStoreKey: getStoreKey(nextActiveKey, nextActiveId, modeNow),
-});
+  console.log("[active-item-change] Resetting filed state for new email", {
+    activeItemKey: nextActiveKey,
+    activeItemId: nextActiveId,
+  });
 
   setIsItemLoading(true);
   setSentPill(null);
@@ -2604,6 +2870,14 @@ if (itemKey && activeChanged) {
   setSubmitError("");
   setReplyBaseCaseId("");
   setReplyBaseEmailDocId("");
+
+  // CRITICAL: Clear filed status to prevent stale UI during loading
+  setFiledStatusChecked(false);
+  setAlreadyFiled(false);
+  setAlreadyFiledCaseId("");
+  setAlreadyFiledCaseLabel("");
+  setAlreadyFiledDocumentId("");
+  setQuickActions([]);
 
   setActiveItemId(nextActiveId);
   setActiveItemKey(nextActiveKey);
@@ -2617,6 +2891,10 @@ if (itemKey && activeChanged) {
 const nextStoreKey = getStoreKey(nextActiveKey, nextActiveId, modeNow);
 await evaluateItem(nextStoreKey);
   setIsItemLoading(false);
+  console.log("[active-item-change] Evaluation complete", {
+    activeItemKey: nextActiveKey,
+    confirmedFiled: alreadyFiled,
+  });
   return;
 }
 
@@ -2913,7 +3191,7 @@ setSelectedSource("manual"); // important
           setPrompt({
             itemId: activeItemId,
             kind: "unfiled",
-            text: `OK. Klikněte Zařadit teď. Potom můžete email normálně odeslat. Spis: ${detectedFrequentCaseName}.`,
+            text: `OK. Click File Now. Then you can send the email normally. Case: ${detectedFrequentCaseName}.`,
           });
           return;
         }
@@ -3017,7 +3295,7 @@ setSelectedSource("manual"); // important
         setPrompt({
           itemId: activeItemId,
           kind: "unfiled",
-          text: "Dobře. Klikněte Zařadit teď. Zařadím jen email.",
+          text: "OK. Click File Now. I will file only the email.",
         });
         return;
       }
@@ -3030,7 +3308,7 @@ setSelectedSource("manual"); // important
         setPrompt({
           itemId: activeItemId,
           kind: "unfiled",
-          text: "Dobře. Klikněte Zařadit teď. Zařadím email i přílohy.",
+          text: "OK. Click File Now. I will file the email and attachments.",
         });
         return;
       }
@@ -3050,6 +3328,24 @@ setSelectedSource("manual"); // important
         return;
       }
 
+      if (intent === "file_now_from_weak_signal") {
+        console.log("[handleQuickAction] File now - clearing weak signal state");
+        // Clear any filed signals and show normal filing UI
+        setFiledStatusChecked(false);
+        setAlreadyFiled(false);
+        setAlreadyFiledCaseId("");
+        setSentPill(null);
+        setViewMode("prompt");
+        setPickStep("case");
+        setQuickActions([]);
+        setPrompt({
+          itemId: activeItemKey,
+          kind: "none",
+          text: "Select a case for this email.",
+        });
+        return;
+      }
+
       if (intent === "refresh_filing_status") {
         console.log("[handleQuickAction] Refreshing filing status");
         // Reset filed status check so it runs again
@@ -3061,17 +3357,22 @@ setSelectedSource("manual"); // important
       }
 
       if (intent === "mark_as_unfiled") {
-        console.log("[handleQuickAction] Marking as unfiled (category only)");
+        console.log("[handleQuickAction] Marking as SC: Unfiled (category only, no re-filing)");
         setFilingDivergenceDetected(false);
-        // Apply unfiled category to remove the "SC: Filed" category
         void (async () => {
           try {
+            setIsTogglingCategory(true);
             await applyUnfiledCategoryToCurrentEmailOfficeJs();
-            console.log("[handleQuickAction] Unfiled category applied");
-            // Trigger re-evaluation
-            void evaluateItem(activeItemKey);
+            // Update label — email is still filed in SingleCase, only Outlook
+            // category is changing.  Do NOT call evaluateItem() as that would
+            // detect "no local filing data" and restart the filing prompt.
+            setForceUnfiledLabel(true);
+            setAlreadyFiled(false);
+            setViewMode("sent"); // keep FiledSummaryCard visible
           } catch (e) {
-            console.error("[handleQuickAction] Failed to apply unfiled category:", e);
+            console.error("[handleQuickAction] Failed to apply SC: Unfiled category:", e);
+          } finally {
+            setIsTogglingCategory(false);
           }
         })();
         return;
@@ -3112,15 +3413,20 @@ setSelectedSource("manual"); // important
 
       if (isInternalEmailDetected && !overrideInternalGuard) {
         console.log("[doSubmit] Internal email detected without override, skipping filing");
-        setSubmitError("Interní email nebude zařazen. Klikněte 'File anyway' pro přepsání.");
+        setSubmitError("Internal email will not be filed. Click 'File anyway' to override.");
         return;
       }
 
       // Prevent double filing if email is already filed
-      if (alreadyFiled && !composeMode) {
+      // BUT allow re-filing if user explicitly confirmed after deletion warning
+      if (alreadyFiled && !composeMode && !allowRefilingOverride) {
         console.log("[doSubmit] Email already filed, preventing double filing");
-        setSubmitError("Email již byl zařazen do SingleCase.");
+        setSubmitError("This email is already filed in SingleCase.");
         return;
+      }
+
+      if (allowRefilingOverride) {
+        console.log("[doSubmit] Refiling override active - bypassing duplicate guard");
       }
 
       if (
@@ -3372,6 +3678,11 @@ setSelectedSource("manual"); // important
         };
 
         await saveSentPill(storeKey, pill);
+        // Also save under conv: key so State B can recover even if the Exchange
+        // item ID changes after the SC:Filed category is applied.
+        if (conversationKey) {
+          try { await saveSentPill(`conv:${conversationKey}`, pill); } catch { /* ignore */ }
+        }
         setSentPill(pill);
         markEverFiled(storeKey);
         try {
@@ -3575,7 +3886,7 @@ setSelectedSource("manual"); // important
             </div>
           ) : null}
 
-          {viewMode === "prompt" ? (
+          {viewMode === "prompt" && (prompt.kind !== "filed" || !showFiledSummary) ? (
             <PromptBubble
               text={prompt.text}
               isUnfiled={prompt.kind === "unfiled" || prompt.kind === "deleted"}
@@ -3626,7 +3937,7 @@ setSelectedSource("manual"); // important
                     setPrompt({
                       itemId: storeKey || activeItemId,
                       kind: "unfiled",
-                      text: `OK. Klikněte Zařadit teď. Potom můžete email normálně odeslat. Spis: ${name}.`,
+                      text: `OK. Click File Now. Then you can send the email normally. Case: ${name}.`,
                     });
                     return;
                   }
@@ -3746,6 +4057,8 @@ setSelectedSource("manual"); // important
                   className="mwPrimaryBtn"
                   type="button"
                   onClick={() => {
+                    console.log("[UI] Yes, file it - setting refiling override");
+                    setAllowRefilingOverride(true); // Allow bypassing duplicate guard
                     setViewMode("pickCase");
                     setPickStep("case");
                     setSelectedCaseId("");
@@ -3992,6 +4305,24 @@ setSelectedSource("manual"); // important
             >
               {forceUnfiledLabel ? "Mark as Filed" : "Mark as Unfiled"}
             </button>
+          </div>
+        ) : null}
+
+        {/* Filed-state quick actions (e.g. "Mark as SC: Unfiled").
+            Rendered inside mwChatCard so it sits in the bottom actions strip,
+            not above the FiledSummaryCard. */}
+        {viewMode === "prompt" && prompt.kind === "filed" && showFiledSummary && !composeMode && !isItemLoading && (quickActions || []).length > 0 ? (
+          <div className="mwActionsBar">
+            {(quickActions || []).map((a) => (
+              <button
+                key={a.id}
+                className="mwGhostBtn"
+                type="button"
+                onClick={() => handleQuickAction(a.intent)}
+              >
+                {a.label}
+              </button>
+            ))}
           </div>
         ) : null}
       </div>

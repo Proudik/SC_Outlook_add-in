@@ -57,19 +57,17 @@ export async function cacheFiledEmail(
       filedAt: Date.now(),
     };
 
-    // Clean old entries (keep last 20 filed emails - reduced to stay under 32KB limit)
+    // Always prune to 8 most recent entries to stay well under the 32KB roamingSettings limit
     const entries = Object.entries(cache);
-    if (entries.length > 20) {
-      entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
-      const keep = entries.slice(0, 20);
-      const newCache: FiledEmailCache = {};
-      keep.forEach(([key, val]) => {
-        newCache[key] = val;
-      });
-      await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
-      console.log("[cacheFiledEmail] Cleaned cache, kept 20 most recent entries");
-    } else {
-      await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
+    entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
+    const keep = entries.slice(0, 8);
+    const newCache: FiledEmailCache = {};
+    keep.forEach(([key, val]) => {
+      newCache[key] = val;
+    });
+    await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
+    if (entries.length > 8) {
+      console.log("[cacheFiledEmail] Pruned cache from", entries.length, "to 8 entries");
     }
 
     // Verify write succeeded
@@ -190,19 +188,17 @@ export async function cacheFiledEmailBySubject(
       filedAt: Date.now(),
     };
 
-    // Clean old entries (keep last 20 - reduced to stay under 32KB limit)
+    // Always prune to 8 most recent entries to stay well under the 32KB roamingSettings limit
     const entries = Object.entries(cache);
-    if (entries.length > 20) {
-      entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
-      const keep = entries.slice(0, 20);
-      const newCache: FiledEmailCache = {};
-      keep.forEach(([key, val]) => {
-        newCache[key] = val;
-      });
-      await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
-      console.log("[cacheFiledEmailBySubject] Cleaned cache, kept 20 most recent entries");
-    } else {
-      await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
+    entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
+    const keep = entries.slice(0, 8);
+    const newCache: FiledEmailCache = {};
+    keep.forEach(([key, val]) => {
+      newCache[key] = val;
+    });
+    await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
+    if (entries.length > 8) {
+      console.log("[cacheFiledEmailBySubject] Pruned cache from", entries.length, "to 8 entries");
     }
 
     // Verify write succeeded
