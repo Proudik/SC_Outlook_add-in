@@ -12,9 +12,9 @@ import {
   TimerItem,
   UpsertTimerPayload,
   UserOption,
-  CaseScope,
   ClientOption,
 } from "../../services/singlecase";
+import type { CaseListScope } from "./SettingsModal";
 import { useOutlookSuggestions } from "../../hooks/useOutlookSuggestions";
 import { useCaseSuggestions } from "../../hooks/useCaseSuggestions";
 import { loadSentPill } from "../../utils/sentPillStore";
@@ -90,7 +90,7 @@ export default function TimesheetsPanel({ token, onBack }: Props) {
   const [clientNamesById, setClientNamesById] = React.useState<Record<string, string>>({});
   const [users, setUsers] = React.useState<UserOption[]>([]);
 
-  const [caseScope, setCaseScope] = React.useState<CaseScope>("my");
+  const [caseScope, setCaseScope] = React.useState<CaseListScope>("all");
   const [isLoadingCases, setIsLoadingCases] = React.useState(false);
 
   const [selectedCaseId, setSelectedCaseId] = React.useState("");

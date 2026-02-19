@@ -1,14 +1,17 @@
 import * as React from "react";
 
-export type CaseListScope = "favourites" | "my" | "all";
+export type CaseListScope = "favourites" | "all";
+export type DuplicatesHandling = "off" | "warn" | "block";
+export type FilingOnSend = "off" | "ask" | "always";
+export type InternalEmailHandling = "treatNormally" | "defaultToLastCase" | "doNotSuggest";
 
 export type AddinSettings = {
-  autoSuggestCase: boolean;
   caseListScope: CaseListScope;
-  preventDuplicates: boolean;
-  includeBodySnippet: boolean;
   rememberLastCase: boolean;
   includeAttachments: boolean;
+  duplicates: DuplicatesHandling;
+  filingOnSend: FilingOnSend;
+  internalEmailHandling: InternalEmailHandling;
 };
 
 type Props = {
@@ -69,6 +72,7 @@ export default function SettingsModal(props: Props) {
     border: "1px solid rgba(0,0,0,0.12)",
     padding: "0 10px",
     background: "rgba(255,255,255,0.9)",
+    fontSize: 12,
   };
 
   const card: React.CSSProperties = {
@@ -131,42 +135,26 @@ export default function SettingsModal(props: Props) {
         </div>
 
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {/* ── Case display ── */}
           <div style={{ ...card, background: "rgba(17,24,39,0.02)" }}>
             <div style={row}>
               <div>
                 <div style={label}>Default case group</div>
                 <div style={help}>
-                  Select which case group should be shown by default when opening the add-in.
+                  Which case group is shown by default when opening the add-in.
                 </div>
               </div>
               <select
                 style={selectStyle}
                 value={settings.caseListScope}
                 onChange={(e) =>
-                  onChange({
-                    ...settings,
-                    caseListScope: e.target.value as CaseListScope,
-                  })
+                  onChange({ ...settings, caseListScope: e.target.value as CaseListScope })
                 }
               >
                 <option value="favourites">Favourites</option>
                 <option value="all">All</option>
               </select>
-            </div>
-          </div>
-
-          <div style={card}>
-            <div style={row}>
-              <div>
-                <div style={label}>Auto suggest case from subject</div>
-                <div style={help}>Preselect a case based on the email subject.</div>
-              </div>
-              <input
-                style={toggle}
-                type="checkbox"
-                checked={settings.autoSuggestCase}
-                onChange={(e) => onChange({ ...settings, autoSuggestCase: e.target.checked })}
-              />
             </div>
 
             <div style={{ marginTop: 10, ...row }}>
@@ -183,33 +171,26 @@ export default function SettingsModal(props: Props) {
             </div>
           </div>
 
+          {/* ── Filing behaviour ── */}
           <div style={card}>
             <div style={row}>
               <div>
-                <div style={label}>Prevent duplicates</div>
+                <div style={label}>File on send</div>
                 <div style={help}>
-                  Block sending if the same email was already attached to the same case.
+                  What happens when you send a composed email.
                 </div>
               </div>
-              <input
-                style={toggle}
-                type="checkbox"
-                checked={settings.preventDuplicates}
-                onChange={(e) => onChange({ ...settings, preventDuplicates: e.target.checked })}
-              />
-            </div>
-
-            <div style={{ marginTop: 10, ...row }}>
-              <div>
-                <div style={label}>Include body snippet</div>
-                <div style={help}>Send a short plain text excerpt.</div>
-              </div>
-              <input
-                style={toggle}
-                type="checkbox"
-                checked={settings.includeBodySnippet}
-                onChange={(e) => onChange({ ...settings, includeBodySnippet: e.target.checked })}
-              />
+              <select
+                style={selectStyle}
+                value={settings.filingOnSend}
+                onChange={(e) =>
+                  onChange({ ...settings, filingOnSend: e.target.value as FilingOnSend })
+                }
+              >
+                <option value="off">Off</option>
+                <option value="ask">Ask each time</option>
+                <option value="always">Always file</option>
+              </select>
             </div>
 
             <div style={{ marginTop: 10, ...row }}>
@@ -224,63 +205,108 @@ export default function SettingsModal(props: Props) {
                 onChange={(e) => onChange({ ...settings, includeAttachments: e.target.checked })}
               />
             </div>
+
+            <div style={{ marginTop: 10, ...row }}>
+              <div>
+                <div style={label}>Duplicate handling</div>
+                <div style={help}>
+                  What to do when the same email was already filed to the same case.
+                </div>
+              </div>
+              <select
+                style={selectStyle}
+                value={settings.duplicates}
+                onChange={(e) =>
+                  onChange({ ...settings, duplicates: e.target.value as DuplicatesHandling })
+                }
+              >
+                <option value="off">Off</option>
+                <option value="warn">Warn</option>
+                <option value="block">Block</option>
+              </select>
+            </div>
           </div>
-          
+
+          {/* ── Internal emails ── */}
+          <div style={card}>
+            <div style={row}>
+              <div>
+                <div style={label}>Internal email handling</div>
+                <div style={help}>
+                  How to handle emails where everyone shares your email domain.
+                </div>
+              </div>
+              <select
+                style={selectStyle}
+                value={settings.internalEmailHandling}
+                onChange={(e) =>
+                  onChange({
+                    ...settings,
+                    internalEmailHandling: e.target.value as InternalEmailHandling,
+                  })
+                }
+              >
+                <option value="treatNormally">Treat normally</option>
+                <option value="defaultToLastCase">Default to last case</option>
+                <option value="doNotSuggest">Do not suggest</option>
+              </select>
+            </div>
+          </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-  {props.onSignOut ? (
-    <button
-      onClick={props.onSignOut}
-      style={{
-        height: 34,
-        borderRadius: 10,
-        border: "1px solid rgba(220,38,38,0.25)",
-        padding: "0 12px",
-        background: "rgba(220,38,38,0.06)",
-        color: "rgb(153,27,27)",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-      type="button"
-    >
-      Sign out
-    </button>
-  ) : (
-    <div />
-  )}
+            {props.onSignOut ? (
+              <button
+                onClick={props.onSignOut}
+                style={{
+                  height: 34,
+                  borderRadius: 10,
+                  border: "1px solid rgba(220,38,38,0.25)",
+                  padding: "0 12px",
+                  background: "rgba(220,38,38,0.06)",
+                  color: "rgb(153,27,27)",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+                type="button"
+              >
+                Sign out
+              </button>
+            ) : (
+              <div />
+            )}
 
-  <div style={{ display: "flex", gap: 10 }}>
-    <button
-      onClick={onReset}
-      style={{
-        height: 34,
-        borderRadius: 10,
-        border: "1px solid rgba(0,0,0,0.12)",
-        padding: "0 12px",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-      type="button"
-    >
-      Reset
-    </button>
-    <button
-      onClick={onClose}
-      style={{
-        height: 34,
-        borderRadius: 10,
-        border: "none",
-        padding: "0 12px",
-        background: "#111827",
-        color: "white",
-        cursor: "pointer",
-      }}
-      type="button"
-    >
-      Done
-    </button>
-  </div>
-</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={onReset}
+                style={{
+                  height: 34,
+                  borderRadius: 10,
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  padding: "0 12px",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+                type="button"
+              >
+                Reset
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  height: 34,
+                  borderRadius: 10,
+                  border: "none",
+                  padding: "0 12px",
+                  background: "#111827",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+                type="button"
+              >
+                Done
+              </button>
+            </div>
+          </div>
 
         </div>
       </div>

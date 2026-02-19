@@ -217,24 +217,41 @@ export function suggestCasesLocal(params: {
     }
   }
 
-  // 4) Sender email history
+  // Generic consumer domains that are too broad for useful domain-level suggestions
+  const GENERIC_DOMAINS = new Set([
+    "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
+    "yahoo.com", "yahoo.co.uk", "icloud.com", "me.com", "mac.com",
+    "protonmail.com", "proton.me", "aol.com", "msn.com",
+  ]);
+
+  // 4) Sender email history (count + recency weighted)
+  const now = Date.now();
   if (fromEmail && senderToCase[fromEmail]) {
     for (const [caseId, meta] of Object.entries(senderToCase[fromEmail])) {
-      const boost = 30 * log1p(meta.count || 0);
+      const ageDays = (now - (meta.lastSeenAt || 0)) / (24 * 60 * 60 * 1000);
+      const recency = Math.exp(-ageDays / 30); // half-weight at ~30 days
+      const countWeight = log1p(meta.count || 0) / log1p(5); // normalise: count=5 → 1.0
+      const baseBoost = Math.round(65 * (0.65 * clamp(countWeight, 0, 1) + 0.35 * recency));
+      // Extra bonus for very recent filings (within last 2 days) so that even a single
+      // filing is enough to auto-select when there is no competing signal.
+      const freshBonus = ageDays < 2 ? 30 : 0;
+      const boost = baseBoost + freshBonus;
       if (boost > 0) add(caseId, boost, "You often attach emails from this sender to this case.");
     }
   }
 
-  // 5) Domain history
-  if (domain && domainToCase[domain]) {
+  // 5) Domain history — skip generic consumer domains (gmail, outlook, etc.)
+  if (domain && !GENERIC_DOMAINS.has(domain) && domainToCase[domain]) {
     for (const [caseId, meta] of Object.entries(domainToCase[domain])) {
-      const boost = 20 * log1p(meta.count || 0);
+      const ageDays = (now - (meta.lastSeenAt || 0)) / (24 * 60 * 60 * 1000);
+      const recency = Math.exp(-ageDays / 30);
+      const countWeight = log1p(meta.count || 0) / log1p(5);
+      const boost = Math.round(40 * (0.65 * clamp(countWeight, 0, 1) + 0.35 * recency));
       if (boost > 0) add(caseId, boost, "This domain often maps to this case.");
     }
   }
 
   // 6) Recent cases (low weight)
-  const now = Date.now();
   for (const rc of recentCases || []) {
     const ageDays = (now - (rc.lastUsedAt || 0)) / (24 * 60 * 60 * 1000);
     const decay = clamp(1 - ageDays / 14, 0, 1);

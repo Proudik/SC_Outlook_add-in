@@ -1,9 +1,18 @@
 // MainWorkspace.tsx (part 1 of 5)
 
 import * as React from "react";
-import { markEverFiled } from "../../../utils/settingsStorage";
+import {
+  markEverFiled,
+  loadLastCaseId,
+  saveLastCaseId,
+  loadDuplicateCache,
+  saveDuplicateCache,
+  hasAttached,
+  markAttached,
+  computeEmailFingerprint,
+} from "../../../utils/settingsStorage";
 import { loadSentPill, saveSentPill, SentPillData } from "../../../utils/sentPillStore";
-import type { AddinSettings } from "../SettingsModal";
+import type { AddinSettings, CaseListScope } from "../SettingsModal";
 import CaseSelector from "../CaseSelector";
 import {
   listCases,
@@ -19,6 +28,7 @@ import {
   uploadDocumentVersion,
   getDocumentMeta,
 } from "../../../services/singlecaseDocuments";
+import { recordSuccessfulAttach } from "../../../utils/suggestionStorage";
 import { getStored, setStored, removeStored } from "../../../utils/storage";
 import { STORAGE_KEYS } from "../../../utils/constants";
 import { loadUploadedLinks, saveUploadedLinks } from "../../../utils/uploadedLinksStore";
@@ -1065,7 +1075,7 @@ function getStoreKey(activeItemKey: string, activeItemId: string, composeMode: b
 
 // MainWorkspace.tsx (part 3 of 5)
 
-export default function MainWorkspace({ email, token, settings, onChangeSettings }: Props) {
+export default function MainWorkspace({ email, token, settings, onChangeSettings: _onChangeSettings }: Props) {
   void email;
 
   const greeting = React.useMemo(() => getGreetingCz(new Date()), []);
@@ -1136,6 +1146,18 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
   const [renameSaving, setRenameSaving] = React.useState(false);
 
   const [subjectText, setSubjectText] = React.useState<string>("");
+
+  // Ephemeral tab state — initialised synchronously from the stored default so there is no
+  // flash on startup. Tab clicks update this only; the stored setting (settings.caseListScope)
+  // only changes when the user saves from the Settings modal.
+  const [caseGroupTab, setCaseGroupTab] = React.useState<"favourites" | "all">(() =>
+    settings.caseListScope === "favourites" ? "favourites" : "all"
+  );
+
+  // When the stored default changes (via Settings modal), reset the active tab to match.
+  React.useEffect(() => {
+    setCaseGroupTab(settings.caseListScope === "favourites" ? "favourites" : "all");
+  }, [settings.caseListScope]);
 
   React.useEffect(() => {
     let alive = true;
@@ -1245,16 +1267,22 @@ const attachmentIds = React.useMemo(
   }, [viewMode, prompt.kind, sentPill?.caseId, uploadedLinksValidated.length]);
 
   const visibleCases = React.useMemo(() => {
-    if (settings.caseListScope === "all") return cases;
+    if (caseGroupTab === "all") return cases;
     return cases.filter((c) => !isClosedStatus((c as any)?.status));
-  }, [cases, settings.caseListScope]);
+  }, [cases, caseGroupTab]);
 
   const [composeRecipientsLive, setComposeRecipientsLive] = React.useState<string[]>([]);
   const [chatStep, setChatStep] = React.useState<ChatStep>("idle");
   const [quickActions, setQuickActions] = React.useState<QuickAction[]>([]);
   const [detectedFrequentCaseId, setDetectedFrequentCaseId] = React.useState<string>("");
-  const [autoFileOnSend, setAutoFileOnSend] = React.useState<boolean>(true);
+  const [autoFileOnSend, setAutoFileOnSend] = React.useState<boolean>(
+    () => settings.filingOnSend !== "off"
+  );
   const [dismissedFrequentKey, setDismissedFrequentKey] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (!autoFileUserSet) setAutoFileOnSend(settings.filingOnSend !== "off");
+  }, [settings.filingOnSend, autoFileUserSet]);
 
   // Submail detection state
   const [submailDetectedCaseId, setSubmailDetectedCaseId] = React.useState<string>("");
@@ -1268,6 +1296,7 @@ const attachmentIds = React.useMemo(
   const [alreadyFiledCaseLabel, setAlreadyFiledCaseLabel] = React.useState("");
   const [alreadyFiledDocumentId, setAlreadyFiledDocumentId] = React.useState("");
   const [allowRefilingOverride, setAllowRefilingOverride] = React.useState(false);
+  const [duplicateFilingWarning, setDuplicateFilingWarning] = React.useState(false);
 
   // Divergence: Outlook category says "SC: Filed" but server says not filed
   const [filingDivergenceDetected, setFilingDivergenceDetected] = React.useState(false);
@@ -1560,7 +1589,7 @@ const attachmentIds = React.useMemo(
   }, [viewMode, showFiledSummary, composeMode, token, settings.caseListScope]);
 
   const { suggestions: caseSuggestions } = useCaseSuggestions({
-    enabled: viewMode === "pickCase" && settings.autoSuggestCase,
+    enabled: viewMode === "pickCase" && !(settings.internalEmailHandling === "doNotSuggest" && isInternalEmailDetected),
     emailItemId: activeItemId,
     conversationKey,
     subject: subjectText,
@@ -1841,6 +1870,20 @@ const attachmentIds = React.useMemo(
     });
   }, [composeMode, activeItemId, activeItemKey]);
 
+  // Effect: When an internal email is detected and the setting is "defaultToLastCase",
+  // auto-select the last remembered case (read mode only, skipped if user already picked one).
+  React.useEffect(() => {
+    if (composeMode || !isInternalEmailDetected) return;
+    if (settings.internalEmailHandling !== "defaultToLastCase") return;
+    if (selectedSource !== "") return; // don't override any existing selection
+
+    const lastCase = loadLastCaseId();
+    if (!lastCase) return;
+
+    setSelectedCaseId(lastCase);
+    setSelectedSource("remembered");
+  }, [composeMode, isInternalEmailDetected, settings.internalEmailHandling, selectedSource]);
+
   // Effect: Reset internal guard overrides when email item changes
   React.useEffect(() => {
     // Reset overrides when switching to a different email
@@ -1878,6 +1921,7 @@ const attachmentIds = React.useMemo(
       setAlreadyFiledCaseId("");
       setAlreadyFiledCaseLabel("");
       setAlreadyFiledDocumentId("");
+      setDuplicateFilingWarning(false);
     }
 
     // Only check if authenticated
@@ -2284,11 +2328,11 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
       setQuickActions([
         { id: "s1", label: "Select a different case", intent: "pick_another_case" },
-        {
+        ...(settings.filingOnSend === "ask" ? [{
           id: "s2",
           label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-          intent: "toggle_auto_file",
-        },
+          intent: "toggle_auto_file" as const,
+        }] : []),
       ]);
       return;
     }
@@ -2297,7 +2341,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     // Must be checked BEFORE frequent case / selectedCaseId so it fires even
     // when no case is selected yet (chatStep would otherwise land on
     // "compose_choose_case" which the old guard effect never watched).
-    if (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) {
+    if (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail && settings.internalEmailHandling === "treatNormally") {
       console.log("[compose-flow] Internal email detected — showing guard prompt");
       setChatStep("compose_ready"); // allows compose_ready effect to keep guard active
       setViewMode("prompt");
@@ -2354,11 +2398,11 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
       setQuickActions([
         { id: "a2", label: "Select a different case", intent: "pick_another_case" },
-        {
+        ...(settings.filingOnSend === "ask" ? [{
           id: "a3",
           label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-          intent: "toggle_auto_file",
-        },
+          intent: "toggle_auto_file" as const,
+        }] : []),
       ]);
       return;
     }
@@ -2369,11 +2413,11 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     setChatStep("compose_choose_case");
     setQuickActions([
       { id: "b1", label: "Select a different case", intent: "pick_another_case" },
-      {
+      ...(settings.filingOnSend === "ask" ? [{
         id: "b2",
         label: autoFileOnSend ? "Disable auto file on send" : "Enable auto file on send",
-        intent: "toggle_auto_file",
-      },
+        intent: "toggle_auto_file" as const,
+      }] : []),
     ]);
 
     setPrompt({
@@ -2409,7 +2453,8 @@ React.useEffect(() => {
   const shouldShowInternalGuard =
     isInternalEmailDetected &&
     !overrideInternalGuard &&
-    !doNotFileThisEmail;
+    !doNotFileThisEmail &&
+    settings.internalEmailHandling === "treatNormally";
 
   if (shouldShowInternalGuard) {
     console.log("[internal-guard] Showing internal email warning instead of suggestions");
@@ -2455,11 +2500,11 @@ React.useEffect(() => {
   // DO NOT clear actions here, this is where user needs them
   setQuickActions([
     { id: "c1", label: "Select a different case", intent: "pick_another_case" },
-    {
+    ...(settings.filingOnSend === "ask" ? [{
       id: "c2",
       label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-      intent: "toggle_auto_file",
-    },
+      intent: "toggle_auto_file" as const,
+    }] : []),
   ]);
 
   console.log("[prompt:set] reason=compose_ready/frequent", { selectedCaseId, chatStep });
@@ -2479,6 +2524,8 @@ React.useEffect(() => {
   overrideInternalGuard,
   doNotFileThisEmail,
   submailDetectedCaseId,
+  settings.internalEmailHandling,
+  settings.filingOnSend,
 ]);
 
 
@@ -3139,8 +3186,8 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
 
-  // For internal emails, show the guard prompt
-  if (isInternalEmailDetected) {
+  // For internal emails with "treatNormally", show the guard prompt
+  if (isInternalEmailDetected && settings.internalEmailHandling === "treatNormally") {
     setQuickActions([{ id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" }]);
     setPrompt({
       itemId: activeItemId,
@@ -3423,19 +3470,52 @@ setSelectedSource("manual"); // important
         return;
       }
 
-      if (isInternalEmailDetected && !overrideInternalGuard) {
+      if (isInternalEmailDetected && !overrideInternalGuard && settings.internalEmailHandling === "treatNormally") {
         console.log("[doSubmit] Internal email detected without override, skipping filing");
         setSubmitError("Internal email will not be filed. Click 'File anyway' to override.");
         return;
       }
 
-      // Prevent double filing if email is already filed
-      // BUT allow re-filing if user explicitly confirmed after deletion warning
-      if (alreadyFiled && !composeMode && !allowRefilingOverride) {
-        console.log("[doSubmit] Email already filed, preventing double filing");
-        setSubmitError("This email is already filed in SingleCase.");
-        return;
+      // ── Duplicate detection ──────────────────────────────────────────────────
+      // Use a content fingerprint (subject + sender + body) so that two separate
+      // emails with identical content are caught, even though their itemIds and
+      // conversationIds differ (e.g. sent copy vs received copy).
+      const dupFingerprint = computeEmailFingerprint(
+        subjectText || "",
+        fromEmail || "",
+        suggestBodySnippet || ""
+      );
+      const dupCache = loadDuplicateCache();
+      const isDuplicate =
+        (dupFingerprint !== "" && hasAttached(dupCache, caseId, dupFingerprint)) ||
+        (Boolean(activeItemId) && hasAttached(dupCache, caseId, activeItemId));
+
+      if (isDuplicate && settings.duplicates !== "off" && !allowRefilingOverride) {
+        if (settings.duplicates === "block") {
+          console.log("[doSubmit] Duplicates=block: preventing filing");
+          setSubmitError(
+            "This email (or one with identical content) has already been filed to this case."
+          );
+          return;
+        }
+        // "warn"
+        if (!duplicateFilingWarning) {
+          console.log("[doSubmit] Duplicates=warn: showing warning on first attempt");
+          setDuplicateFilingWarning(true);
+          setSubmitError(
+            "This email (or one with identical content) was already filed to this case. Click File again to file anyway."
+          );
+          setIsSubmitting(false);
+          setViewMode("pickCase");
+          return;
+        }
+        // Second click: user confirmed — proceed and reset flag
+        console.log("[doSubmit] Duplicates=warn: user confirmed re-filing");
+        setDuplicateFilingWarning(false);
+      } else {
+        setDuplicateFilingWarning(false);
       }
+      // ─────────────────────────────────────────────────────────────────────────
 
       if (allowRefilingOverride) {
         console.log("[doSubmit] Refiling override active - bypassing duplicate guard");
@@ -3514,7 +3594,7 @@ setSelectedSource("manual"); // important
             fromName,
           };
 
-          if (settings.includeBodySnippet && bodySnippetFull) payload.bodySnippet = bodySnippetFull;
+          if (bodySnippetFull) payload.bodySnippet = bodySnippetFull;
 
           const res = await submitEmailToCase(token, payload);
           singlecaseRecordId = res?.singlecaseRecordId;
@@ -3754,6 +3834,32 @@ setSelectedSource("manual"); // important
           console.warn("[doSubmit] Failed to cache filed email:", err);
         }
 
+        // Mark in DuplicateCache so future filings of this email (or an identical
+        // one) can be caught regardless of itemId / conversationId.
+        try {
+          const freshDupCache = loadDuplicateCache();
+          if (dupFingerprint) markAttached(freshDupCache, caseId, dupFingerprint);
+          if (activeItemId && !activeItemId.startsWith("draft:")) {
+            markAttached(freshDupCache, caseId, activeItemId);
+          }
+          saveDuplicateCache(freshDupCache);
+          console.log("[doSubmit] Marked in duplicate cache", { fingerprint: dupFingerprint });
+        } catch (err) {
+          console.warn("[doSubmit] Failed to update duplicate cache:", err);
+        }
+
+        // Record in suggestion history for sender-based future suggestions
+        try {
+          recordSuccessfulAttach({
+            caseId,
+            conversationKey: conversationKey || undefined,
+            senderEmail: composeMode ? undefined : fromEmail || undefined,
+          });
+          console.log("[doSubmit] Recorded suggest history", { caseId, senderEmail: composeMode ? undefined : fromEmail });
+        } catch (err) {
+          console.warn("[doSubmit] Failed to record suggest history:", err);
+        }
+
         if (composeMode) {
           setPrompt({
             itemId: storeKey,
@@ -3808,7 +3914,6 @@ setSelectedSource("manual"); // important
       fromEmail,
       fromName,
       token,
-      settings.includeBodySnippet,
       suggestBodySnippet,
       workspaceHost,
       filingMode,
@@ -3821,10 +3926,13 @@ setSelectedSource("manual"); // important
       sentPill?.revisionNumber,
       userLabel,
       composeMode,
-      alreadyFiled,
+      allowRefilingOverride,
       composeRecipientsLive,
       storeKey,
       activeItemId,
+      settings.duplicates,
+      settings.internalEmailHandling,
+      duplicateFilingWarning,
     ]
   );
 
@@ -3907,13 +4015,8 @@ setSelectedSource("manual"); // important
             <div>
               <CaseSelector
                 title="Case"
-                scope={settings.caseListScope}
-                onScopeChange={(scope) => {
-                  onChangeSettings((prev) => {
-                    if (prev.caseListScope === scope) return prev;
-                    return { ...prev, caseListScope: scope };
-                  });
-                }}
+                scope={caseGroupTab}
+                onScopeChange={(scope) => setCaseGroupTab(scope === "favourites" ? "favourites" : "all")}
                 selectedCaseId={selectedCaseId}
                 onSelectCaseId={(id) => {
                   setSelectedCaseId(id);
@@ -3921,6 +4024,7 @@ setSelectedSource("manual"); // important
                   setReplyBaseCaseId("");
                   setReplyBaseEmailDocId("");
                   setIsUploadingNewVersion(false);
+                  if (settings.rememberLastCase) saveLastCaseId(id);
 
                   if (composeMode) {
                     const c: any = (cases || []).find((x: any) => String(x?.id) === String(id));

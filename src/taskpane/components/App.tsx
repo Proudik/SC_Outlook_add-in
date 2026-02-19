@@ -9,7 +9,7 @@ import SettingsModal, { AddinSettings } from "./SettingsModal";
 import { getAuth, clearAuth, clearAuthIfExpired, setAuth } from "../../services/auth";
 import { getStored, setStored } from "../../utils/storage";
 import { STORAGE_KEYS } from "../../utils/constants";
-import { loadSettings } from "../../utils/settingsStorage";
+import { loadSettings, saveSettings } from "../../utils/settingsStorage";
 import QuickActionsPanel from "./QuickActionsPanel";
 
 interface AppProps {
@@ -17,12 +17,12 @@ interface AppProps {
 }
 
 const DEFAULT_SETTINGS: AddinSettings = {
-  autoSuggestCase: true,
-  caseListScope: "my",
-  preventDuplicates: true,
-  includeBodySnippet: false,
+  caseListScope: "all",
   rememberLastCase: true,
   includeAttachments: true,
+  duplicates: "warn",
+  filingOnSend: "ask",
+  internalEmailHandling: "treatNormally",
 };
 
 type DialogPayload =
@@ -514,8 +514,8 @@ setAuth(payload.token, payload.email);
             isOpen={isSettingsOpen}
             settings={settings}
             onClose={() => setIsSettingsOpen(false)}
-            onChange={(s) => setSettings(s)}
-            onReset={() => setSettings(DEFAULT_SETTINGS)}
+            onChange={(s) => { saveSettings(s); setSettings(s); }}
+            onReset={() => { saveSettings(DEFAULT_SETTINGS); setSettings(DEFAULT_SETTINGS); }}
             onSignOut={onSignOut}
           />
 

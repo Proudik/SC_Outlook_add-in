@@ -127,6 +127,36 @@ export function markAttached(cache: DuplicateCache, caseId: string, itemId: stri
   }
 }
 
+/**
+ * Compute a stable content fingerprint for an email.
+ * Two emails with the same subject, sender, and body will produce the same key,
+ * regardless of their Office itemId or conversationId.
+ * Used as the primary key in DuplicateCache so duplicate detection works across
+ * separate copies of "identical" emails (e.g. sent + received).
+ */
+function djb2Hash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
+  }
+  return h.toString(36);
+}
+
+export function computeEmailFingerprint(
+  subject: string,
+  senderEmail: string,
+  bodyExcerpt: string
+): string {
+  const norm = (v: string) =>
+    String(v || "").toLowerCase().trim().replace(/\s+/g, " ");
+  const key = [
+    norm(subject),
+    norm(senderEmail),
+    norm(bodyExcerpt).substring(0, 200),
+  ].join("\x01");
+  return `fp:${djb2Hash(key)}`;
+}
+
 
 function discardEmailKey(itemId: string): string {
   return `sc_case_intake_discarded:${getMailboxKeySafe()}:${String(itemId || "").trim()}`;
