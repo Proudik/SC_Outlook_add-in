@@ -29,7 +29,10 @@ export function loadSettings(defaultSettings: AddinSettings): AddinSettings {
     const raw = localStorage.getItem(settingsStorageKey());
     if (!raw) return defaultSettings;
     const parsed = JSON.parse(raw);
-    return { ...defaultSettings, ...parsed };
+    const merged = { ...defaultSettings, ...parsed };
+    // Migrate old "ask" value → "warn" (renamed in v2)
+    if ((merged as any).filingOnSend === "ask") (merged as any).filingOnSend = "warn";
+    return merged as AddinSettings;
   } catch {
     return defaultSettings;
   }

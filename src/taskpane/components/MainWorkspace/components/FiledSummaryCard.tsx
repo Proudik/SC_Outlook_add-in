@@ -9,6 +9,10 @@ export type UploadedItem = {
   kind: "email" | "attachment";
   atIso: string;
   uploadedBy?: string;
+
+  isLocked?: boolean;
+  lockedBy?: string;
+  lockedUntilIso?: string;
 };
 
 type Props = {
@@ -17,6 +21,7 @@ type Props = {
   sentPill: SentPillData | null;
   documentsToShow: UploadedItem[];
   workspaceHost: string;
+  onLockedDocAttempt: (msg: string) => void;
   onOpenUrl: (url: string) => void;
   buildLiveEditUrl: (host: string, documentId: string) => string;
   fmtCs: (iso?: string) => string;
@@ -30,6 +35,8 @@ export default function FiledSummaryCard({
   workspaceHost,
   onOpenUrl,
   buildLiveEditUrl,
+    onLockedDocAttempt,
+
   fmtCs,
 }: Props) {
   return (
@@ -65,14 +72,15 @@ export default function FiledSummaryCard({
       {documentsToShow.length > 0 ? (
         <div className="mwFiledDocsMini">
           {documentsToShow.map((doc) => (
-            <DocumentHoverCard
-              key={doc.id}
-              doc={doc}
-              workspaceHost={workspaceHost}
-              onOpenUrl={onOpenUrl}
-              buildLiveEditUrl={buildLiveEditUrl}
-            />
-          ))}
+  <DocumentHoverCard
+    key={doc.id}
+    doc={doc}
+    workspaceHost={workspaceHost}
+    onOpenUrl={onOpenUrl}
+    buildLiveEditUrl={buildLiveEditUrl}
+    onLockedDocAttempt={onLockedDocAttempt}
+  />
+))}
         </div>
       ) : null}
     </div>

@@ -69,6 +69,11 @@ type UploadedItem = {
   atIso: string;
   uploadedBy?: string;
   caseId?: string;
+
+  // lock awareness
+  isLocked?: boolean;
+  lockedBy?: string;
+  lockedUntilIso?: string;
 };
 
 type AttachmentLike = {
@@ -113,7 +118,10 @@ type QuickAction = {
     | "show_suggestions"
     | "refresh_filing_status"
     | "mark_as_unfiled"
-    | "file_now_from_weak_signal";
+    | "file_now_from_weak_signal"
+    | "enable_filing_on_send"
+    | "confirm_file_now"
+    | "skip_pending_filing";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -284,11 +292,27 @@ async function recordRecipientsFiledToCase(emails: string[], caseId: string) {
   await saveRecipientHistory(map);
 }
 
+// Per-draft autoFileOnSend persistence (localStorage, taskpane-only)
+const DRAFT_AUTOFILE_PREFIX = "sc_draft_autofile:";
+function getDraftAutoFile(key: string): boolean | null {
+  if (!key) return null;
+  try {
+    const raw = localStorage.getItem(`${DRAFT_AUTOFILE_PREFIX}${key}`);
+    if (raw === null) return null;
+    return raw === "1";
+  } catch { return null; }
+}
+function setDraftAutoFile(key: string, enabled: boolean): void {
+  if (!key) return;
+  try { localStorage.setItem(`${DRAFT_AUTOFILE_PREFIX}${key}`, enabled ? "1" : "0"); } catch {}
+}
+
 // Draft intent is still useful for future hosts, but on Mac you cannot rely on OnMessageSend.
 async function saveComposeIntent(params: {
   itemKey: string;
   caseId: string;
   autoFileOnSend: boolean;
+  filingOnSend?: string;
   baseCaseId?: string;
   baseEmailDocId?: string;
 }) {
@@ -296,6 +320,7 @@ async function saveComposeIntent(params: {
     const value = JSON.stringify({
       caseId: params.caseId,
       autoFileOnSend: params.autoFileOnSend,
+      filingOnSend: String(params.filingOnSend || ""),
       baseCaseId: String(params.baseCaseId || "").trim(),
       baseEmailDocId: String(params.baseEmailDocId || "").trim(),
     });
@@ -375,11 +400,15 @@ async function saveComposeIntent(params: {
   }
 }
 
+const RECIPIENT_HISTORY_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+const RECIPIENT_HISTORY_MIN_COUNT = 2; // or within age window
+
 async function findBestCaseForRecipients(
   emails: string[]
 ): Promise<{ caseId: string; score: number } | null> {
   const map = await loadRecipientHistory();
   const votes: Record<string, number> = {};
+  const now = Date.now();
 
   for (const e of emails) {
     const email = normEmail(e);
@@ -388,7 +417,13 @@ async function findBestCaseForRecipients(
     const hit = map[email];
     if (!hit?.caseId) continue;
 
-    const w = Math.min(10, Math.max(1, Number(hit.count || 1)));
+    // Strong-match filter: only use if recent (≤90 days) OR count ≥ 2
+    const count = Number(hit.count || 1);
+    const lastUsed = hit.lastUsedIso ? new Date(hit.lastUsedIso).getTime() : 0;
+    const isRecent = lastUsed > 0 && now - lastUsed <= RECIPIENT_HISTORY_MAX_AGE_MS;
+    if (!isRecent && count < RECIPIENT_HISTORY_MIN_COUNT) continue;
+
+    const w = Math.min(10, Math.max(1, count));
     votes[hit.caseId] = (votes[hit.caseId] || 0) + w;
   }
 
@@ -1051,6 +1086,44 @@ function extractLatestRevisionNumber(doc: any): number | null {
   return Number.isFinite(num) && num > 0 ? num : null;
 }
 
+function extractLockInfo(meta: any): { isLocked: boolean; lockedBy?: string; lockedUntilIso?: string } {
+  if (!meta) return { isLocked: false };
+
+  // Accept several possible shapes without guessing too hard.
+  // You can refine once you see real meta payload fields.
+  const locked =
+    Boolean(meta.locked) ||
+    Boolean(meta.is_locked) ||
+    Boolean(meta.isLocked) ||
+    Boolean(meta.lock?.is_locked) ||
+    Boolean(meta.lock?.locked) ||
+    Boolean(meta.opened_and_locked) ||
+    Boolean(meta.openedAndLocked);
+
+  const lockedBy =
+    String(
+      meta.locked_by?.name ??
+      meta.locked_by?.email ??
+      meta.lockedBy?.name ??
+      meta.lockedBy ??
+      meta.lock?.locked_by?.name ??
+      meta.lock?.locked_by ??
+      meta.lock?.user ??
+      ""
+    ).trim() || undefined;
+
+  const lockedUntilIso =
+    String(
+      meta.locked_until ??
+      meta.lockedUntil ??
+      meta.lock?.locked_until ??
+      meta.lock?.until ??
+      ""
+    ).trim() || undefined;
+
+  return { isLocked: locked, lockedBy, lockedUntilIso };
+}
+
 function extractRevisionFromVersionUploadResponse(raw: any): number | null {
   if (!raw) return null;
   const v = raw.data || raw.result || raw.document || raw.version || raw;
@@ -1075,7 +1148,7 @@ function getStoreKey(activeItemKey: string, activeItemId: string, composeMode: b
 
 // MainWorkspace.tsx (part 3 of 5)
 
-export default function MainWorkspace({ email, token, settings, onChangeSettings: _onChangeSettings }: Props) {
+export default function MainWorkspace({ email, token, settings, onChangeSettings }: Props) {
   void email;
 
   const greeting = React.useMemo(() => getGreetingCz(new Date()), []);
@@ -1130,6 +1203,7 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
   const [uploadedLinksRaw, setUploadedLinksRaw] = React.useState<UploadedItem[]>([]);
   const [uploadedLinksValidated, setUploadedLinksValidated] = React.useState<UploadedItem[]>([]);
 
+const [lockedDocAlert, setLockedDocAlert] = React.useState<string>("");
 
   const [isTogglingCategory, setIsTogglingCategory] = React.useState(false);
   const [filingMode, setFilingMode] = React.useState<FilingMode>("both");
@@ -1284,6 +1358,25 @@ const attachmentIds = React.useMemo(
     if (!autoFileUserSet) setAutoFileOnSend(settings.filingOnSend !== "off");
   }, [settings.filingOnSend, autoFileUserSet]);
 
+  // Restore per-draft autoFileOnSend when switching between compose drafts.
+  // "off" → always false; "warn"/"always" → load saved preference or default to true.
+  React.useEffect(() => {
+    if (!composeMode || !storeKey) return;
+    if (settings.filingOnSend === "off") {
+      setAutoFileOnSend(false);
+      return;
+    }
+    const stored = getDraftAutoFile(storeKey);
+    if (stored !== null) {
+      setAutoFileOnSend(stored);
+      setAutoFileUserSet(true);
+    } else {
+      // No explicit preference for this draft → reset to default-on
+      setAutoFileUserSet(false);
+      setAutoFileOnSend(true);
+    }
+  }, [composeMode, storeKey, settings.filingOnSend]);
+
   // Submail detection state
   const [submailDetectedCaseId, setSubmailDetectedCaseId] = React.useState<string>("");
   const [submailDetectedCaseKey, setSubmailDetectedCaseKey] = React.useState<string>("");
@@ -1297,6 +1390,12 @@ const attachmentIds = React.useMemo(
   const [alreadyFiledDocumentId, setAlreadyFiledDocumentId] = React.useState("");
   const [allowRefilingOverride, setAllowRefilingOverride] = React.useState(false);
   const [duplicateFilingWarning, setDuplicateFilingWarning] = React.useState(false);
+  const [pendingFiling, setPendingFiling] = React.useState<{
+    caseId: string;
+    subject: string;
+    conversationId: string;
+    sentAt: string;
+  } | null>(null);
 
   // Divergence: Outlook category says "SC: Filed" but server says not filed
   const [filingDivergenceDetected, setFilingDivergenceDetected] = React.useState(false);
@@ -1451,11 +1550,21 @@ const attachmentIds = React.useMemo(
           // If meta is missing, keep the item as-is (do NOT drop)
           if (!meta) return it as UploadedItem;
 
-          const metaCaseId = String(meta.case_id || meta.caseId || "").trim();
-          if (expectedCaseId && metaCaseId && metaCaseId !== expectedCaseId) return null;
+               const metaCaseId = String(meta.case_id || meta.caseId || "").trim();
+        if (expectedCaseId && metaCaseId && metaCaseId !== expectedCaseId) return null;
 
-          const name = String(it.name || meta.name || "").trim();
-          return { ...it, name: name || it.name, caseId: metaCaseId || it.caseId } as UploadedItem;
+        const name = String(it.name || meta.name || "").trim();
+
+        const lock = extractLockInfo(meta);
+
+        return {
+          ...it,
+          name: name || it.name,
+          caseId: metaCaseId || it.caseId,
+          isLocked: lock.isLocked,
+          lockedBy: lock.lockedBy,
+          lockedUntilIso: lock.lockedUntilIso,
+        } as UploadedItem;
         })
       );
 
@@ -1526,7 +1635,12 @@ const attachmentIds = React.useMemo(
       return;
     }
 
-    if (selectedCaseId && autoFileOnSend) {
+    const wantToFile =
+      settings.filingOnSend === "always"
+        ? Boolean(selectedCaseId)
+        : selectedCaseId && autoFileOnSend;
+
+    if (wantToFile) {
       const shouldVersion =
         isUploadingNewVersion &&
         Boolean(replyBaseEmailDocId) &&
@@ -1537,6 +1651,7 @@ const attachmentIds = React.useMemo(
         itemKey: storeKey,
         caseId: selectedCaseId,
         autoFileOnSend,
+        filingOnSend: settings.filingOnSend,
         baseCaseId: shouldVersion ? replyBaseCaseId : "",
         baseEmailDocId: shouldVersion ? replyBaseEmailDocId : "",
       });
@@ -1548,6 +1663,7 @@ const attachmentIds = React.useMemo(
     storeKey,
     selectedCaseId,
     autoFileOnSend,
+    settings.filingOnSend,
     isUploadingNewVersion,
     replyBaseCaseId,
     replyBaseEmailDocId,
@@ -1630,13 +1746,19 @@ const attachmentIds = React.useMemo(
       if (!mounted) return;
 
       if (!isComposeMode()) {
-        setComposeRecipientsLive([]);
+        setComposeRecipientsLive(prev => (prev.length === 0 ? prev : []));
         return;
       }
 
       const r = await getDraftRecipientsEmailsAsync();
       if (!mounted) return;
-      setComposeRecipientsLive(r);
+      // Stabilize: only update state when content actually changed.
+      // Without this, every poll produces a new [] reference → Effect A re-runs
+      // → setPrompt() with a new object reference → re-render every 350 ms → flicker.
+      setComposeRecipientsLive(prev => {
+        if (prev.length === r.length && prev.every((e, i) => e === r[i])) return prev;
+        return r;
+      });
     };
 
     const setup = async () => {
@@ -2165,6 +2287,7 @@ const attachmentIds = React.useMemo(
       }
 
       const emails = composeRecipientsLive || [];
+      console.log("[recipientDetection] Recipients polled:", emails);
       if (emails.length === 0) {
         setDetectedFrequentCaseId("");
         return;
@@ -2172,6 +2295,7 @@ const attachmentIds = React.useMemo(
 
       const keyNow = `${activeItemId}:${emails.slice().sort().join("|")}`;
       if (dismissedFrequentKey && dismissedFrequentKey === keyNow) {
+        console.log("[recipientDetection] Skipped — dismissed for this recipient set");
         setDetectedFrequentCaseId("");
         return;
       }
@@ -2179,6 +2303,11 @@ const attachmentIds = React.useMemo(
       const best = await findBestCaseForRecipients(emails);
       if (cancelled) return;
 
+      if (best) {
+        console.log("[recipientDetection] Match found:", { caseId: best.caseId, score: best.score });
+      } else {
+        console.log("[recipientDetection] No strong match in history for recipients:", emails);
+      }
       setDetectedFrequentCaseId(best?.caseId || "");
     })();
 
@@ -2281,6 +2410,20 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       return;
     }
 
+    // Filing is disabled — show informational panel
+    if (settings.filingOnSend === "off") {
+      setChatStep("idle");
+      setViewMode("prompt");
+      setPickStep("case");
+      setQuickActions([{ id: "off1", label: "Turn on 'Warn each time'", intent: "enable_filing_on_send" }]);
+      setPrompt({
+        itemId: activeItemId,
+        kind: "unfiled",
+        text: "Auto filing is off. This email will send normally and won't be filed to SingleCase.",
+      });
+      return;
+    }
+
     const recips = Array.isArray(composeRecipientsLive) ? composeRecipientsLive : [];
 
     if (recips.length === 0) {
@@ -2315,24 +2458,20 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
       setChatStep("compose_ready");
 
-      const statusText = autoFileOnSend
-        ? "Email will be filed on send."
-        : "Email will not be filed on send.";
+      const statusText =
+        settings.filingOnSend === "always"
+          ? "When you hit Send, I'll file this email to SingleCase automatically."
+          : "Heads up — when you hit Send, the email goes through normally. Right after, I'll ask if you want to file it.";
 
       console.log("[prompt:set] reason=submail", { submailDetectedCaseId, submailDetectedCaseKey });
       setPrompt({
         itemId: activeItemId,
         kind: "unfiled",
-        text: `I've matched this email to ${submailDetectedCaseKey} · ${submailDetectedCaseName} based on the BCC address. ${statusText}`,
+        text: `${statusText} Case: ${submailDetectedCaseKey} · ${submailDetectedCaseName}.`,
       });
 
       setQuickActions([
         { id: "s1", label: "Select a different case", intent: "pick_another_case" },
-        ...(settings.filingOnSend === "ask" ? [{
-          id: "s2",
-          label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-          intent: "toggle_auto_file" as const,
-        }] : []),
       ]);
       return;
     }
@@ -2386,23 +2525,19 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
       setChatStep("compose_offer_frequent");
 
-      const statusText = autoFileOnSend
-        ? "Email will be filed on send."
-        : "Email will not be filed on send.";
+      const statusText =
+        settings.filingOnSend === "always"
+          ? "When you hit Send, I'll file this email to SingleCase automatically."
+          : "Heads up — when you hit Send, the email goes through normally. Right after, I'll ask if you want to file it.";
 
       setPrompt({
         itemId: activeItemId,
         kind: "unfiled",
-        text: `I've matched this email to ${detectedFrequentCaseName} based on previous interactions. ${statusText}`,
+        text: `${statusText} Prepared case: ${detectedFrequentCaseName}.`,
       });
 
       setQuickActions([
         { id: "a2", label: "Select a different case", intent: "pick_another_case" },
-        ...(settings.filingOnSend === "ask" ? [{
-          id: "a3",
-          label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-          intent: "toggle_auto_file" as const,
-        }] : []),
       ]);
       return;
     }
@@ -2412,18 +2547,15 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
     setChatStep("compose_choose_case");
     setQuickActions([
-      { id: "b1", label: "Select a different case", intent: "pick_another_case" },
-      ...(settings.filingOnSend === "ask" ? [{
-        id: "b2",
-        label: autoFileOnSend ? "Disable auto file on send" : "Enable auto file on send",
-        intent: "toggle_auto_file" as const,
-      }] : []),
+      { id: "b1", label: "Select case", intent: "pick_another_case" },
     ]);
 
     setPrompt({
       itemId: activeItemId,
       kind: "unfiled",
-      text: "Select a case for this draft email.",
+      text: settings.filingOnSend === "always"
+        ? "Select a case to enable auto filing on send."
+        : "Heads up — when you hit Send, the email will send normally. After that, I can file it to SingleCase, but you'll need to pick a case first.",
     });
   }, [
     composeMode,
@@ -2440,11 +2572,19 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     isInternalEmailDetected,
     overrideInternalGuard,
     doNotFileThisEmail,
+    settings.filingOnSend,
   ]);
 
 React.useEffect(() => {
   if (!composeMode) return;
   if (chatStep !== "compose_ready") return;
+
+  // Do not show case-ready prompt when recipients are still empty — Effect A owns
+  // that state and will set chatStep to "compose_wait_recipients". Running here
+  // while recipients are empty causes the two effects to fight each other and
+  // produces visible flickering every polling cycle.
+  const recips = Array.isArray(composeRecipientsLive) ? composeRecipientsLive : [];
+  if (recips.length === 0) return;
 
   // Submail has highest priority — the chat-step effect already set the correct prompt
   if (submailDetectedCaseId) return;
@@ -2500,18 +2640,15 @@ React.useEffect(() => {
   // DO NOT clear actions here, this is where user needs them
   setQuickActions([
     { id: "c1", label: "Select a different case", intent: "pick_another_case" },
-    ...(settings.filingOnSend === "ask" ? [{
-      id: "c2",
-      label: autoFileOnSend ? "Auto file on send: Enabled" : "Auto file on send: Disabled",
-      intent: "toggle_auto_file" as const,
-    }] : []),
   ]);
 
   console.log("[prompt:set] reason=compose_ready/frequent", { selectedCaseId, chatStep });
   setPrompt({
     itemId: activeItemId,
     kind: "unfiled",
-    text: `I've matched this email to ${name} based on previous interactions.`,
+    text: settings.filingOnSend === "always"
+      ? `Auto filing is on. When you hit Send, I'll file this email to SingleCase automatically. Case: ${name}.`
+      : `Heads up — when you hit Send, I'll let the email go through as normal. Prepared case: ${name}.`,
   });
 }, [
   composeMode,
@@ -2528,6 +2665,30 @@ React.useEffect(() => {
   settings.filingOnSend,
 ]);
 
+  // Check for a pending filing confirmation left by the ItemSend handler (ask mode)
+  React.useEffect(() => {
+    if (!composeMode) {
+      // In read mode, check if there's a pending filing for the current item
+      void (async () => {
+        try {
+          const raw = await getStored("sc_pending_filing");
+          if (!raw) { setPendingFiling(null); return; }
+          const parsed = JSON.parse(raw);
+          if (!parsed?.caseId) { setPendingFiling(null); return; }
+          setPendingFiling({
+            caseId: String(parsed.caseId || ""),
+            subject: String(parsed.subject || ""),
+            conversationId: String(parsed.conversationId || ""),
+            sentAt: String(parsed.sentAt || ""),
+          });
+        } catch {
+          setPendingFiling(null);
+        }
+      })();
+    } else {
+      setPendingFiling(null);
+    }
+  }, [composeMode, activeItemId]);
 
   const evaluateItem = React.useCallback(async (itemKey: string) => {
     try {
@@ -3125,11 +3286,38 @@ await evaluateItem(nextStoreKey);
 
 const handleQuickAction = React.useCallback((intent) => {
   console.log("[handleQuickAction] enter", intent);
+
+  if (intent === "enable_filing_on_send") {
+    onChangeSettings((prev) => ({ ...prev, filingOnSend: "warn" }));
+    return;
+  }
+
+  if (intent === "confirm_file_now") {
+    if (!pendingFiling) return;
+    const caseId = pendingFiling.caseId;
+    void removeStored("sc_pending_filing");
+    setPendingFiling(null);
+    setSelectedCaseId(caseId);
+    setSelectedSource("manual");
+    // Use the ref so we don't create a circular dep with doSubmit
+    void doSubmitOverrideRef.current?.({ caseId });
+    return;
+  }
+
+  if (intent === "skip_pending_filing") {
+    void removeStored("sc_pending_filing");
+    setPendingFiling(null);
+    return;
+  }
+
       if (intent === "toggle_auto_file") {
   setAutoFileUserSet(true);
 
   setAutoFileOnSend((v) => {
     const next = !v;
+
+    // Persist per-draft choice so it survives closing and reopening the draft
+    if (storeKey) setDraftAutoFile(storeKey, next);
 
     if (composeMode && selectedCaseId && storeKey) {
       if (next) {
@@ -3148,7 +3336,7 @@ const handleQuickAction = React.useCallback((intent) => {
         a.intent === "toggle_auto_file"
           ? {
               ...a,
-              label: next ? "Auto-file on send: On" : "Auto-file on send: Off",
+              label: next ? "Disable auto file on send" : "Enable auto file on send",
             }
           : a
       )
@@ -3453,6 +3641,8 @@ setSelectedSource("manual"); // important
       alreadyFiledDocumentId,
       alreadyFiledCaseId,
       workspaceHost,
+      pendingFiling,
+      onChangeSettings,
     ]
   );
 
@@ -3936,10 +4126,14 @@ setSelectedSource("manual"); // important
     ]
   );
 
+  const doSubmitOverrideRef = React.useRef<((override: { caseId: string }) => Promise<void>) | null>(null);
+
   React.useEffect(() => {
     doSubmitRef.current = () => doSubmit();
+    doSubmitOverrideRef.current = (override) => doSubmit(override);
     return () => {
       doSubmitRef.current = null;
+      doSubmitOverrideRef.current = null;
     };
   }, [doSubmit]);
 
@@ -3957,7 +4151,6 @@ setSelectedSource("manual"); // important
           {submitError}
         </div>
       ) : null}
-
       {isItemLoading ? (
         <div className="mwFiledSummaryCard">
           <div className="mwChatBubble">
@@ -3970,16 +4163,17 @@ setSelectedSource("manual"); // important
           </div>
         </div>
       ) : showFiledSummary ? (
-        <FiledSummaryCard
-          caseUrl={caseUrl}
-          filedCaseName={filedCaseName}
-          sentPill={sentPill}
-          documentsToShow={documentsToShow}
-          workspaceHost={workspaceHost}
-          onOpenUrl={openUrl}
-          buildLiveEditUrl={buildLiveEditUrl}
-          fmtCs={fmtCs}
-        />
+     <FiledSummaryCard
+  caseUrl={caseUrl}
+  filedCaseName={filedCaseName}
+  sentPill={sentPill}
+  documentsToShow={documentsToShow}
+  workspaceHost={workspaceHost}
+  onOpenUrl={openUrl}
+  buildLiveEditUrl={buildLiveEditUrl}
+  fmtCs={fmtCs}
+  onLockedDocAttempt={(msg) => setLockedDocAlert(msg)}
+/>
       ) : null}
 
       <div className="mwChatCard">
@@ -3995,11 +4189,41 @@ setSelectedSource("manual"); // important
             </div>
           ) : null}
 
+          {pendingFiling ? (
+            <div className="mwPendingFilingBanner">
+              <div className="mwPendingFilingText">
+                Email sent. File it to SingleCase now?
+                {pendingFiling.subject ? ` "${pendingFiling.subject}"` : ""}
+              </div>
+              <div className="mwPendingFilingHelper">
+                Nothing will be filed unless you choose File now.
+              </div>
+              <div className="mwPendingFilingActions">
+                <button
+                  className="mwPendingFilingBtn mwPendingFilingBtn--primary"
+                  onClick={() => handleQuickAction("confirm_file_now")}
+                >
+                  File now
+                </button>
+                <button
+                  className="mwPendingFilingBtn mwPendingFilingBtn--secondary"
+                  onClick={() => handleQuickAction("skip_pending_filing")}
+                >
+                  Skip
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {viewMode === "prompt" && (prompt.kind !== "filed" || !showFiledSummary) ? (
             <PromptBubble
               text={prompt.text}
               isUnfiled={prompt.kind === "unfiled" || prompt.kind === "deleted"}
-              tone={(composeMode && selectedCaseId && autoFileOnSend) || (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) ? "success" : "default"}
+              tone={
+                composeMode && settings.filingOnSend === "warn" ? "warning" :
+                (composeMode && settings.filingOnSend === "always" && Boolean(selectedCaseId)) || (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) ? "success" :
+                "default"
+              }
              actions={(quickActions || []).map((a) => ({
     id: a.id,
     label: a.label,
@@ -4042,7 +4266,9 @@ setSelectedSource("manual"); // important
                     setPrompt({
                       itemId: storeKey || activeItemId,
                       kind: "unfiled",
-                      text: `OK. Click File Now. Then you can send the email normally. Case: ${name}.`,
+                      text: settings.filingOnSend === "always"
+                        ? `Auto filing is on. When you hit Send, I'll file this email to SingleCase automatically. Case: ${name}.`
+                        : `Heads up — when you hit Send, I'll let the email go through as normal. Prepared case: ${name}.`,
                     });
                     return;
                   }
@@ -4084,7 +4310,7 @@ setSelectedSource("manual"); // important
 
           {viewMode === "sent" ? (
             <>
-              {showFiledSummary ? (
+              {showFiledSummary && !lockedDocAlert ? (
                 <div className="mwChatBubble">Done</div>
               ) : (
                 <PromptBubble
@@ -4096,6 +4322,12 @@ setSelectedSource("manual"); // important
               )}
               <div ref={chatEndRef} />
             </>
+          ) : null}
+
+          {lockedDocAlert ? (
+            <div className="mwChatBubbleWarning">
+              ⚠ {lockedDocAlert}
+            </div>
           ) : null}
 
           <div ref={chatEndRef} />

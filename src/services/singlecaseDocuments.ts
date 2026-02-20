@@ -93,12 +93,27 @@ async function getToken(): Promise<string> {
   throw new Error("Missing auth token.");
 }
 
+class DocumentLockedError extends Error {
+  readonly isLockError = true;
+  constructor(message: string) {
+    super(message);
+    this.name = "DocumentLockedError";
+  }
+}
+
+export function isDocumentLockedError(e: unknown): boolean {
+  return (
+    e instanceof DocumentLockedError ||
+    (typeof e === "object" && e !== null && (e as any).isLockError === true)
+  );
+}
+
 async function expectJson(res: Response, errorPrefix: string) {
   const text = await res.text().catch(() => "");
 
   if (!res.ok) {
     if (res.status === 423) {
-      throw new Error(
+      throw new DocumentLockedError(
         "Dokument je momentálně uzamčen. Někdo jej právě upravuje. Počkejte prosím, než se dokument odemkne, a zkuste to znovu."
       );
     }
@@ -138,6 +153,73 @@ export async function getDocumentMeta(documentId: string | number): Promise<Docu
     name: String((json as any).name || ""),
     case_id: String((json as any).case_id || ""),
   };
+}
+
+/**
+ * Returns the full raw JSON from the document endpoint (no field stripping).
+ * Use this when you need lock info or other fields beyond the basic DocumentMeta shape.
+ */
+export async function getDocumentMetaRaw(documentId: string | number): Promise<any | null> {
+  const token = await getToken();
+
+  const base = await resolveApiBaseUrl();
+  const url = `${base}/documents/${encodeURIComponent(String(documentId))}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authentication: token,
+      "Content-Type": "application/json",
+      "Accept-Encoding": "identity",
+    },
+  });
+
+  if (res.status === 404) return null;
+
+  return expectJson(res, "Get document failed");
+}
+
+/**
+ * Probes whether a document is currently locked by sending a minimal POST to
+ * the version upload endpoint. The server runs lock validation before body
+ * validation, so a locked document returns HTTP 423 even with an empty body.
+ * Returns true only on 423; any other response (400, 422, network error, etc.)
+ * is treated as "not locked" so we never block the user incorrectly.
+ */
+export async function probeDocumentLock(documentId: string | number): Promise<boolean> {
+  const token = await getToken();
+  const base = await resolveApiBaseUrl();
+  const id = encodeURIComponent(String(documentId));
+
+  const candidates = [
+    `${base}/documents/${id}/version`,
+    `${base}/documents/${id}/versions`,
+  ];
+
+  for (const url of candidates) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authentication: token,
+          "Accept-Encoding": "identity",
+        },
+        body: JSON.stringify({ name: "probe", mime_type: "text/plain", data_base64: "" }),
+      });
+    } catch {
+      return false; // Network error → don't block
+    }
+
+    await res.text().catch(() => ""); // Drain body
+
+    if (res.status === 423) return true;
+    if (res.status === 404 || res.status === 405) continue; // Try next endpoint
+    return false; // 400/422/etc → body rejected (not a lock error)
+  }
+
+  return false;
 }
 
 export async function uploadDocumentVersion(params: {

@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS: AddinSettings = {
   rememberLastCase: true,
   includeAttachments: true,
   duplicates: "warn",
-  filingOnSend: "ask",
+  filingOnSend: "warn",
   internalEmailHandling: "treatNormally",
 };
 

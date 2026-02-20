@@ -5,6 +5,7 @@ import { getStored, setStored } from "../utils/storage";
 import { STORAGE_KEYS } from "../utils/constants";
 import { uploadDocumentToCase, uploadDocumentVersion, findDocumentBySubject } from "../services/singlecaseDocuments";
 import { cacheFiledEmail, cacheFiledEmailBySubject } from "../utils/filedCache";
+import { recordRecipientsFiledToCase } from "../utils/recipientHistory";
 
 type SendEvent = Office.AddinCommands.Event;
 
@@ -153,6 +154,7 @@ async function readIntentAny(
   itemKey: string;
   caseId: string;
   autoFileOnSend: boolean;
+  filingOnSend: string;
   baseCaseId?: string;
   baseEmailDocId?: string;
 } | null> {
@@ -186,6 +188,7 @@ async function readIntentAny(
       const obj = JSON.parse(String(raw));
       const caseId = String(obj?.caseId || "").trim();
       const autoFileOnSend = Boolean(obj?.autoFileOnSend);
+      const filingOnSend = String(obj?.filingOnSend || "").trim();
       const baseCaseId = String(obj?.baseCaseId || "").trim();
       const baseEmailDocId = String(obj?.baseEmailDocId || "").trim();
 
@@ -195,6 +198,7 @@ async function readIntentAny(
         itemKey: k,
         caseId,
         autoFileOnSend,
+        filingOnSend,
         hasBase: !!(baseCaseId && baseEmailDocId),
       });
 
@@ -202,6 +206,7 @@ async function readIntentAny(
         itemKey: k,
         caseId,
         autoFileOnSend,
+        filingOnSend,
         baseCaseId: baseCaseId || undefined,
         baseEmailDocId: baseEmailDocId || undefined,
       };
@@ -261,6 +266,44 @@ async function getBodyTextRuntime(): Promise<string> {
   });
 
   return String(text || "");
+}
+
+async function getRecipientsRuntime(): Promise<string[]> {
+  const item = Office.context.mailbox.item as any;
+  if (!item) return [];
+
+  const readField = (field: any): Promise<string[]> => {
+    if (!field) return Promise.resolve([]);
+    if (typeof field.getAsync === "function") {
+      return new Promise((resolve) => {
+        field.getAsync((res: any) => {
+          if (res?.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(
+              (res.value || [])
+                .map((r: any) => String(r?.emailAddress || "").toLowerCase().trim())
+                .filter(Boolean)
+            );
+          } else {
+            resolve([]);
+          }
+        });
+      });
+    }
+    if (Array.isArray(field)) {
+      return Promise.resolve(
+        field.map((r: any) => String(r?.emailAddress || "").toLowerCase().trim()).filter(Boolean)
+      );
+    }
+    return Promise.resolve([]);
+  };
+
+  const [to, cc, bcc] = await Promise.all([
+    readField(item.to),
+    readField(item.cc),
+    readField(item.bcc),
+  ]);
+
+  return Array.from(new Set([...to, ...cc, ...bcc]));
 }
 
 async function showInfo(message: string) {
@@ -333,8 +376,38 @@ export async function onMessageSendHandler(event: SendEvent) {
       foundUnderKey: intent?.itemKey,
     });
 
-    if (!intent?.autoFileOnSend || !intent.caseId) {
-      console.log("[onMessageSendHandler] No auto-file intent or case ID, skipping");
+    if (!intent?.caseId) {
+      console.log("[onMessageSendHandler] No case ID in intent, skipping");
+      finish(true);
+      return;
+    }
+
+    // Warn mode (renamed from "ask" in v2): store pending filing for post-send confirmation
+    // Accept both "warn" and legacy "ask" values for backward compatibility
+    if (intent.filingOnSend === "warn" || intent.filingOnSend === "ask") {
+      console.log("[onMessageSendHandler] warn mode — storing pending filing intent without filing");
+      try {
+        const subjectForPending = await withTimeout(getSubjectRuntime(), T_SUBJECT_MS);
+        const convForPending = getConversationIdSafe();
+        await setStored("sc_pending_filing", JSON.stringify({
+          caseId: intent.caseId,
+          subject: subjectForPending,
+          conversationId: convForPending,
+          sentAt: new Date().toISOString(),
+        }));
+        console.log("[onMessageSendHandler] Pending filing stored", { caseId: intent.caseId });
+      } catch (e) {
+        console.warn("[onMessageSendHandler] Failed to store pending filing:", e);
+      }
+      await showInfo("SingleCase: otevřete panel a potvrďte zařazení.");
+      finish(true);
+      return;
+    }
+
+    // Off mode or no autoFileOnSend (legacy): skip filing
+    const shouldFile = intent.filingOnSend === "always" || intent.autoFileOnSend;
+    if (!shouldFile) {
+      console.log("[onMessageSendHandler] Filing not requested (mode=off or autoFileOnSend=false), skipping");
       finish(true);
       return;
     }
@@ -520,6 +593,17 @@ export async function onMessageSendHandler(event: SendEvent) {
 
       console.log("[onMessageSendHandler] Version uploaded successfully");
 
+      // Record recipient history for future compose preselection
+      try {
+        const recipients = await getRecipientsRuntime();
+        if (recipients.length > 0) {
+          await recordRecipientsFiledToCase(recipients, intent.caseId);
+          console.log("[onMessageSendHandler] Recipient history recorded (version)", { count: recipients.length });
+        }
+      } catch (e) {
+        console.warn("[onMessageSendHandler] Failed to record recipient history:", e);
+      }
+
       // Update filed context with the existing document ID
       await persistFiledCtx(intent.caseId, existingDoc.id);
 
@@ -568,6 +652,17 @@ export async function onMessageSendHandler(event: SendEvent) {
       console.log("[onMessageSendHandler] Created docId", { createdDocId, rawResponse: created });
 
       if (createdDocId) {
+        // Record recipient history for future compose preselection
+        try {
+          const recipients = await getRecipientsRuntime();
+          if (recipients.length > 0) {
+            await recordRecipientsFiledToCase(recipients, intent.caseId);
+            console.log("[onMessageSendHandler] Recipient history recorded (new doc)", { count: recipients.length });
+          }
+        } catch (e) {
+          console.warn("[onMessageSendHandler] Failed to record recipient history:", e);
+        }
+
         await persistFiledCtx(intent.caseId, createdDocId);
 
         // NEW: Cache filed email for "already filed" detection

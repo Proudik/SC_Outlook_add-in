@@ -2,7 +2,7 @@ import * as React from "react";
 
 export type CaseListScope = "favourites" | "all";
 export type DuplicatesHandling = "off" | "warn" | "block";
-export type FilingOnSend = "off" | "ask" | "always";
+export type FilingOnSend = "off" | "warn" | "always";
 export type InternalEmailHandling = "treatNormally" | "defaultToLastCase" | "doNotSuggest";
 
 export type AddinSettings = {
@@ -177,7 +177,11 @@ export default function SettingsModal(props: Props) {
               <div>
                 <div style={label}>File on send</div>
                 <div style={help}>
-                  What happens when you send a composed email.
+                  {settings.filingOnSend === "warn"
+                    ? "Shows a warning before you send. After sending, you can choose whether to file to SingleCase."
+                    : settings.filingOnSend === "always"
+                    ? "Files this email to SingleCase automatically when you press Send."
+                    : "Auto filing is disabled. Emails will not be filed when you press Send."}
                 </div>
               </div>
               <select
@@ -188,7 +192,7 @@ export default function SettingsModal(props: Props) {
                 }
               >
                 <option value="off">Off</option>
-                <option value="ask">Ask each time</option>
+                <option value="warn">Warn each time</option>
                 <option value="always">Always file</option>
               </select>
             </div>
