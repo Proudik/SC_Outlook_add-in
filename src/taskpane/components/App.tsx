@@ -18,8 +18,8 @@ interface AppProps {
 
 const DEFAULT_SETTINGS: AddinSettings = {
   caseListScope: "all",
-  rememberLastCase: true,
-  includeAttachments: true,
+  rememberLastCase: false,
+
   duplicates: "warn",
   filingOnSend: "warn",
   internalEmailHandling: "treatNormally",

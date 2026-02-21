@@ -27,6 +27,7 @@ import {
   uploadDocumentToCase,
   uploadDocumentVersion,
   getDocumentMeta,
+  checkDuplicateFilename,
 } from "../../../services/singlecaseDocuments";
 import { recordSuccessfulAttach } from "../../../utils/suggestionStorage";
 import { getStored, setStored, removeStored } from "../../../utils/storage";
@@ -112,8 +113,6 @@ type QuickAction = {
     | "select_attachments"
     | "cancel_compose"
     | "view_in_singlecase"
-    | "internal_guard_file_anyway"
-    | "internal_guard_dont_file"
     | "file_manually"
     | "show_suggestions"
     | "refresh_filing_status"
@@ -313,6 +312,7 @@ async function saveComposeIntent(params: {
   caseId: string;
   autoFileOnSend: boolean;
   filingOnSend?: string;
+  duplicates?: string;
   baseCaseId?: string;
   baseEmailDocId?: string;
 }) {
@@ -321,6 +321,7 @@ async function saveComposeIntent(params: {
       caseId: params.caseId,
       autoFileOnSend: params.autoFileOnSend,
       filingOnSend: String(params.filingOnSend || ""),
+      duplicates: String(params.duplicates || ""),
       baseCaseId: String(params.baseCaseId || "").trim(),
       baseEmailDocId: String(params.baseEmailDocId || "").trim(),
     });
@@ -1146,6 +1147,25 @@ function getStoreKey(activeItemKey: string, activeItemId: string, composeMode: b
 }
 
 
+// ── Internal email handling decision ─────────────────────────────────────────
+// Single source of truth: determines whether internal-email suppression is
+// active for the current email. All logic branches read from this function.
+function getInternalHandlingDecision({
+  internalHandlingEnabled,
+  isInternal,
+}: {
+  internalHandlingEnabled: boolean;
+  isInternal: boolean;
+}): { suppressSuggestions: boolean; showInternalBanner: boolean } {
+  const active = internalHandlingEnabled && isInternal;
+  console.log(
+    "[InternalEmail] enabled:", internalHandlingEnabled,
+    "detected:", isInternal,
+    "suppressSuggestions:", active
+  );
+  return { suppressSuggestions: active, showInternalBanner: active };
+}
+
 // MainWorkspace.tsx (part 3 of 5)
 
 export default function MainWorkspace({ email, token, settings, onChangeSettings }: Props) {
@@ -1184,7 +1204,7 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
 
   const [selectedCaseId, setSelectedCaseId] = React.useState("");
   const [selectedSource, setSelectedSource] = React.useState<
-    "" | "remembered" | "suggested" | "manual"
+    "" | "remembered" | "last_case" | "suggested" | "manual"
   >("");
   const [forceUnfiledLabel, setForceUnfiledLabel] = React.useState(false);
 
@@ -1192,10 +1212,18 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
   const [contentBasedSuggestions, setContentBasedSuggestions] = React.useState<any[]>([]);
   const [isLoadingContentSuggestions] = React.useState(false);
 
-  // Internal email guardrail (prevent filing internal-only emails)
+  // Internal email detection state
   const [isInternalEmailDetected, setIsInternalEmailDetected] = React.useState(false);
-  const [overrideInternalGuard, setOverrideInternalGuard] = React.useState(false);
-  const [doNotFileThisEmail, setDoNotFileThisEmail] = React.useState(false);
+
+  // Derived: single source of truth for internal-email suppression
+  const { suppressSuggestions: suppressInternalSuggestions } = React.useMemo(
+    () =>
+      getInternalHandlingDecision({
+        internalHandlingEnabled: settings.internalEmailHandling === "doNotSuggest",
+        isInternal: isInternalEmailDetected,
+      }),
+    [settings.internalEmailHandling, isInternalEmailDetected]
+  );
 
   const [sentPill, setSentPill] = React.useState<SentPillData | null>(null);
   const [workspaceHost, setWorkspaceHost] = React.useState<string>("");
@@ -1652,6 +1680,7 @@ const attachmentIds = React.useMemo(
         caseId: selectedCaseId,
         autoFileOnSend,
         filingOnSend: settings.filingOnSend,
+        duplicates: settings.duplicates,
         baseCaseId: shouldVersion ? replyBaseCaseId : "",
         baseEmailDocId: shouldVersion ? replyBaseEmailDocId : "",
       });
@@ -1979,40 +2008,37 @@ const attachmentIds = React.useMemo(
     setIsInternalEmailDetected(isInternal);
 
     // Immediately update a "Checking…" or generic unfiled prompt to reflect internal status
+    const showBanner = isInternal && settings.internalEmailHandling === "doNotSuggest";
     setPrompt(prev => {
       if (prev.kind === "unfiled" && (prev.text === "Checking..." || prev.text.includes("isn't filed yet"))) {
         return {
           ...prev,
-          text: isInternal
+          text: showBanner
             ? "This looks like an internal email."
             : "This email isn't filed yet. Would you like me to file it to a case?",
         };
       }
       return prev;
     });
-  }, [composeMode, activeItemId, activeItemKey]);
+  }, [composeMode, activeItemId, activeItemKey, settings.internalEmailHandling]);
 
-  // Effect: When an internal email is detected and the setting is "defaultToLastCase",
-  // auto-select the last remembered case (read mode only, skipped if user already picked one).
+  // Effect: Preselect the last chosen case in read mode when "Remember last selected case" is ON.
+  // Priority: below submail/frequent-case (those are compose-only) and below internal-email
+  // defaultToLastCase handling. Only fires when no case has been selected yet (selectedSource === "").
   React.useEffect(() => {
-    if (composeMode || !isInternalEmailDetected) return;
-    if (settings.internalEmailHandling !== "defaultToLastCase") return;
+    if (composeMode) return;
+    if (!settings.rememberLastCase) return;
     if (selectedSource !== "") return; // don't override any existing selection
 
     const lastCase = loadLastCaseId();
     if (!lastCase) return;
 
-    setSelectedCaseId(lastCase);
-    setSelectedSource("remembered");
-  }, [composeMode, isInternalEmailDetected, settings.internalEmailHandling, selectedSource]);
+    // Only apply if the case still exists in the loaded cases list
+    if (!(cases || []).some((c: any) => String(c?.id) === String(lastCase))) return;
 
-  // Effect: Reset internal guard overrides when email item changes
-  React.useEffect(() => {
-    // Reset overrides when switching to a different email
-    setOverrideInternalGuard(false);
-    setDoNotFileThisEmail(false);
-    console.log("[internal-guard] Reset overrides for new email item:", activeItemKey);
-  }, [activeItemKey]);
+    setSelectedCaseId(lastCase);
+    setSelectedSource("last_case");
+  }, [composeMode, settings.rememberLastCase, selectedSource, cases]);
 
   // Effect: Check if email is already filed (read mode only, using conversationId + subject)
   React.useEffect(() => {
@@ -2353,18 +2379,21 @@ const attachmentIds = React.useMemo(
       if (cancelled) return;
     }
 
-    // 2) Fallback to last filed case only after recipients exist
-    // DISABLED: Auto-selection of last filed case
-    // if (!remembered && hasRecipients) {
-    //   remembered = await loadLastFiledCase();
-    //   rememberedSource = remembered ? "last" : "";
-    //   if (cancelled) return;
-    // }
+    // 2) Fallback to last selected case (if setting is on, no frequent-case suggestion yet,
+    //    and there is at least one recipient to confirm this isn't a completely blank draft).
+    if (!remembered && settings.rememberLastCase && hasRecipients && !detectedFrequentCaseId) {
+      const lastCase = loadLastCaseId();
+      if (lastCase && (cases || []).some((c: any) => String(c?.id) === String(lastCase))) {
+        remembered = lastCase;
+        rememberedSource = "last";
+      }
+      if (cancelled) return;
+    }
 
     if (!remembered) return;
 
     setSelectedCaseId(remembered);
-    setSelectedSource("remembered");
+    setSelectedSource(rememberedSource === "last" ? "last_case" : "remembered");
 if (!autoFileUserSet) setAutoFileOnSend(true);
     setChatStep("compose_ready");
 
@@ -2393,6 +2422,8 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
   composeRecipientsLive,
   subjectText,
   suggestBodySnippet,
+  detectedFrequentCaseId,
+  settings.rememberLastCase,
 ]);
 
   const detectedFrequentCaseName = React.useMemo(() => {
@@ -2476,28 +2507,9 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       return;
     }
 
-    // PRIORITY 2: Internal email guard.
-    // Must be checked BEFORE frequent case / selectedCaseId so it fires even
-    // when no case is selected yet (chatStep would otherwise land on
-    // "compose_choose_case" which the old guard effect never watched).
-    if (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail && settings.internalEmailHandling === "treatNormally") {
-      console.log("[compose-flow] Internal email detected — showing guard prompt");
-      setChatStep("compose_ready"); // allows compose_ready effect to keep guard active
-      setViewMode("prompt");
-      setPickStep("case");
-      setQuickActions([
-        { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
-      ]);
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: "This looks like an internal email.",
-      });
-      return;
-    }
-
-    // PRIORITY 3: User has explicitly said "don't file this email"
-    if (doNotFileThisEmail) {
+    // PRIORITY 2: Internal email suppression (setting ON + all recipients internal).
+    if (suppressInternalSuggestions) {
+      console.log("[compose-flow] Internal email suppressed — showing info banner");
       setChatStep("compose_ready");
       setViewMode("prompt");
       setPickStep("case");
@@ -2505,7 +2517,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       setPrompt({
         itemId: activeItemId,
         kind: "unfiled",
-        text: "No problem. I'll hide suggestions for this email, but you can still file it anytime.",
+        text: "This looks like an internal email. You can still file it manually if needed.",
       });
       return;
     }
@@ -2569,9 +2581,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     submailDetectedCaseKey,
     submailDetectedCaseName,
     storeKey,
-    isInternalEmailDetected,
-    overrideInternalGuard,
-    doNotFileThisEmail,
+    suppressInternalSuggestions,
     settings.filingOnSend,
   ]);
 
@@ -2589,43 +2599,8 @@ React.useEffect(() => {
   // Submail has highest priority — the chat-step effect already set the correct prompt
   if (submailDetectedCaseId) return;
 
-  // Check for internal email guard FIRST (highest priority)
-  const shouldShowInternalGuard =
-    isInternalEmailDetected &&
-    !overrideInternalGuard &&
-    !doNotFileThisEmail &&
-    settings.internalEmailHandling === "treatNormally";
-
-  if (shouldShowInternalGuard) {
-    console.log("[internal-guard] Showing internal email warning instead of suggestions");
-    setViewMode("prompt");
-    setPickStep("case");
-    setQuickActions([
-      { id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" },
-    ]);
-    setPrompt({
-      itemId: activeItemId,
-      kind: "unfiled",
-      text: "This looks like an internal email.",
-    });
-    return;
-  }
-
-  // Check for "Don't file" state
-  if (doNotFileThisEmail) {
-    console.log("[internal-guard] Email marked as do-not-file, showing confirmation");
-    setViewMode("prompt");
-    setPickStep("case");
-    setQuickActions([
-      { id: "fm1", label: "File manually", intent: "file_manually" },
-    ]);
-    setPrompt({
-      itemId: activeItemId,
-      kind: "unfiled",
-      text: "No problem. I'll hide suggestions for this email, but you can still file it anytime.",
-    });
-    return;
-  }
+  // Internal email suppression: compose-flow already set the correct prompt; bail here too.
+  if (suppressInternalSuggestions) return;
 
   // Normal flow: show case selection if selectedCaseId exists
   if (!selectedCaseId) return;
@@ -2657,11 +2632,8 @@ React.useEffect(() => {
   cases,
   activeItemId,
   autoFileOnSend,
-  isInternalEmailDetected,
-  overrideInternalGuard,
-  doNotFileThisEmail,
+  suppressInternalSuggestions,
   submailDetectedCaseId,
-  settings.internalEmailHandling,
   settings.filingOnSend,
 ]);
 
@@ -3268,22 +3240,6 @@ await evaluateItem(nextStoreKey);
     }
   };
 
-  // Internal email guard handlers
-  const handleFileAnyway = React.useCallback(() => {
-    console.log("[internal-guard] User clicked 'File anyway', overriding guard");
-    setOverrideInternalGuard(true);
-    setDoNotFileThisEmail(false);
-  }, []);
-
-  const handleDontFile = React.useCallback(() => {
-    console.log("[internal-guard] User clicked 'Don't file', marking email as do-not-file");
-    setDoNotFileThisEmail(true);
-    setOverrideInternalGuard(false);
-    // Clear any case selection
-    setSelectedCaseId("");
-    setSelectedSource("");
-  }, []);
-
 const handleQuickAction = React.useCallback((intent) => {
   console.log("[handleQuickAction] enter", intent);
 
@@ -3348,18 +3304,7 @@ const handleQuickAction = React.useCallback((intent) => {
   return;
 }
 
-      if (intent === "internal_guard_file_anyway") {
-  handleFileAnyway();
-  return;
-}
-
-      if (intent === "internal_guard_dont_file") {
-  handleDontFile();
-  return;
-}
-
       if (intent === "file_manually") {
-  if (isInternalEmailDetected) setOverrideInternalGuard(true);
   setViewMode("pickCase");
   setPickStep("case");
   setSelectedCaseId("");
@@ -3374,18 +3319,6 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
 
-  // For internal emails with "treatNormally", show the guard prompt
-  if (isInternalEmailDetected && settings.internalEmailHandling === "treatNormally") {
-    setQuickActions([{ id: "ig1", label: "File anyway", intent: "internal_guard_file_anyway" }]);
-    setPrompt({
-      itemId: activeItemId,
-      kind: "unfiled",
-      text: "This looks like an internal email.",
-    });
-    return;
-  }
-
-  // For normal emails, go directly to case picker
   setViewMode("pickCase");
   setPickStep("case");
   setSelectedCaseId("");
@@ -3653,19 +3586,6 @@ setSelectedSource("manual"); // important
       const caseId = String(override?.caseId || selectedCaseId || "").trim();
       if (!caseId) return;
 
-      // Check internal email guard
-      if (doNotFileThisEmail) {
-        console.log("[doSubmit] Email marked as do-not-file, skipping filing");
-        setSubmitError("Email will not be filed (marked as internal).");
-        return;
-      }
-
-      if (isInternalEmailDetected && !overrideInternalGuard && settings.internalEmailHandling === "treatNormally") {
-        console.log("[doSubmit] Internal email detected without override, skipping filing");
-        setSubmitError("Internal email will not be filed. Click 'File anyway' to override.");
-        return;
-      }
-
       // ── Duplicate detection ──────────────────────────────────────────────────
       // Use a content fingerprint (subject + sender + body) so that two separate
       // emails with identical content are caught, even though their itemIds and
@@ -3738,6 +3658,51 @@ setSelectedSource("manual"); // important
         // populated if the user filed quickly after selecting the email.
         const freshSubject = await getOutlookSubjectAsync().catch(() => "");
         const baseName = safeFileName(freshSubject || subjectText || "email");
+
+        // ── Server-side filename duplicate check ────────────────────────────
+        // Runs after baseName is known but before any upload.
+        // `duplicateFilingWarning` being true means the user already confirmed
+        // via the "Continue Filing" button — skip and proceed.
+        if (settings.duplicates !== "off" && !duplicateFilingWarning && !allowRefilingOverride) {
+          let serverDupName = "";
+          try {
+            if (filingMode !== "attachments") {
+              if (await checkDuplicateFilename(caseId, `${baseName}.eml`)) {
+                serverDupName = `${baseName}.eml`;
+              }
+            }
+            if (!serverDupName) {
+              for (const attId of selectedAttachments) {
+                const meta = attachmentsLite.find((a) => String(a.id) === String(attId));
+                if (meta?.name && await checkDuplicateFilename(caseId, meta.name)) {
+                  serverDupName = meta.name;
+                  break;
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("[doSubmit] Server duplicate check failed, proceeding:", e);
+          }
+
+          if (serverDupName) {
+            console.log("[doSubmit] Server duplicate found:", serverDupName, settings.duplicates);
+            setIsSubmitting(false);
+            setViewMode(composeMode ? "prompt" : "pickCase");
+            if (settings.duplicates === "block") {
+              setSubmitError(
+                `A document named "${serverDupName}" already exists in this case. Filing has been prevented.`
+              );
+            } else {
+              // warn — show confirm/cancel UI
+              setDuplicateFilingWarning(true);
+              setSubmitError(
+                `A document named "${serverDupName}" already exists in this case. Do you want to upload it again?`
+              );
+            }
+            return;
+          }
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         const emailText =
           `From: ${fromName} <${fromEmail}>\r\n` +
@@ -4151,6 +4116,27 @@ setSelectedSource("manual"); // important
           {submitError}
         </div>
       ) : null}
+      {duplicateFilingWarning ? (
+        <div className="mwQuickActions">
+          <button
+            type="button"
+            className="mwQuickAction"
+            onClick={() => void doSubmit()}
+          >
+            Continue filing
+          </button>
+          <button
+            type="button"
+            className="mwQuickAction"
+            onClick={() => {
+              setDuplicateFilingWarning(false);
+              setSubmitError("");
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      ) : null}
       {isItemLoading ? (
         <div className="mwFiledSummaryCard">
           <div className="mwChatBubble">
@@ -4221,7 +4207,7 @@ setSelectedSource("manual"); // important
               isUnfiled={prompt.kind === "unfiled" || prompt.kind === "deleted"}
               tone={
                 composeMode && settings.filingOnSend === "warn" ? "warning" :
-                (composeMode && settings.filingOnSend === "always" && Boolean(selectedCaseId)) || (isInternalEmailDetected && !overrideInternalGuard && !doNotFileThisEmail) ? "success" :
+                composeMode && settings.filingOnSend === "always" && Boolean(selectedCaseId) ? "success" :
                 "default"
               }
              actions={(quickActions || []).map((a) => ({
@@ -4336,28 +4322,8 @@ setSelectedSource("manual"); // important
         {/* RECEIVED MODE ACTIONS (hidden when dismissed — dismissal shows its own inline actions) */}
         {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !dismissedRef.current.has(prompt.itemId) ? (
           <div className="mwActionsBar">
-            {/* For internal emails, show only "File anyway" button */}
-            {isInternalEmailDetected && !overrideInternalGuard ? (
-              <button
-                className="mwPrimaryBtn"
-                type="button"
-                onClick={() => {
-                  // Override guard and proceed to file
-                  setOverrideInternalGuard(true);
-                  setDoNotFileThisEmail(false);
-                  setViewMode("pickCase");
-                  setPickStep("case");
-                  setSelectedCaseId("");
-                  setSelectedSource("");
-                  setSelectedAttachments([]);
-                  setIsUploadingNewVersion(false);
-                }}
-              >
-                File anyway
-              </button>
-            ) : (
-              <>
-                {/* For normal emails, show "No" and "Yes, file it" buttons */}
+            <>
+                {/* No / Yes, file it */}
                 <button
                   className="mwGhostBtn"
                   type="button"
@@ -4418,8 +4384,7 @@ setSelectedSource("manual"); // important
                 >
                   Yes, file it
                 </button>
-              </>
-            )}
+            </>
           </div>
         ) : null}
 

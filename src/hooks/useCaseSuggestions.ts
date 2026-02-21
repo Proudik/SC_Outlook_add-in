@@ -5,7 +5,7 @@ import type { CaseSuggestion } from "../utils/caseSuggestionEngine";
 
 type AttachmentLike = { name: string; isInline?: boolean };
 
-type SelectedSource = "" | "remembered" | "suggested" | "manual";
+type SelectedSource = "" | "remembered" | "last_case" | "suggested" | "manual";
 
 export function useCaseSuggestions(params: {
   enabled: boolean;

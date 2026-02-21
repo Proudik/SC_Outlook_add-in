@@ -3,12 +3,12 @@ import * as React from "react";
 export type CaseListScope = "favourites" | "all";
 export type DuplicatesHandling = "off" | "warn" | "block";
 export type FilingOnSend = "off" | "warn" | "always";
-export type InternalEmailHandling = "treatNormally" | "defaultToLastCase" | "doNotSuggest";
+export type InternalEmailHandling = "treatNormally" | "doNotSuggest";
 
 export type AddinSettings = {
   caseListScope: CaseListScope;
   rememberLastCase: boolean;
-  includeAttachments: boolean;
+
   duplicates: DuplicatesHandling;
   filingOnSend: FilingOnSend;
   internalEmailHandling: InternalEmailHandling;
@@ -199,19 +199,6 @@ export default function SettingsModal(props: Props) {
 
             <div style={{ marginTop: 10, ...row }}>
               <div>
-                <div style={label}>Include attachments</div>
-                <div style={help}>Allow selecting attachments to send to SingleCase.</div>
-              </div>
-              <input
-                style={toggle}
-                type="checkbox"
-                checked={settings.includeAttachments}
-                onChange={(e) => onChange({ ...settings, includeAttachments: e.target.checked })}
-              />
-            </div>
-
-            <div style={{ marginTop: 10, ...row }}>
-              <div>
                 <div style={label}>Duplicate handling</div>
                 <div style={help}>
                   What to do when the same email was already filed to the same case.
@@ -237,23 +224,20 @@ export default function SettingsModal(props: Props) {
               <div>
                 <div style={label}>Internal email handling</div>
                 <div style={help}>
-                  How to handle emails where everyone shares your email domain.
+                  When on, emails where everyone shares your domain show an info message and skip case suggestions.
                 </div>
               </div>
-              <select
-                style={selectStyle}
-                value={settings.internalEmailHandling}
+              <input
+                style={toggle}
+                type="checkbox"
+                checked={settings.internalEmailHandling === "doNotSuggest"}
                 onChange={(e) =>
                   onChange({
                     ...settings,
-                    internalEmailHandling: e.target.value as InternalEmailHandling,
+                    internalEmailHandling: e.target.checked ? "doNotSuggest" : "treatNormally",
                   })
                 }
-              >
-                <option value="treatNormally">Treat normally</option>
-                <option value="defaultToLastCase">Default to last case</option>
-                <option value="doNotSuggest">Do not suggest</option>
-              </select>
+              />
             </div>
           </div>
 

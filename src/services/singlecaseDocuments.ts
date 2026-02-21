@@ -822,6 +822,65 @@ export async function findDocumentBySubject(
   return null;
 }
 
+/**
+ * Returns true if a document with the given filename already exists in the case.
+ * Fails open (returns false) on any network or API error so that filing is never
+ * blocked by a transient connectivity issue.
+ */
+export async function checkDuplicateFilename(
+  caseId: string,
+  filename: string
+): Promise<boolean> {
+  if (!caseId || !filename) return false;
+
+  const token = await getToken();
+  const base = await resolveApiBaseUrl();
+  const normalized = filename.trim().toLowerCase();
+
+  const candidates = [
+    `${base}/cases/${encodeURIComponent(caseId)}/documents`,
+    `${base}/documents?case_id=${encodeURIComponent(caseId)}`,
+    `${base}/cases/${encodeURIComponent(caseId)}/files`,
+  ];
+
+  for (const url of candidates) {
+    let res: Response;
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      res = await fetch(url, {
+        method: "GET",
+        headers: { Authentication: token, "Accept-Encoding": "identity" },
+      });
+    } catch {
+      continue;
+    }
+
+    if (res.status === 404 || res.status === 405) continue;
+    if (!res.ok) continue;
+
+    // eslint-disable-next-line no-await-in-loop
+    const json = await res.json().catch(() => null);
+    if (!json) continue;
+
+    const docs: any[] =
+      Array.isArray(json) ? json :
+      Array.isArray(json.documents) ? json.documents :
+      Array.isArray(json.files) ? json.files :
+      Array.isArray(json.items) ? json.items :
+      Array.isArray(json.data) ? json.data :
+      [];
+
+    // Found a valid document list — check for filename match and return.
+    return docs.some(
+      (doc: any) =>
+        String(doc?.name || doc?.filename || "").trim().toLowerCase() === normalized
+    );
+  }
+
+  // All endpoints failed or returned nothing — fail open.
+  return false;
+}
+
 // ============================================================================
 // Cross-Mailbox Filed Detection (internetMessageId)
 // ============================================================================

@@ -577,6 +577,45 @@ export async function onMessageSendHandler(event: SendEvent) {
       shouldUploadVersion,
     });
 
+    // ── Duplicate handling (always-file mode only) ────────────────────────
+    // existingDoc means a document with the same subject/filename already
+    // exists in this case.  Apply the duplicates setting from the intent.
+    const dupMode = String((intent as any).duplicates || "warn");
+    if (shouldUploadVersion && dupMode !== "off") {
+      if (dupMode === "block") {
+        console.log("[onMessageSendHandler] Duplicate=block: skipping filing");
+        await showInfo(
+          "SingleCase: this email already exists in the case. Filing was skipped (duplicate blocked)."
+        );
+        finish(true); // email still sends
+        return;
+      }
+      // warn: defer filing so the user can confirm in the add-in after sending
+      if (dupMode === "warn") {
+        console.log("[onMessageSendHandler] Duplicate=warn: deferring filing to user");
+        try {
+          const convForPending = getConversationIdSafe();
+          await setStored(
+            "sc_pending_filing",
+            JSON.stringify({
+              caseId: intent.caseId,
+              subject,
+              conversationId: convForPending,
+              sentAt: new Date().toISOString(),
+            })
+          );
+        } catch (e) {
+          console.warn("[onMessageSendHandler] Failed to store pending filing for duplicate:", e);
+        }
+        await showInfo(
+          "SingleCase: a duplicate was detected. Open the panel to confirm filing."
+        );
+        finish(true);
+        return;
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     if (shouldUploadVersion && existingDoc) {
       // Upload as new version of existing document
       console.log("[onMessageSendHandler] Uploading as version of existing document:", existingDoc.id);
