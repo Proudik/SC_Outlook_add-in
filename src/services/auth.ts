@@ -41,37 +41,29 @@ async function rtGet(key: string): Promise<string | null> {
   return null;
 }
 
-async function rtSet(key: string, value: string): Promise<void> {
-  // Try OfficeRuntime.storage first
+// Returns true if saved to OfficeRuntime.storage, false if staged to roamingSettings
+// (caller must call saveAsync once after all keys are staged).
+async function rtSet(key: string, value: string): Promise<boolean> {
   if (typeof OfficeRuntime !== 'undefined' && (OfficeRuntime as any)?.storage) {
     try {
       await (OfficeRuntime as any).storage.setItem(key, value);
       console.log("[rtSet] Saved to OfficeRuntime.storage:", key);
-      return; // Success
+      return true;
     } catch (e) {
       console.warn("[rtSet] OfficeRuntime.storage.setItem failed:", e);
     }
   }
 
-  // Fallback to Office.context.roamingSettings (Outlook-specific, works cross-context)
+  // Fallback: stage the value; caller flushes with a single saveAsync
   if ((Office as any)?.context?.roamingSettings) {
     try {
       (Office as any).context.roamingSettings.set(key, value);
-      await new Promise<void>((resolve, reject) => {
-        (Office as any).context.roamingSettings.saveAsync((result: any) => {
-          if (result.status === (Office as any).AsyncResultStatus.Succeeded) {
-            console.log("[rtSet] Saved to roamingSettings:", key);
-            resolve();
-          } else {
-            console.error("[rtSet] roamingSettings.saveAsync failed:", result.error);
-            reject(new Error(result.error?.message || "saveAsync failed"));
-          }
-        });
-      });
+      console.log("[rtSet] Staged to roamingSettings:", key);
     } catch (e) {
-      console.error("[rtSet] roamingSettings failed:", e);
+      console.error("[rtSet] roamingSettings.set failed:", e);
     }
   }
+  return false; // needs saveAsync flush
 }
 
 async function rtRemove(key: string): Promise<void> {
@@ -118,12 +110,31 @@ export async function setAuth(token: string, email: string): Promise<void> {
   sessionStorage.setItem(USER_KEY, emailNorm);
   sessionStorage.setItem(ISSUED_AT_KEY, String(issuedAt));
 
-  // Mirror for command runtime
-  await Promise.all([
+  // Mirror for command runtime — stage all keys first, then flush with a single saveAsync
+  const results = await Promise.all([
     rtSet(RT_TOKEN_KEY, token),
     rtSet(RT_USER_KEY, emailNorm),
     rtSet(RT_ISSUED_AT_KEY, String(issuedAt)),
   ]);
+
+  // If any key was staged to roamingSettings (OfficeRuntime unavailable), flush once
+  if (results.some(r => !r) && (Office as any)?.context?.roamingSettings) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        (Office as any).context.roamingSettings.saveAsync((result: any) => {
+          if (result.status === (Office as any).AsyncResultStatus.Succeeded) {
+            console.log("[setAuth] roamingSettings flushed (1 saveAsync for all keys)");
+            resolve();
+          } else {
+            console.error("[setAuth] roamingSettings.saveAsync failed:", result.error);
+            reject(new Error(result.error?.message || "saveAsync failed"));
+          }
+        });
+      });
+    } catch (e) {
+      console.error("[setAuth] roamingSettings flush failed:", e);
+    }
+  }
 }
 
 export function clearAuthIfExpired(): void {

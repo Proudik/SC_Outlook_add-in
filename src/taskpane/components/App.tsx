@@ -538,7 +538,7 @@ setAuth(payload.token, payload.email);
 
                 <div className={styles.logoCenter}>
                   <img
-                    src={`${window.location.origin}/assets/sc.png`}
+                    src="assets/sc.png"
                     alt="SingleCase"
                     className={styles.brandLogo}
                   />
