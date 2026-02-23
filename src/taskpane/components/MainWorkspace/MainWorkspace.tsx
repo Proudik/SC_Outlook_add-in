@@ -120,7 +120,8 @@ type QuickAction = {
     | "file_now_from_weak_signal"
     | "enable_filing_on_send"
     | "confirm_file_now"
-    | "skip_pending_filing";
+    | "skip_pending_filing"
+    | "file_now";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -1182,6 +1183,9 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
 
   const [activeItemKey, setActiveItemKey] = React.useState<string>("");
   const [viewMode, setViewMode] = React.useState<ViewMode>("prompt");
+  // Ref kept in sync every render — lets effects read viewMode without adding it to deps
+  const viewModeRef = React.useRef<ViewMode>(viewMode);
+  viewModeRef.current = viewMode;
   const [pickStep, setPickStep] = React.useState<PickStep>("case");
 
 
@@ -2511,16 +2515,39 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
 
     // PRIORITY 2: Internal email suppression (setting ON + all recipients internal).
     if (suppressInternalSuggestions) {
-      console.log("[compose-flow] Internal email suppressed — showing info banner");
+      // Don't interrupt the user while they are actively picking a case.
+      // viewModeRef reads the current viewMode without adding it to the deps array
+      // (adding viewMode as a dep would cause the effect to fight with setViewMode calls).
+      if (viewModeRef.current === "pickCase") return;
+
       setChatStep("compose_ready");
       setViewMode("prompt");
       setPickStep("case");
-      setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: "This looks like an internal email. You can still file it manually if needed.",
-      });
+
+      if (selectedCaseId) {
+        // Branch B: user picked a case manually → show confirmation
+        const c: any = (cases || []).find((x: any) => String(x?.id) === String(selectedCaseId));
+        const caseName = String(c?.title || c?.name || c?.label || "").trim() || `Case ${selectedCaseId}`;
+        const actionLine = settings.filingOnSend === "always"
+          ? "When you hit Send, this email will be filed automatically."
+          : "Ready to file. You can send the email and file it from your Sent folder afterwards.";
+        console.log("[compose-flow] Internal email — case confirmed", { selectedCaseId, caseName });
+        setQuickActions([{ id: "fm2", label: "Select a different case", intent: "file_manually" }]);
+        setPrompt({
+          itemId: activeItemId,
+          kind: "unfiled",
+          text: `Case selected: ${caseName}. ${actionLine}`,
+        });
+      } else {
+        // Branch A: no case selected yet → show initial warning
+        console.log("[compose-flow] Internal email suppressed — showing info banner");
+        setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
+        setPrompt({
+          itemId: activeItemId,
+          kind: "unfiled",
+          text: "This looks like an internal email. You can still file it manually if needed.",
+        });
+      }
       return;
     }
 
@@ -3303,6 +3330,11 @@ const handleQuickAction = React.useCallback((intent) => {
     return next;
   });
 
+  return;
+}
+
+      if (intent === "file_now") {
+  void doSubmitOverrideRef.current?.({ caseId: selectedCaseId });
   return;
 }
 
@@ -4208,6 +4240,7 @@ setSelectedSource("manual"); // important
               text={prompt.text}
               isUnfiled={prompt.kind === "unfiled" || prompt.kind === "deleted"}
               tone={
+                suppressInternalSuggestions && Boolean(selectedCaseId) ? "success" :
                 composeMode && settings.filingOnSend === "warn" ? "warning" :
                 composeMode && settings.filingOnSend === "always" && Boolean(selectedCaseId) ? "success" :
                 "default"
@@ -4257,6 +4290,24 @@ setSelectedSource("manual"); // important
                       text: settings.filingOnSend === "always"
                         ? `Auto filing is on. When you hit Send, I'll file this email to SingleCase automatically. Case: ${name}.`
                         : `Heads up — when you hit Send, I'll let the email go through as normal. Prepared case: ${name}.`,
+                    });
+                    return;
+                  }
+
+                  // Read mode + internal email flow → show confirmation banner
+                  if (suppressInternalSuggestions) {
+                    const c: any = (cases || []).find((x: any) => String(x?.id) === String(id));
+                    const caseName = String(c?.title || c?.name || c?.label || "").trim() || `Case ${id}`;
+                    setViewMode("prompt");
+                    setPickStep("case");
+                    setQuickActions([
+                      { id: "fm_file_now", label: "File now", intent: "file_now" },
+                      { id: "fm2", label: "Select a different case", intent: "file_manually" },
+                    ]);
+                    setPrompt({
+                      itemId: storeKey || activeItemId,
+                      kind: "unfiled",
+                      text: `Case selected: ${caseName}. Ready to file this email.`,
                     });
                     return;
                   }
