@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Open24Regular, Edit24Regular } from "@fluentui/react-icons";
-import { getDocumentMetaRaw, probeDocumentLock, isDocumentLockedError } from "../../../../services/singlecaseDocuments";
+import { getDocumentMetaRaw, isDocumentLockedError } from "../../../../services/singlecaseDocuments";
 
 export type UploadedItem = {
   id: string;
@@ -135,17 +135,10 @@ export default function DocumentHoverCard({
         return false;
       }
 
-      // Metadata endpoint did not return lock info — probe the version upload
-      // endpoint which runs server-side lock validation before body validation.
-      console.log("[preflight] meta has no lock info, probing version endpoint");
-      const isLocked = await probeDocumentLock(String(doc.id));
-      console.log("[preflight] probe result", { isLocked });
-
-      if (isLocked) {
-        console.log("[preflight] blocked due to lock (probe 423)");
-        if (onLockedDocAttempt) onLockedDocAttempt(buildLockMessage({}, doc.name));
-        return false;
-      }
+      // Metadata returned no lock info → treat as unlocked.
+      // NOTE: Do NOT probe the version-upload endpoint as a lock check —
+      // POST /documents/{id}/version with data_base64:"" creates a real
+      // empty version on the server (side-effectful write endpoint).
       return true;
     } catch (e) {
       if (isDocumentLockedError(e)) {

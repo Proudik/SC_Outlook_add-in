@@ -28,7 +28,7 @@ export default function AttachmentsStep({
 }: Props) {
   return (
     <div ref={containerRef} className="mwAttachmentsStep">
-      <div className="mwAttachmentsStepTitle">Co chcete uložit?</div>
+      <div className="mwAttachmentsStepTitle">What do you want to file?</div>
 
       <div className="mwAttachmentsStepButtons">
         <button
@@ -39,7 +39,7 @@ export default function AttachmentsStep({
             onSelectionChange(attachmentIds);
           }}
         >
-          Pouze přílohy
+          Attachments
         </button>
 
         <button
@@ -50,7 +50,7 @@ export default function AttachmentsStep({
             onSelectionChange(attachmentIds);
           }}
         >
-          Email i přílohy
+          Email & Attachments
         </button>
       </div>
 

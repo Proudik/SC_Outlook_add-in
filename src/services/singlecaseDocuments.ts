@@ -179,49 +179,6 @@ export async function getDocumentMetaRaw(documentId: string | number): Promise<a
   return expectJson(res, "Get document failed");
 }
 
-/**
- * Probes whether a document is currently locked by sending a minimal POST to
- * the version upload endpoint. The server runs lock validation before body
- * validation, so a locked document returns HTTP 423 even with an empty body.
- * Returns true only on 423; any other response (400, 422, network error, etc.)
- * is treated as "not locked" so we never block the user incorrectly.
- */
-export async function probeDocumentLock(documentId: string | number): Promise<boolean> {
-  const token = await getToken();
-  const base = await resolveApiBaseUrl();
-  const id = encodeURIComponent(String(documentId));
-
-  const candidates = [
-    `${base}/documents/${id}/version`,
-    `${base}/documents/${id}/versions`,
-  ];
-
-  for (const url of candidates) {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authentication: token,
-          "Accept-Encoding": "identity",
-        },
-        body: JSON.stringify({ name: "probe", mime_type: "text/plain", data_base64: "" }),
-      });
-    } catch {
-      return false; // Network error → don't block
-    }
-
-    await res.text().catch(() => ""); // Drain body
-
-    if (res.status === 423) return true;
-    if (res.status === 404 || res.status === 405) continue; // Try next endpoint
-    return false; // 400/422/etc → body rejected (not a lock error)
-  }
-
-  return false;
-}
-
 export async function uploadDocumentVersion(params: {
   documentId: string | number;
   fileName: string;
@@ -230,6 +187,14 @@ export async function uploadDocumentVersion(params: {
   directoryId?: string;
 }): Promise<UploadDocumentVersionResponse> {
   const { documentId, fileName, mimeType, dataBase64, directoryId } = params;
+
+  // Hard block: never upload an empty version. An empty data_base64 string
+  // would silently create a zero-byte document version on the server.
+  if (!dataBase64 || dataBase64.trim() === "") {
+    throw new Error(
+      `[uploadDocumentVersion] Blocked zero-byte upload for document ${documentId} ("${fileName}"). dataBase64 is empty.`
+    );
+  }
 
   const token = await getToken();
 

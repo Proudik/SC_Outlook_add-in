@@ -1745,6 +1745,7 @@ const attachmentIds = React.useMemo(
     selectedCaseId,
     selectedSource,
     onAutoSelectCaseId: (id) => {
+      if (!settings.rememberLastCase) return;
       setSelectedCaseId(id);
       setSelectedSource("suggested");
     },
@@ -1753,6 +1754,7 @@ const attachmentIds = React.useMemo(
 
   React.useEffect(() => {
     if (!detectedFrequentCaseId) return;
+    if (!settings.rememberLastCase) return;
     if (selectedSource === "manual" || selectedSource === "remembered") return;
 
     // IMPORTANT: Only auto-select frequent cases in compose mode
@@ -1765,7 +1767,7 @@ const attachmentIds = React.useMemo(
       setSelectedCaseId(detectedFrequentCaseId);
       setSelectedSource("suggested");
     }
-  }, [detectedFrequentCaseId, selectedSource, selectedCaseId, submailDetectedCaseId]);
+  }, [detectedFrequentCaseId, settings.rememberLastCase, selectedSource, selectedCaseId, submailDetectedCaseId]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -4297,10 +4299,10 @@ setSelectedSource("manual"); // important
           {viewMode === "sent" ? (
             <>
               {showFiledSummary && !lockedDocAlert ? (
-                <div className="mwChatBubble">Done</div>
+                <div className="mwChatBubble">Documents filed successfully</div>
               ) : (
                 <PromptBubble
-                  text={prompt.text || "Tento email je již zařazen."}
+                  text={prompt.text || "This email is already filed."}
                   isUnfiled={false}
                   tone="default"
                   actions={[]}
