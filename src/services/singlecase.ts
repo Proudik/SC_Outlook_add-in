@@ -6,6 +6,8 @@ export type CaseScope = "favourites" | "my" | "all";
 export type CaseOption = {
   id: string;
   title: string;
+  /** Raw case name without the visible-ID prefix (e.g. "Human Ressource" rather than "2026-0001 · Human Ressource"). Used by the suggestion engine for fuzzy title matching. */
+  caseName?: string;
 
   clientId?: string;
   client?: string;
@@ -108,6 +110,7 @@ function mapApiCaseToOption(apiCase: any): CaseOption {
   return {
     id: String(apiCase.id),
     title,
+    caseName: name || undefined,
     clientId,
     client: apiCase.client?.name || apiCase.client_name || undefined,
     status: apiCase.status?.name || apiCase.status || undefined,

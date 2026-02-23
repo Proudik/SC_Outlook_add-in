@@ -20,6 +20,11 @@ type Props = {
 
   suggestions?: CaseSuggestion[];
 
+  // When set, the matching suggestion card gets a green "recommended" outline
+  // instead of the blue selected highlight. Driven by suggestedCaseId state in
+  // MainWorkspace when rememberLastCase is OFF.
+  suggestedCaseId?: string;
+
   // Content-based suggestions (triggered when user clicks "Vybrat jiný spis")
   contentSuggestions?: CaseSuggestion[];
   isLoadingContentSuggestions?: boolean;
@@ -164,6 +169,7 @@ export default function CaseSelector({
   isLoadingCases,
   clientNamesById,
   suggestions,
+  suggestedCaseId,
   contentSuggestions,
   isLoadingContentSuggestions,
 }: Props) {
@@ -346,6 +352,8 @@ export default function CaseSelector({
     variant: "primary" | "secondary"
   ) => {
     const isSelected = selectedCaseId === s.caseId;
+    // Recommended: system suggests this case but user has NOT explicitly selected it
+    const isRecommended = !isSelected && suggestedCaseId === s.caseId;
 
     return (
       <button
@@ -354,6 +362,7 @@ export default function CaseSelector({
           "case-selector-suggested-btn",
           variant === "secondary" ? "case-selector-suggested-btn--secondary" : "",
           isSelected ? "case-selector-suggested-btn--selected" : "",
+          isRecommended ? "case-selector-suggested-btn--recommended" : "",
         ]
           .filter(Boolean)
           .join(" ")}

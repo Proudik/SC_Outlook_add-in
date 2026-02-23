@@ -22,17 +22,19 @@ function getCaseVisibleId(c: any): string {
   return String(c?.case_id_visible || c?.caseIdVisible || c?.caseIdVisibleText || c?.visibleId || "").trim();
 }
 
-// IMPORTANT: CaseOption often uses `label` (what you show in the UI).
+// IMPORTANT: prefer caseName (raw name without visible-ID prefix) over the
+// combined title field so fuzzy matching compares "Human Ressource" instead of
+// "2026-0001 · Human Ressource".
 function getCaseTitle(c: any): string {
   return String(
-    c?.title ||
+    c?.caseName ||
       c?.name ||
+      c?.case_name ||
+      c?.caseNameVisible ||
+      c?.case_name_visible ||
+      c?.title ||
       c?.label ||
       c?.caseTitle ||
-      c?.case_name ||
-      c?.caseName ||
-      c?.case_name_visible ||
-      c?.caseNameVisible ||
       ""
   ).trim();
 }
@@ -73,6 +75,73 @@ function tokenOverlapScore(aTokens: string[], bText: string): { hits: number; to
     if (b.includes(` ${t} `)) hits += 1;
   }
   return { hits, total: aTokens.length };
+}
+
+/**
+ * Levenshtein edit distance (character level).
+ * O(min(|a|, |b|)) space via single-row DP.
+ */
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  // Keep `a` as the shorter string so the row fits in less memory
+  if (a.length > b.length) { const t = a; a = b; b = t; }
+
+  const m = a.length;
+  const n = b.length;
+  const row: number[] = Array.from({ length: m + 1 }, (_, i) => i);
+
+  for (let j = 1; j <= n; j++) {
+    let prev = row[0];
+    row[0] = j;
+    for (let i = 1; i <= m; i++) {
+      const tmp = row[i];
+      row[i] = a[i - 1] === b[j - 1]
+        ? prev
+        : 1 + Math.min(prev, row[i], row[i - 1]);
+      prev = tmp;
+    }
+  }
+  return row[m];
+}
+
+/**
+ * Normalized Levenshtein similarity in [0, 1].
+ *   sim = 1 − levenshtein(a, b) / max(|a|, |b|)
+ */
+function strSimilarity(a: string, b: string): number {
+  if (a === b) return 1;
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 1;
+  return 1 - levenshtein(a, b) / maxLen;
+}
+
+/**
+ * Typo-tolerant similarity between a normalized subject and a normalized case title.
+ * Takes the best of:
+ *   - full-string similarity (good when lengths are similar, e.g. "human recources" vs "human ressource")
+ *   - prefix-truncated similarity (good when one string is much longer, e.g. subject is shorter
+ *     than a longer case title: "Human Resources" vs "Human Resources Management")
+ *
+ * Returns 0 when either string is shorter than 5 chars (too short for reliable fuzzy matching).
+ */
+function subjectTitleSimilarity(subjectLoose: string, titleLoose: string): number {
+  if (!subjectLoose || !titleLoose) return 0;
+  if (subjectLoose.length < 5 || titleLoose.length < 5) return 0;
+
+  const full = strSimilarity(subjectLoose, titleLoose);
+
+  // Also compare both strings truncated to the length of the shorter one so that
+  // "human recources" (15) vs "human ressource management" (26) is not penalised
+  // for length difference alone.
+  const minLen = Math.min(subjectLoose.length, titleLoose.length);
+  const prefix = strSimilarity(
+    subjectLoose.slice(0, minLen),
+    titleLoose.slice(0, minLen),
+  );
+
+  return Math.max(full, prefix);
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -190,6 +259,21 @@ export function suggestCasesLocal(params: {
         const ratio = subjOverlap.total > 0 ? subjOverlap.hits / subjOverlap.total : 0;
         const boost = 60 + 30 * clamp(ratio, 0, 1); // 60..90
         add(caseId, boost, "Case name matches the email subject.");
+      }
+    }
+
+    // 3b-bis) Fuzzy full-string similarity (typo-tolerant matching).
+    // Catches cases like "Human recources" ↔ "Human Ressource" where exact token
+    // overlap fails but the strings are clearly similar after edit-distance analysis.
+    // Runs even when 3b fires so both signals can accumulate independently.
+    if (subjectLoose) {
+      const sim = subjectTitleSimilarity(subjectLoose, titleLoose);
+      if (sim >= 0.88) {
+        add(caseId, 90, `Subject similar to case name `);
+      } else if (sim >= 0.78) {
+        add(caseId, 75, `Subject similar to case name `);
+      } else if (sim >= 0.70) {
+        add(caseId, 55, `Subject similar to case name `);
       }
     }
 
@@ -388,6 +472,18 @@ export function suggestCasesByContent(params: {
         const ratio = subjOverlap.total > 0 ? subjOverlap.hits / subjOverlap.total : 0;
         const boost = 60 + 30 * clamp(ratio, 0, 1);
         add(caseId, boost, "Case name matches subject keywords");
+      }
+    }
+
+    // 2b-bis) Fuzzy full-string similarity (same logic as suggestCasesLocal 3b-bis)
+    if (subjectLoose) {
+      const sim = subjectTitleSimilarity(subjectLoose, titleLoose);
+      if (sim >= 0.88) {
+        add(caseId, 90, `Subject similar to case name `);
+      } else if (sim >= 0.78) {
+        add(caseId, 75, `Subject similar to case name `);
+      } else if (sim >= 0.70) {
+        add(caseId, 55, `Subject similar to case name `);
       }
     }
 

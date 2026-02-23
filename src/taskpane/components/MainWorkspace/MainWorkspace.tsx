@@ -1210,6 +1210,14 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
   const [selectedSource, setSelectedSource] = React.useState<
     "" | "remembered" | "last_case" | "suggested" | "manual"
   >("");
+
+  // Suggestion state: tracks system-recommended case without polluting selectedCaseId.
+  // suggestedCaseId is written ONLY by suggestion/detection logic (never by user clicks).
+  // selectedCaseId is written ONLY by explicit user picks or rememberLastCase restores.
+  // filingTargetCaseId is set when user clicks Continue (from either source).
+  const [suggestedCaseId, setSuggestedCaseId] = React.useState<string>("");
+  const [suggestedConfidencePct, setSuggestedConfidencePct] = React.useState<number>(0);
+  const [filingTargetCaseId, setFilingTargetCaseId] = React.useState<string>("");
   const [forceUnfiledLabel, setForceUnfiledLabel] = React.useState(false);
 
   // Content-based suggestions (triggered when user clicks "Vybrat jiný spis")
@@ -1758,13 +1766,17 @@ const attachmentIds = React.useMemo(
 
   React.useEffect(() => {
     if (!detectedFrequentCaseId) return;
-    if (!settings.rememberLastCase) return;
+
+    if (!settings.rememberLastCase) {
+      // OFF: surface as a suggestion, never touch selectedCaseId
+      setSuggestedCaseId(detectedFrequentCaseId);
+      setSuggestedConfidencePct(85); // conversation-based match is treated as high-confidence
+      return;
+    }
+
+    // ON: existing auto-select behaviour
     if (selectedSource === "manual" || selectedSource === "remembered") return;
-
-    // IMPORTANT: Only auto-select frequent cases in compose mode
     if (!isComposeMode()) return;
-
-    // Skip frequent case auto-selection if submail is detected (highest priority)
     if (submailDetectedCaseId) return;
 
     if (selectedCaseId !== detectedFrequentCaseId) {
@@ -1772,6 +1784,18 @@ const attachmentIds = React.useMemo(
       setSelectedSource("suggested");
     }
   }, [detectedFrequentCaseId, settings.rememberLastCase, selectedSource, selectedCaseId, submailDetectedCaseId]);
+
+  // Sync suggestedCaseId/suggestedConfidencePct from content-based suggestions
+  // (only while the picker is open and rememberLastCase is OFF).
+  React.useEffect(() => {
+    if (settings.rememberLastCase) return;
+    if (viewMode !== "pickCase") return;
+    const top = caseSuggestions[0];
+    if (top) {
+      setSuggestedCaseId(top.caseId);
+      setSuggestedConfidencePct(top.confidencePct);
+    }
+  }, [caseSuggestions, viewMode, settings.rememberLastCase]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -2552,34 +2576,43 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     }
 
     if (detectedFrequentCaseId) {
-      // auto preselect
-      if (!selectedCaseId) {
-        setSelectedCaseId(detectedFrequentCaseId);
-        setSelectedSource("suggested");
-        if (storeKey)
-          void saveComposeIntent({
-            itemKey: storeKey,
-            caseId: detectedFrequentCaseId,
-            autoFileOnSend: true,
-          });
+      if (settings.rememberLastCase) {
+        // rememberLastCase ON: existing auto-select behaviour
+        if (!selectedCaseId) {
+          setSelectedCaseId(detectedFrequentCaseId);
+          setSelectedSource("suggested");
+          if (storeKey)
+            void saveComposeIntent({
+              itemKey: storeKey,
+              caseId: detectedFrequentCaseId,
+              autoFileOnSend: true,
+            });
+        }
+
+        setChatStep("compose_offer_frequent");
+
+        const statusText =
+          settings.filingOnSend === "always"
+            ? "When you hit Send, I'll file this email to SingleCase automatically."
+            : "Heads up — when you hit Send, the email goes through normally. Right after, I'll ask if you want to file it.";
+
+        setPrompt({
+          itemId: activeItemId,
+          kind: "unfiled",
+          text: `${statusText} Prepared case: ${detectedFrequentCaseName}.`,
+        });
+
+        setQuickActions([
+          { id: "a2", label: "Select a different case", intent: "pick_another_case" },
+        ]);
+      } else {
+        // rememberLastCase OFF: show picker with the suggestion, never auto-select.
+        // If the user already picked a case manually, don't override the compose_ready state.
+        if (selectedCaseId) return;
+        setViewMode("pickCase");
+        setPickStep("case");
+        setChatStep("compose_offer_frequent");
       }
-
-      setChatStep("compose_offer_frequent");
-
-      const statusText =
-        settings.filingOnSend === "always"
-          ? "When you hit Send, I'll file this email to SingleCase automatically."
-          : "Heads up — when you hit Send, the email goes through normally. Right after, I'll ask if you want to file it.";
-
-      setPrompt({
-        itemId: activeItemId,
-        kind: "unfiled",
-        text: `${statusText} Prepared case: ${detectedFrequentCaseName}.`,
-      });
-
-      setQuickActions([
-        { id: "a2", label: "Select a different case", intent: "pick_another_case" },
-      ]);
       return;
     }
 
@@ -2612,6 +2645,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
     storeKey,
     suppressInternalSuggestions,
     settings.filingOnSend,
+    settings.rememberLastCase,
   ]);
 
 React.useEffect(() => {
@@ -3105,6 +3139,9 @@ if (itemKey && activeChanged) {
 
   setSelectedCaseId("");
   setSelectedSource("");
+  setSuggestedCaseId("");
+  setSuggestedConfidencePct(0);
+  setFilingTargetCaseId("");
   setPickStep("case");
   setSelectedAttachments([]);
   setIsUploadingNewVersion(false);
@@ -3387,8 +3424,39 @@ setSelectedSource("manual"); // important
       if (intent === "accept_frequent_case") {
         if (!detectedFrequentCaseId) return;
 
-        setSelectedCaseId(detectedFrequentCaseId);
-        setSelectedSource("suggested");
+        if (settings.rememberLastCase) {
+          // ON: write to selectedCaseId (existing behaviour)
+          setSelectedCaseId(detectedFrequentCaseId);
+          setSelectedSource("suggested");
+
+          if (composeMode) {
+            setViewMode("prompt");
+            setPickStep("case");
+            setQuickActions([]);
+            setChatStep("compose_ready");
+            if (storeKey)
+              void saveComposeIntent({
+                itemKey: storeKey,
+                caseId: detectedFrequentCaseId,
+                autoFileOnSend,
+              });
+
+            setPrompt({
+              itemId: activeItemId,
+              kind: "unfiled",
+              text: `OK. Click File Now. Then you can send the email normally. Case: ${detectedFrequentCaseName}.`,
+            });
+            return;
+          }
+
+          setChatStep("idle");
+          setViewMode("pickCase");
+          setPickStep(attachmentsLite.length > 0 ? "attachments" : "case");
+          return;
+        }
+
+        // OFF: accept means "user confirmed suggestion" → set filingTargetCaseId, not selectedCaseId
+        setFilingTargetCaseId(detectedFrequentCaseId);
 
         if (composeMode) {
           setViewMode("prompt");
@@ -4266,6 +4334,10 @@ setSelectedSource("manual"); // important
                 onSelectCaseId={(id) => {
                   setSelectedCaseId(id);
                   setSelectedSource("manual");
+                  // Manual pick supersedes any system suggestion and resets the filing target
+                  setSuggestedCaseId("");
+                  setSuggestedConfidencePct(0);
+                  setFilingTargetCaseId("");
                   setReplyBaseCaseId("");
                   setReplyBaseEmailDocId("");
                   setIsUploadingNewVersion(false);
@@ -4314,6 +4386,7 @@ setSelectedSource("manual"); // important
 
                   if (attachmentsLite.length > 0) setPickStep("attachments");
                 }}
+                suggestedCaseId={suggestedCaseId}
                 suggestions={caseSuggestions}
                 cases={visibleCases}
                 isLoadingCases={isLoadingCases}
@@ -4494,37 +4567,52 @@ setSelectedSource("manual"); // important
             )}
 
             {pickStep === "case" ? (
-              <button
-                className={`mwPrimaryBtn ${!selectedCaseId ? "mwPrimaryBtnDisabled" : ""}`}
-                type="button"
-                disabled={!selectedCaseId}
-                onClick={() => {
-                  if (attachmentsLite.length > 0) setPickStep("attachments");
-                  else void doSubmit();
-                }}
-              >
-                Continue
-              </button>
+              (() => {
+                // Continue is enabled when the user manually selected a case OR
+                // when rememberLastCase is OFF and there is a high-confidence suggestion.
+                const canContinue =
+                  !!selectedCaseId ||
+                  (!settings.rememberLastCase && !!suggestedCaseId && suggestedConfidencePct >= 70);
+                return (
+                  <button
+                    className={`mwPrimaryBtn ${!canContinue ? "mwPrimaryBtnDisabled" : ""}`}
+                    type="button"
+                    disabled={!canContinue}
+                    onClick={() => {
+                      // Resolve the case to file: explicit selection wins; fall back to suggestion.
+                      const target =
+                        selectedCaseId ||
+                        (suggestedConfidencePct >= 70 ? suggestedCaseId : "");
+                      if (!target) return;
+                      setFilingTargetCaseId(target);
+                      if (attachmentsLite.length > 0) setPickStep("attachments");
+                      else void doSubmit({ caseId: target });
+                    }}
+                  >
+                    Continue
+                  </button>
+                );
+              })()
             ) : (
-              <button
-                className={`mwPrimaryBtn ${
-                  !selectedCaseId ||
-                  isSubmitting ||
-                  (attachmentsLite.length > 0 && selectedAttachments.length === 0)
-                    ? "mwPrimaryBtnDisabled"
-                    : ""
-                }`}
-                type="button"
-                disabled={
-                  !selectedCaseId ||
-                  isSubmitting ||
-                  isItemLoading ||
-                  (attachmentsLite.length > 0 && selectedAttachments.length === 0)
-                }
-                onClick={() => void doSubmit()}
-              >
-                Continue
-              </button>
+              (() => {
+                // Attachments step: use the filing target set by the previous Continue click.
+                const effectiveCaseId = filingTargetCaseId || selectedCaseId;
+                const attachmentsRequired = attachmentsLite.length > 0 && selectedAttachments.length === 0;
+                return (
+                  <button
+                    className={`mwPrimaryBtn ${
+                      !effectiveCaseId || isSubmitting || attachmentsRequired
+                        ? "mwPrimaryBtnDisabled"
+                        : ""
+                    }`}
+                    type="button"
+                    disabled={!effectiveCaseId || isSubmitting || isItemLoading || attachmentsRequired}
+                    onClick={() => void doSubmit({ caseId: effectiveCaseId })}
+                  >
+                    Continue
+                  </button>
+                );
+              })()
             )}
           </div>
         ) : null}

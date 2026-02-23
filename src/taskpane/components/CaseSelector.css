@@ -462,12 +462,20 @@
   margin-top: 4px;
 }
 
-/* Clean selected state for suggestion buttons */
+/* Clean selected state for suggestion buttons (blue — explicit manual pick) */
 .case-selector-suggested-btn--selected {
   border: 1px solid rgba(37, 99, 235, 0.30) !important;
   border-left: 3px solid rgba(37, 99, 235, 0.75) !important;
   background: rgba(37, 99, 235, 0.05) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Recommended state (green — system suggestion, not yet manually selected) */
+.case-selector-suggested-btn--recommended {
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  border-left: 3px solid rgba(16, 185, 129, 0.80) !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
 }
 
 /* Clean selected state for search items */
