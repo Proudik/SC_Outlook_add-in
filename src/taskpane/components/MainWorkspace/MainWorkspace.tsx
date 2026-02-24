@@ -4332,9 +4332,9 @@ setSelectedSource("manual"); // important
                 onScopeChange={(scope) => setCaseGroupTab(scope === "favourites" ? "favourites" : "all")}
                 selectedCaseId={selectedCaseId}
                 onSelectCaseId={(id) => {
+                  // Option A: row click is selection-only. Continue button drives all advancement.
                   setSelectedCaseId(id);
                   setSelectedSource("manual");
-                  // Manual pick supersedes any system suggestion and resets the filing target
                   setSuggestedCaseId("");
                   setSuggestedConfidencePct(0);
                   setFilingTargetCaseId("");
@@ -4342,49 +4342,6 @@ setSelectedSource("manual"); // important
                   setReplyBaseEmailDocId("");
                   setIsUploadingNewVersion(false);
                   if (settings.rememberLastCase) saveLastCaseId(id);
-
-                  if (composeMode) {
-                    const c: any = (cases || []).find((x: any) => String(x?.id) === String(id));
-                    const name =
-                      String(c?.name || c?.title || c?.label || "").trim() || `Case ${id}`;
-
-                    setViewMode("prompt");
-                    setPickStep("case");
-                    setQuickActions([]);
-                    setChatStep("compose_ready");
-
-                    if (storeKey)
-                      void saveComposeIntent({ itemKey: storeKey, caseId: id, autoFileOnSend });
-
-                    setPrompt({
-                      itemId: storeKey || activeItemId,
-                      kind: "unfiled",
-                      text: settings.filingOnSend === "always"
-                        ? `Auto filing is on. When you hit Send, I'll file this email to SingleCase automatically. Case: ${name}.`
-                        : `Heads up — when you hit Send, I'll let the email go through as normal. Prepared case: ${name}.`,
-                    });
-                    return;
-                  }
-
-                  // Read mode + internal email flow → show confirmation banner
-                  if (suppressInternalSuggestions) {
-                    const c: any = (cases || []).find((x: any) => String(x?.id) === String(id));
-                    const caseName = String(c?.title || c?.name || c?.label || "").trim() || `Case ${id}`;
-                    setViewMode("prompt");
-                    setPickStep("case");
-                    setQuickActions([
-                      { id: "fm_file_now", label: "File now", intent: "file_now" },
-                      { id: "fm2", label: "Select a different case", intent: "file_manually" },
-                    ]);
-                    setPrompt({
-                      itemId: storeKey || activeItemId,
-                      kind: "unfiled",
-                      text: `Case selected: ${caseName}. Ready to file this email.`,
-                    });
-                    return;
-                  }
-
-                  if (attachmentsLite.length > 0) setPickStep("attachments");
                 }}
                 suggestedCaseId={suggestedCaseId}
                 suggestions={caseSuggestions}
@@ -4573,20 +4530,65 @@ setSelectedSource("manual"); // important
                 const canContinue =
                   !!selectedCaseId ||
                   (!settings.rememberLastCase && !!suggestedCaseId && suggestedConfidencePct >= 70);
+
+                // Single source of truth for advancing from the case step.
+                // The case row click (onSelectCaseId) only updates selection state;
+                // all step/view transitions happen exclusively here.
+                const advanceFromCaseStep = (caseId: string) => {
+                  setFilingTargetCaseId(caseId);
+
+                  if (composeMode) {
+                    const c: any = (cases || []).find((x: any) => String(x?.id) === String(caseId));
+                    const name = String(c?.caseName || c?.name || c?.title || c?.label || "").trim() || `Case ${caseId}`;
+                    setViewMode("prompt");
+                    setPickStep("case");
+                    setQuickActions([]);
+                    setChatStep("compose_ready");
+                    if (storeKey) void saveComposeIntent({ itemKey: storeKey, caseId, autoFileOnSend });
+                    setPrompt({
+                      itemId: storeKey || activeItemId,
+                      kind: "unfiled",
+                      text: settings.filingOnSend === "always"
+                        ? `Auto filing is on. When you hit Send, I'll file this email to SingleCase automatically. Case: ${name}.`
+                        : `Heads up — when you hit Send, I'll let the email go through as normal. Prepared case: ${name}.`,
+                    });
+                    return;
+                  }
+
+                  if (suppressInternalSuggestions) {
+                    const c: any = (cases || []).find((x: any) => String(x?.id) === String(caseId));
+                    const caseName = String(c?.title || c?.caseName || c?.name || c?.label || "").trim() || `Case ${caseId}`;
+                    setViewMode("prompt");
+                    setPickStep("case");
+                    setQuickActions([
+                      { id: "fm_file_now", label: "File now", intent: "file_now" },
+                      { id: "fm2", label: "Select a different case", intent: "file_manually" },
+                    ]);
+                    setPrompt({
+                      itemId: storeKey || activeItemId,
+                      kind: "unfiled",
+                      text: `Case selected: ${caseName}. Ready to file this email.`,
+                    });
+                    return;
+                  }
+
+                  // Read mode: advance to attachments step or submit directly.
+                  if (attachmentsLite.length > 0) setPickStep("attachments");
+                  else void doSubmit({ caseId });
+                };
+
                 return (
                   <button
                     className={`mwPrimaryBtn ${!canContinue ? "mwPrimaryBtnDisabled" : ""}`}
                     type="button"
                     disabled={!canContinue}
                     onClick={() => {
-                      // Resolve the case to file: explicit selection wins; fall back to suggestion.
+                      // Explicit selection wins; fall back to high-confidence suggestion.
                       const target =
                         selectedCaseId ||
                         (suggestedConfidencePct >= 70 ? suggestedCaseId : "");
                       if (!target) return;
-                      setFilingTargetCaseId(target);
-                      if (attachmentsLite.length > 0) setPickStep("attachments");
-                      else void doSubmit({ caseId: target });
+                      advanceFromCaseStep(target);
                     }}
                   >
                     Continue
