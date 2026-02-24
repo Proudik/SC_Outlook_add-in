@@ -352,8 +352,11 @@ export default function CaseSelector({
     variant: "primary" | "secondary"
   ) => {
     const isSelected = selectedCaseId === s.caseId;
-    // Recommended: system suggests this case but user has NOT explicitly selected it
-    const isRecommended = !isSelected && suggestedCaseId === s.caseId;
+    const isSuggested = suggestedCaseId === s.caseId;
+    // Only ONE row gets the green highlight at a time:
+    //   - the manually selected case, OR
+    //   - the suggested case when nothing has been manually selected yet.
+    const isActiveRow = isSelected || (!selectedCaseId && isSuggested);
 
     return (
       <button
@@ -361,8 +364,8 @@ export default function CaseSelector({
         className={[
           "case-selector-suggested-btn",
           variant === "secondary" ? "case-selector-suggested-btn--secondary" : "",
-          isSelected ? "case-selector-suggested-btn--selected" : "",
-          isRecommended ? "case-selector-suggested-btn--recommended" : "",
+          isActiveRow ? "case-selector-row-selected" : "",
+          !isActiveRow && isSuggested ? "case-selector-row-suggested" : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -424,7 +427,7 @@ export default function CaseSelector({
                 type="button"
                 className={[
                   "case-selector-other-item",
-                  isSelected ? "case-selector-other-item--selected" : "",
+                  isSelected ? "case-selector-row-selected" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -448,7 +451,7 @@ export default function CaseSelector({
           {selectedCaseDetails && (
             <div className="case-selector-selected-section">
 
-              <div className="case-selector-selected-card">
+              <div className="case-selector-selected-card case-selector-selected-card-green">
                 <div className="case-selector-selected-card-content">
                   <div className="case-selector-checkmark-icon">✓</div>
                   <div className="case-selector-selected-info">
@@ -534,7 +537,7 @@ export default function CaseSelector({
                       type="button"
                       className={[
                         "case-selector-other-item",
-                        isSelected ? "case-selector-other-item--selected" : "",
+                        isSelected ? "case-selector-row-selected" : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
