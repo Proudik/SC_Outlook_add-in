@@ -185,8 +185,9 @@ export async function uploadDocumentVersion(params: {
   mimeType: string;
   dataBase64: string;
   directoryId?: string;
+  correlationId?: string;
 }): Promise<UploadDocumentVersionResponse> {
-  const { documentId, fileName, mimeType, dataBase64, directoryId } = params;
+  const { documentId, fileName, mimeType, dataBase64, directoryId, correlationId } = params;
 
   // Hard block: never upload an empty version. An empty data_base64 string
   // would silently create a zero-byte document version on the server.
@@ -225,15 +226,18 @@ export async function uploadDocumentVersion(params: {
 
   let lastErr: unknown = null;
 
+  const versionHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authentication: token,
+    "Accept-Encoding": "identity",
+  };
+  if (correlationId) versionHeaders["X-Correlation-ID"] = correlationId;
+
   for (const c of candidates) {
     // eslint-disable-next-line no-await-in-loop
     const res = await fetch(c.url, {
       method: c.method,
-      headers: {
-        "Content-Type": "application/json",
-        Authentication: token,
-        "Accept-Encoding": "identity",
-      },
+      headers: versionHeaders,
       body,
     });
 
@@ -256,6 +260,7 @@ export async function uploadDocumentToCase(params: {
   mimeType: string;
   dataBase64: string;
   directoryId?: string;
+  correlationId?: string;
   metadata?: {
     subject?: string;
     fromEmail?: string;
@@ -263,7 +268,7 @@ export async function uploadDocumentToCase(params: {
     [key: string]: any;
   };
 }): Promise<UploadDocumentResponse> {
-  const { caseId, fileName, mimeType, dataBase64, directoryId, metadata } = params;
+  const { caseId, fileName, mimeType, dataBase64, directoryId, correlationId, metadata } = params;
 
   console.log("[uploadDocumentToCase] Starting upload", {
     caseId,
@@ -316,15 +321,18 @@ export async function uploadDocumentToCase(params: {
     },
   });
 
+  const uploadHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authentication: token,
+    "Accept-Encoding": "identity",
+  };
+  if (correlationId) uploadHeaders["X-Correlation-ID"] = correlationId;
+
   let res: Response;
   try {
     res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authentication: token,
-        "Accept-Encoding": "identity",
-      },
+      headers: uploadHeaders,
       body: JSON.stringify(payload),
     });
     console.log("[uploadDocumentToCase] Fetch completed", {

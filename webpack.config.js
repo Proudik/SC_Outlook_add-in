@@ -5,6 +5,17 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv = require("dotenv");
+const { execSync } = require("child_process");
+
+// Capture git SHA at build time for telemetry __BUILD_SHA__
+let _buildSha = "unknown";
+try {
+  _buildSha = execSync("git rev-parse --short HEAD", { stdio: ["pipe", "pipe", "pipe"] })
+    .toString()
+    .trim();
+} catch (_e) {
+  // Not a git repo or git not available — leave as "unknown"
+}
 
 const urlDev = "https://localhost:3000/";
 const urlProd = "https://www.contoso.com/";
@@ -75,6 +86,15 @@ module.exports = async (env, options) => {
       new webpack.DefinePlugin({
         "process.env.SINGLECASE_PUBLIC_TOKEN": JSON.stringify(process.env.SINGLECASE_PUBLIC_TOKEN),
         "process.env.SINGLECASE_BASE_URL": JSON.stringify(process.env.SINGLECASE_BASE_URL),
+        // Telemetry build-time constants — read via safeRead() in telemetry.ts
+        "__ADDIN_VERSION__": JSON.stringify(require("./package.json").version),
+        "__BUILD_SHA__": JSON.stringify(_buildSha),
+        "__ENVIRONMENT__": JSON.stringify(dev ? "development" : "production"),
+        "__TELEMETRY_ENDPOINT__": JSON.stringify(
+          dev
+            ? (process.env.TELEMETRY_ENDPOINT || "http://localhost:4001/ingest")
+            : (process.env.TELEMETRY_ENDPOINT || "")
+        ),
       }),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",

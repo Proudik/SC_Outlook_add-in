@@ -54,7 +54,8 @@ async function scRequest<T>(
   path: string,
   token: string,
   body?: any,
-  params?: Record<string, any>
+  params?: Record<string, any>,
+  correlationId?: string
 ): Promise<T> {
   if (!token) throw new Error("SingleCase token is missing");
 
@@ -63,11 +64,15 @@ async function scRequest<T>(
 
   const url = `${baseUrl}${path}${toQuery(params)}`;
 
+  const extraHeaders: Record<string, string> = {};
+  if (correlationId) extraHeaders["X-Correlation-ID"] = correlationId;
+
   const res = await fetch(url, {
     method,
     headers: {
       Authentication: token,
       "Content-Type": "application/json",
+      ...extraHeaders,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
@@ -157,8 +162,13 @@ export type SubmitEmailToCasePayload = {
   attachments?: AttachmentPayload[];
 };
 
-// Still mocked until you implement the real endpoint
-export async function submitEmailToCase(token: string, payload: SubmitEmailToCasePayload) {
+// Still mocked until you implement the real endpoint.
+// correlationId will be forwarded as X-Correlation-ID once the real endpoint lands.
+export async function submitEmailToCase(
+  token: string,
+  payload: SubmitEmailToCasePayload,
+  _correlationId?: string
+) {
   void token;
   await new Promise((r) => setTimeout(r, 500));
 

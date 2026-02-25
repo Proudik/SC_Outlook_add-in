@@ -1,6 +1,8 @@
 // MainWorkspace.tsx (part 1 of 5)
 
 import * as React from "react";
+import { emit, createCorrelationContext } from "../../../telemetry/telemetry";
+import { hashCaseId, hashItemId, sanitizeErrorMessage } from "../../../telemetry/hashing";
 import {
   markEverFiled,
   loadLastCaseId,
@@ -1760,6 +1762,20 @@ const attachmentIds = React.useMemo(
       if (!settings.rememberLastCase) return;
       setSelectedCaseId(id);
       setSelectedSource("suggested");
+      // suggestion.accepted — fire-and-forget, never block UI
+      void (async () => {
+        const [hItem, hCase] = await Promise.all([
+          hashItemId(activeItemId),
+          hashCaseId(id),
+        ]);
+        const rank = caseSuggestions.findIndex((s) => s.caseId === id);
+        emit("suggestion.accepted", {
+          hashedItemId: hItem,
+          hashedCaseId: hCase,
+          confidencePct: caseSuggestions.find((s) => s.caseId === id)?.confidencePct ?? 0,
+          rank: rank >= 0 ? rank : 0,
+        });
+      })();
     },
     topK: 3,
   });
@@ -1796,6 +1812,32 @@ const attachmentIds = React.useMemo(
       setSuggestedConfidencePct(top.confidencePct);
     }
   }, [caseSuggestions, viewMode, settings.rememberLastCase]);
+
+  // Telemetry: suggestion.shown — fires once per (itemId + count) pair so we
+  // don't re-emit on unrelated re-renders. Uses a ref to avoid stale closures.
+  const _lastSuggEmitRef = React.useRef<{ itemId: string; count: number }>({
+    itemId: "",
+    count: -1,
+  });
+  React.useEffect(() => {
+    if (!caseSuggestions.length) return;
+    if (viewMode !== "pickCase") return;
+    const count = caseSuggestions.length;
+    if (
+      _lastSuggEmitRef.current.itemId === activeItemId &&
+      _lastSuggEmitRef.current.count === count
+    )
+      return;
+    _lastSuggEmitRef.current = { itemId: activeItemId, count };
+    void (async () => {
+      const hItem = await hashItemId(activeItemId);
+      emit("suggestion.shown", {
+        hashedItemId: hItem,
+        count,
+        topConfidencePct: caseSuggestions[0].confidencePct,
+      });
+    })();
+  }, [caseSuggestions, viewMode, activeItemId]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -2629,7 +2671,7 @@ if (!autoFileUserSet) setAutoFileOnSend(true);
       kind: "unfiled",
       text: settings.filingOnSend === "always"
         ? "Select a case to enable auto filing on send."
-        : "Heads up — when you hit Send, the email will send normally. After that, I can file it to SingleCase, but you'll need to pick a case first.",
+        : "Select a case first. Then the email will send and be filed to SingleCase",
     });
   }, [
     composeMode,
@@ -3750,6 +3792,23 @@ setSelectedSource("manual"); // important
       setViewMode("sending");
       setSubmitError("");
 
+      // ── Telemetry: filing.started ─────────────────────────────────────────
+      const { correlationId: filingCorrelationId } = createCorrelationContext();
+      const _filingStartMs = Date.now();
+      void (async () => {
+        const [hItem, hCase] = await Promise.all([hashItemId(activeItemId), hashCaseId(caseId)]);
+        emit("filing.started", {
+          hashedItemId: hItem,
+          hashedCaseId: hCase,
+          filingMode,
+          attachmentCount: selectedAttachments.length,
+          selectionSource: selectedSource ?? "",
+          confidencePct: suggestedConfidencePct,
+          isNewVersion: isUploadingNewVersion,
+        }, filingCorrelationId);
+      })();
+      // ─────────────────────────────────────────────────────────────────────
+
       try {
         const bodySnippetFull = await getEmailBodySnippet(8000);
         const bodyForEml =
@@ -4127,6 +4186,23 @@ setSelectedSource("manual"); // important
           setPrompt({ itemId: storeKey, kind: "filed", text: "This email is already filed." });
         }
 
+        // ── Telemetry: filing.succeeded ───────────────────────────────────
+        void (async () => {
+          const [hItem, hCase] = await Promise.all([hashItemId(activeItemId), hashCaseId(caseId)]);
+          emit("filing.succeeded", {
+            hashedItemId: hItem,
+            hashedCaseId: hCase,
+            filingMode,
+            attachmentCount: selectedAttachments.length,
+            selectionSource: selectedSource ?? "",
+            confidencePct: suggestedConfidencePct,
+            isNewVersion: isUploadingNewVersion,
+            durationMs: Date.now() - _filingStartMs,
+            documentCount: 1 + selectedAttachments.length,
+          }, filingCorrelationId);
+        })();
+        // ─────────────────────────────────────────────────────────────────
+
         setViewMode("sent");
         setIsUploadingNewVersion(false);
       } catch (e) {
@@ -4147,6 +4223,24 @@ setSelectedSource("manual"); // important
           // Try to extract message from object
           msg = (e as any).message || (e as any).error || JSON.stringify(e);
         }
+
+        // ── Telemetry: filing.failed ──────────────────────────────────────
+        void (async () => {
+          const [hItem, hCase] = await Promise.all([hashItemId(activeItemId), hashCaseId(caseId)]);
+          emit("filing.failed", {
+            hashedItemId: hItem,
+            hashedCaseId: hCase,
+            filingMode,
+            attachmentCount: selectedAttachments.length,
+            selectionSource: selectedSource ?? "",
+            confidencePct: suggestedConfidencePct,
+            isNewVersion: isUploadingNewVersion,
+            durationMs: Date.now() - _filingStartMs,
+            errorCode: e instanceof Error ? e.name : "UnknownError",
+            sanitizedMessage: sanitizeErrorMessage(msg),
+          }, filingCorrelationId);
+        })();
+        // ─────────────────────────────────────────────────────────────────
 
         setSubmitError(`Error while saving: ${msg}`);
         setViewMode(composeMode ? "prompt" : "pickCase");
@@ -4342,6 +4436,11 @@ setSelectedSource("manual"); // important
                   setReplyBaseEmailDocId("");
                   setIsUploadingNewVersion(false);
                   if (settings.rememberLastCase) saveLastCaseId(id);
+                  // case.selected.manual — fire-and-forget
+                  void (async () => {
+                    const [hItem, hCase] = await Promise.all([hashItemId(activeItemId), hashCaseId(id)]);
+                    emit("case.selected.manual", { hashedItemId: hItem, hashedCaseId: hCase });
+                  })();
                 }}
                 suggestedCaseId={suggestedCaseId}
                 suggestions={caseSuggestions}

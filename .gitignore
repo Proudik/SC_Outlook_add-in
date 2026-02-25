@@ -4,5 +4,8 @@
 .env
 .env.local
 
+# Local telemetry event log (written by local-ingest.ts)
+.telemetry/
+
 # Claude Code CLI directory
 .claude/

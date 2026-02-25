@@ -11,6 +11,7 @@ import { getStored, setStored } from "../../utils/storage";
 import { STORAGE_KEYS } from "../../utils/constants";
 import { loadSettings, saveSettings } from "../../utils/settingsStorage";
 import QuickActionsPanel from "./QuickActionsPanel";
+import { emit } from "../../telemetry/telemetry";
 
 interface AppProps {
   title: string;
@@ -373,6 +374,7 @@ if (!payload.agreed) return;
 
 setIsSettingsOpen(false); // ADD THIS LINE
 setAuth(payload.token, payload.email);
+    emit("auth.refreshed", { reason: "login_completed" });
     await setStored(STORAGE_KEYS.agreementAccepted, "true");
 
     if (payload.workspace?.workspaceId) {
@@ -514,7 +516,14 @@ setAuth(payload.token, payload.email);
             isOpen={isSettingsOpen}
             settings={settings}
             onClose={() => setIsSettingsOpen(false)}
-            onChange={(s) => { saveSettings(s); setSettings(s); }}
+            onChange={(s) => {
+              const changedKeys = (Object.keys(s) as (keyof AddinSettings)[]).filter(
+                (k) => s[k] !== settings[k]
+              );
+              saveSettings(s);
+              setSettings(s);
+              emit("settings.changed", { changedKeys });
+            }}
             onReset={() => { saveSettings(DEFAULT_SETTINGS); setSettings(DEFAULT_SETTINGS); }}
             onSignOut={onSignOut}
           />
