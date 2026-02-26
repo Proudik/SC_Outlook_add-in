@@ -71,7 +71,7 @@ function emergencyPruneRoamingSettings(): void {
       const allKeys = Object.keys(dataStore);
       let removedCount = 0;
       for (const k of allKeys) {
-        if (k.startsWith("sc:sent:") || k.startsWith("sc_conv_ctx:") || k === DEBUG_LOG_KEY) {
+        if (k.startsWith("sc:sent:") || k.startsWith("sc_conv_ctx:") || k.startsWith("sc:uploadedLinks:") || k === DEBUG_LOG_KEY) {
           try { Office.context.roamingSettings.remove(k); removedCount++; } catch { /* ignore */ }
         }
       }
@@ -257,24 +257,30 @@ export async function setStored(key: string, value: string, retryCount = 0): Pro
         if (VERBOSE_LOGGING) console.log("[setStored] ✅ saveAsync completed");
         return;
       } catch (saveError) {
-        console.error("[setStored] saveAsync failed:", saveError);
-
-        // If roamingSettings exceeded 32KB, free space and retry once immediately
+        // If roamingSettings exceeded 32KB, try emergency prune once then silently fall back to localStorage.
+        // This is expected in OWA where old accumulated keys fill the 32KB limit.
+        // All callers already mirror to localStorage, so data is not lost.
         const isOverflow = (saveError as any)?.message?.includes("32 KB") ||
                            (saveError as any)?.message?.includes("size limit");
-        if (isOverflow && retryCount === 0) {
-          console.warn("[setStored] roamingSettings overflow — emergency pruning and retrying");
-          emergencyPruneRoamingSettings();
-          try {
-            await saveRoamingSettings();
-            console.log("[setStored] ✅ saveAsync succeeded after emergency prune");
-            return;
-          } catch (retryError) {
-            console.warn("[setStored] saveAsync still failed after emergency prune:", retryError);
+        if (isOverflow) {
+          if (retryCount === 0) {
+            emergencyPruneRoamingSettings();
+            try {
+              await saveRoamingSettings();
+              lsSet();
+              if (VERBOSE_LOGGING) console.log("[setStored] ✅ saveAsync succeeded after emergency prune");
+              return;
+            } catch {
+              // Still full — fall through to localStorage silently
+            }
           }
+          lsSet();
+          return;
         }
 
-        // Retry on desktop Outlook if save fails for other reasons
+        console.error("[setStored] saveAsync failed:", saveError);
+
+        // Retry on desktop Outlook if save fails for other (transient) reasons
         if (retryCount < MAX_RETRIES) {
           const delay = 200 * (retryCount + 1); // Exponential backoff: 200ms, 400ms
           if (VERBOSE_LOGGING) console.log(`[setStored] Retrying in ${delay}ms...`);

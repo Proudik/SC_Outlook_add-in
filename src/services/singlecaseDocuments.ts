@@ -1,5 +1,5 @@
 import { getAuth, getAuthRuntime } from "./auth";
-import { getStored, setStored } from "../utils/storage";
+import { getStored } from "../utils/storage";
 import { STORAGE_KEYS } from "../utils/constants";
 
 export type UploadDocumentResponse = {
@@ -411,11 +411,12 @@ export async function renameDocument(params: { token: string; documentId: string
 const OUTLOOK_FOLDER_NAME = "Outlook add-in";
 
 /**
- * Get cached folder ID for a case, if available
+ * Get cached folder ID for a case, if available.
+ * Uses localStorage directly — folder cache is device-local state, no cross-device sync needed.
  */
 async function getCachedFolderId(caseId: string): Promise<string | null> {
   try {
-    const raw = await getStored(STORAGE_KEYS.outlookFolderCache);
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.outlookFolderCache) : null;
     if (!raw) return null;
 
     const cache = JSON.parse(String(raw));
@@ -427,16 +428,17 @@ async function getCachedFolderId(caseId: string): Promise<string | null> {
 }
 
 /**
- * Cache folder ID for a case
+ * Cache folder ID for a case.
+ * Uses localStorage directly — avoids roamingSettings 32KB overflow in OWA.
  */
 async function cacheFolderId(caseId: string, folderId: string): Promise<void> {
   try {
-    const raw = await getStored(STORAGE_KEYS.outlookFolderCache);
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.outlookFolderCache) : null;
     const cache = raw ? JSON.parse(String(raw)) : {};
 
     cache[String(caseId)] = String(folderId);
 
-    await setStored(STORAGE_KEYS.outlookFolderCache, JSON.stringify(cache));
+    if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEYS.outlookFolderCache, JSON.stringify(cache));
   } catch (e) {
     console.warn("[cacheFolderId] Failed to cache folder ID:", e);
   }

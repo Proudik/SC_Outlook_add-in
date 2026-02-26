@@ -259,6 +259,20 @@ export function suggestCasesLocal(params: {
         const ratio = subjOverlap.total > 0 ? subjOverlap.hits / subjOverlap.total : 0;
         const boost = 60 + 30 * clamp(ratio, 0, 1); // 60..90
         add(caseId, boost, "Case name matches the email subject.");
+      } else {
+        // 3b-alt) Reverse direction: check what proportion of the *subject's* significant
+        // tokens (>= 5 chars) appear in the case title. Handles short subjects like
+        // "Amazon services" for case "Amazon vs. Gebrüder Weiss" — the title has 4 tokens
+        // so only 1/4 hit the subject (misses the >=2 threshold above), but "amazon"
+        // covers 50% of the meaningful subject words, which is a strong content signal.
+        const subjectSigTokens = tokenizeLoose(subjectRaw).filter((t) => t.length >= 5);
+        if (subjectSigTokens.length > 0) {
+          const { hits: sh, total: st } = tokenOverlapScore(subjectSigTokens, titleRaw);
+          if (sh >= 1 && sh / st >= 0.5) {
+            const boost = Math.round(35 + 25 * clamp(sh / st, 0, 1)); // 35..60
+            add(caseId, boost, "Case name matches the email subject.");
+          }
+        }
       }
     }
 
@@ -472,6 +486,16 @@ export function suggestCasesByContent(params: {
         const ratio = subjOverlap.total > 0 ? subjOverlap.hits / subjOverlap.total : 0;
         const boost = 60 + 30 * clamp(ratio, 0, 1);
         add(caseId, boost, "Case name matches subject keywords");
+      } else {
+        // 2b-alt) Reverse direction: same logic as 3b-alt in suggestCasesLocal.
+        const subjectSigTokens = tokenizeLoose(subjectRaw).filter((t) => t.length >= 5);
+        if (subjectSigTokens.length > 0) {
+          const { hits: sh, total: st } = tokenOverlapScore(subjectSigTokens, titleRaw);
+          if (sh >= 1 && sh / st >= 0.5) {
+            const boost = Math.round(35 + 25 * clamp(sh / st, 0, 1)); // 35..60
+            add(caseId, boost, "Case name matches subject keywords");
+          }
+        }
       }
     }
 

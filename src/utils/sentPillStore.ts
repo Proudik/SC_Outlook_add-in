@@ -1,4 +1,7 @@
-import { getStored, setStored } from "./storage";
+// sentPillStore.ts uses localStorage directly (not setStored/getStored) because:
+// - Sent pill indicators are display-only UI state for the current device — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA (OfficeRuntime.storage is Desktop-only),
+//   and writing sc:sentPills to roamingSettings contributes to the 32KB overflow.
 
 export type SentPillData = {
   sent: boolean;
@@ -12,8 +15,8 @@ export type SentPillData = {
   filedBy?: string; // NEW
 };
 
-// New blob-based storage: ONE roamingSettings key holds all sentPills.
-// This avoids accumulating individual "sc:sent:${itemId}" keys that blow up the 32KB limit.
+// Blob-based storage: ONE localStorage key holds all sentPills.
+// This avoids accumulating individual "sc:sent:${itemId}" keys.
 const SENT_PILLS_KEY = "sc:sentPills";
 const MAX_SENT_PILLS = 10;
 
@@ -71,9 +74,9 @@ function normaliseSentPill(raw: unknown): SentPillData | null {
   };
 }
 
-async function loadBlob(): Promise<SentPillsBlob> {
+function loadBlob(): SentPillsBlob {
   try {
-    const raw = await getStored(SENT_PILLS_KEY);
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(SENT_PILLS_KEY) : null;
     if (raw) return JSON.parse(raw) as SentPillsBlob;
   } catch {}
   return {};
@@ -82,9 +85,9 @@ async function loadBlob(): Promise<SentPillsBlob> {
 export async function loadSentPill(itemId: string): Promise<SentPillData | null> {
   if (!itemId) return null;
 
-  // 1. Try new blob format
+  // 1. Try blob format
   try {
-    const blob = await loadBlob();
+    const blob = loadBlob();
     const entry = blob[itemId];
     if (entry) {
       const { _savedAt: _unused, ...pillData } = entry;
@@ -94,7 +97,7 @@ export async function loadSentPill(itemId: string): Promise<SentPillData | null>
 
   // 2. Fallback to legacy individual-key format (for emails saved before this version)
   try {
-    const legacyRaw = await getStored(`${KEY_PREFIX}${itemId}`);
+    const legacyRaw = typeof localStorage !== "undefined" ? localStorage.getItem(`${KEY_PREFIX}${itemId}`) : null;
     if (legacyRaw && legacyRaw.trim() !== "") {
       return normaliseSentPill(JSON.parse(legacyRaw));
     }
@@ -107,7 +110,7 @@ export async function saveSentPill(itemId: string, data: SentPillData): Promise<
   if (!itemId) return;
 
   const normalised = normaliseSentPill(data) ?? { sent: Boolean(data.sent) };
-  let blob = await loadBlob();
+  let blob = loadBlob();
 
   blob[itemId] = { ...normalised, _savedAt: Date.now() };
 
@@ -120,7 +123,13 @@ export async function saveSentPill(itemId: string, data: SentPillData): Promise<
     blob = pruned;
   }
 
-  await setStored(SENT_PILLS_KEY, JSON.stringify(blob));
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(SENT_PILLS_KEY, JSON.stringify(blob));
+    }
+  } catch {
+    // localStorage full or unavailable — silently ignore, pills are display-only
+  }
 }
 
 /**
@@ -131,15 +140,19 @@ export async function clearSentPill(itemId: string): Promise<void> {
 
   // Remove from blob
   try {
-    const blob = await loadBlob();
+    const blob = loadBlob();
     if (blob[itemId] !== undefined) {
       delete blob[itemId];
-      await setStored(SENT_PILLS_KEY, JSON.stringify(blob));
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(SENT_PILLS_KEY, JSON.stringify(blob));
+      }
     }
   } catch {}
 
-  // Also clear legacy individual key (write "" so OfficeRuntime.storage sees it as cleared)
+  // Also clear legacy individual key from localStorage
   try {
-    await setStored(`${KEY_PREFIX}${itemId}`, "");
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(`${KEY_PREFIX}${itemId}`);
+    }
   } catch {}
 }

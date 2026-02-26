@@ -148,12 +148,23 @@ const LAST_FILED_CTX_KEY = "sc_last_filed_ctx";
 
 const CONV_CTX_KEY_PREFIX = "sc_conv_ctx:";
 
+// These helpers use localStorage directly (not setStored) because:
+// - Per-conversation and last-filed state is device-local UI memory — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA and triggers 32KB overflow errors on every filing.
+
+function lsGet(key: string): string {
+  try { return typeof localStorage !== "undefined" ? (localStorage.getItem(key) || "") : ""; } catch { return ""; }
+}
+function lsSet(key: string, value: string): void {
+  try { if (typeof localStorage !== "undefined") localStorage.setItem(key, value); } catch { /* ignore */ }
+}
+
 async function saveConversationFiledCtx(conversationKey: string, ctx: LastFiledCtx) {
   const ck = String(conversationKey || "").trim();
   const caseId = String(ctx.caseId || "").trim();
   const emailDocId = String(ctx.emailDocId || "").trim();
   if (!ck || !caseId || !emailDocId) return;
-  await setStored(`${CONV_CTX_KEY_PREFIX}${ck}`, JSON.stringify({ caseId, emailDocId }));
+  lsSet(`${CONV_CTX_KEY_PREFIX}${ck}`, JSON.stringify({ caseId, emailDocId }));
 }
 
 type LastFiledCtx = {
@@ -165,32 +176,26 @@ async function saveLastFiledCtx(ctx: LastFiledCtx) {
   const caseId = String(ctx.caseId || "").trim();
   const emailDocId = String(ctx.emailDocId || "").trim();
   if (!caseId || !emailDocId) return;
-  await setStored(LAST_FILED_CTX_KEY, JSON.stringify({ caseId, emailDocId }));
+  lsSet(LAST_FILED_CTX_KEY, JSON.stringify({ caseId, emailDocId }));
 }
 
 async function saveLastFiledCase(caseId: string) {
   const cid = String(caseId || "").trim();
   if (!cid) return;
-  await setStored(LAST_FILED_CASE_KEY, cid);
-}
-
-async function loadLastFiledCase(): Promise<string> {
-  const v = await getStored(LAST_FILED_CASE_KEY);
-  return String(v || "").trim();
+  lsSet(LAST_FILED_CASE_KEY, cid);
 }
 
 async function saveConversationFiledCase(conversationKey: string, caseId: string) {
   const ck = String(conversationKey || "").trim();
   const cid = String(caseId || "").trim();
   if (!ck || !cid) return;
-  await setStored(`${CONV_CASE_KEY_PREFIX}${ck}`, cid);
+  lsSet(`${CONV_CASE_KEY_PREFIX}${ck}`, cid);
 }
 
 async function loadConversationFiledCase(conversationKey: string): Promise<string> {
   const ck = String(conversationKey || "").trim();
   if (!ck) return "";
-  const v = await getStored(`${CONV_CASE_KEY_PREFIX}${ck}`);
-  return String(v || "").trim();
+  return lsGet(`${CONV_CASE_KEY_PREFIX}${ck}`);
 }
 
 const RECIPIENT_HISTORY_KEY = (STORAGE_KEYS as any)?.recipientHistory || "recipientHistory";

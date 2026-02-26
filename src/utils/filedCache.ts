@@ -1,4 +1,7 @@
-import { getStored, setStored } from "./storage";
+// filedCache.ts uses localStorage directly (not setStored/getStored) because:
+// - Filed email cache is per-device duplicate detection state — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA (OfficeRuntime.storage is Desktop-only),
+//   and writing sc:filedEmailsCache to roamingSettings contributes to the 32KB overflow.
 
 const FILED_CACHE_KEY = "sc:filedEmailsCache";
 
@@ -12,6 +15,24 @@ export type FiledEmailCache = {
     filedAt: number; // timestamp
   };
 };
+
+function lsGet(): string | null {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(FILED_CACHE_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+function lsSet(value: string): void {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(FILED_CACHE_KEY, value);
+    }
+  } catch {
+    // localStorage full or unavailable — silently ignore, cache is non-critical
+  }
+}
 
 /**
  * Store filed email info by conversationId
@@ -44,7 +65,7 @@ export async function cacheFiledEmail(
     };
     console.log("[cacheFiledEmail] Platform info:", platform);
 
-    const raw = await getStored(FILED_CACHE_KEY);
+    const raw = lsGet();
     const cache: FiledEmailCache = raw ? JSON.parse(String(raw)) : {};
     console.log("[cacheFiledEmail] Current cache size:", Object.keys(cache).length);
 
@@ -57,7 +78,7 @@ export async function cacheFiledEmail(
       filedAt: Date.now(),
     };
 
-    // Always prune to 8 most recent entries to stay well under the 32KB roamingSettings limit
+    // Always prune to 8 most recent entries
     const entries = Object.entries(cache);
     entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
     const keep = entries.slice(0, 8);
@@ -65,13 +86,13 @@ export async function cacheFiledEmail(
     keep.forEach(([key, val]) => {
       newCache[key] = val;
     });
-    await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
+    lsSet(JSON.stringify(newCache));
     if (entries.length > 8) {
       console.log("[cacheFiledEmail] Pruned cache from", entries.length, "to 8 entries");
     }
 
     // Verify write succeeded
-    const verification = await getStored(FILED_CACHE_KEY);
+    const verification = lsGet();
     const verifiedCache = verification ? JSON.parse(String(verification)) : {};
     const writeSuccess = !!verifiedCache[conversationId];
     console.log("[cacheFiledEmail] Write verification:", {
@@ -112,8 +133,7 @@ export async function getFiledEmailFromCache(
     };
     console.log("[getFiledEmailFromCache] Platform info:", platform);
 
-    // Force fresh read to avoid stale roamingSettings after recent write
-    const raw = await getStored(FILED_CACHE_KEY, true);
+    const raw = lsGet();
     if (!raw) {
       console.log("[getFiledEmailFromCache] No cache found in storage");
       return null;
@@ -171,7 +191,7 @@ export async function cacheFiledEmailBySubject(
     };
     console.log("[cacheFiledEmailBySubject] Platform info:", platform);
 
-    const raw = await getStored(FILED_CACHE_KEY);
+    const raw = lsGet();
     const cache: FiledEmailCache = raw ? JSON.parse(String(raw)) : {};
     console.log("[cacheFiledEmailBySubject] Current cache size:", Object.keys(cache).length);
 
@@ -188,7 +208,7 @@ export async function cacheFiledEmailBySubject(
       filedAt: Date.now(),
     };
 
-    // Always prune to 8 most recent entries to stay well under the 32KB roamingSettings limit
+    // Always prune to 8 most recent entries
     const entries = Object.entries(cache);
     entries.sort((a, b) => b[1].filedAt - a[1].filedAt);
     const keep = entries.slice(0, 8);
@@ -196,13 +216,13 @@ export async function cacheFiledEmailBySubject(
     keep.forEach(([key, val]) => {
       newCache[key] = val;
     });
-    await setStored(FILED_CACHE_KEY, JSON.stringify(newCache));
+    lsSet(JSON.stringify(newCache));
     if (entries.length > 8) {
       console.log("[cacheFiledEmailBySubject] Pruned cache from", entries.length, "to 8 entries");
     }
 
     // Verify write succeeded
-    const verification = await getStored(FILED_CACHE_KEY);
+    const verification = lsGet();
     const verifiedCache = verification ? JSON.parse(String(verification)) : {};
     const writeSuccess = !!verifiedCache[tempKey];
     console.log("[cacheFiledEmailBySubject] Write verification:", {
@@ -243,8 +263,7 @@ export async function findFiledEmailBySubject(
     };
     console.log("[findFiledEmailBySubject] Platform info:", platform);
 
-    // Force fresh read to avoid stale roamingSettings after recent write
-    const raw = await getStored(FILED_CACHE_KEY, true);
+    const raw = lsGet();
     if (!raw) {
       console.log("[findFiledEmailBySubject] No cache found in storage");
       return null;
@@ -273,10 +292,10 @@ export async function findFiledEmailBySubject(
         console.log("[findFiledEmailBySubject] Upgrading cache with conversationId:", conversationId.substring(0, 30) + "...");
         cache[conversationId] = entry;
         // Keep the subject-based entry for a while (don't delete)
-        await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
+        lsSet(JSON.stringify(cache));
 
         // Verify upgrade succeeded
-        const verification = await getStored(FILED_CACHE_KEY);
+        const verification = lsGet();
         const verifiedCache = verification ? JSON.parse(String(verification)) : {};
         const upgradeSuccess = !!verifiedCache[conversationId];
         console.log("[findFiledEmailBySubject] Cache upgrade verification:", {
@@ -305,13 +324,13 @@ export async function removeFiledEmailFromCache(conversationId: string): Promise
   }
 
   try {
-    const raw = await getStored(FILED_CACHE_KEY);
+    const raw = lsGet();
     if (!raw) return;
 
     const cache: FiledEmailCache = JSON.parse(String(raw));
     delete cache[conversationId];
 
-    await setStored(FILED_CACHE_KEY, JSON.stringify(cache));
+    lsSet(JSON.stringify(cache));
     console.log("[removeFiledEmailFromCache] Removed entry", {
       conversationId: conversationId.substring(0, 20) + "...",
     });

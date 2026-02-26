@@ -1,4 +1,6 @@
-import { getStored, setStored } from "./storage";
+// recipientHistory uses localStorage directly (not setStored) because:
+// - Recipient → case history is per-device suggestion state — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA and triggers 32KB overflow errors.
 import { STORAGE_KEYS } from "./constants";
 
 export type RecipientHistoryEntry = {
@@ -13,9 +15,9 @@ function normEmail(v: string): string {
 }
 
 async function loadMap(): Promise<Record<string, RecipientHistoryEntry>> {
-  const raw = await getStored(STORAGE_KEYS.recipientHistory).catch(() => null);
-  if (!raw) return {};
   try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.recipientHistory) : null;
+    if (!raw) return {};
     const obj = JSON.parse(String(raw));
     return obj && typeof obj === "object" ? (obj as any) : {};
   } catch {
@@ -24,7 +26,9 @@ async function loadMap(): Promise<Record<string, RecipientHistoryEntry>> {
 }
 
 async function saveMap(map: Record<string, RecipientHistoryEntry>) {
-  await setStored(STORAGE_KEYS.recipientHistory, JSON.stringify(map));
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEYS.recipientHistory, JSON.stringify(map));
+  } catch { /* ignore */ }
 }
 
 export async function recordRecipientsFiledToCase(emails: string[], caseId: string) {
