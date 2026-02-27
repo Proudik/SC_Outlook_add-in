@@ -3,7 +3,8 @@
 import { getAuthRuntime, clearAuthIfExpiredRuntime } from "../services/auth";
 import { getStored, setStored } from "../utils/storage";
 import { STORAGE_KEYS } from "../utils/constants";
-import { uploadDocumentToCase, uploadDocumentVersion, findDocumentBySubject } from "../services/singlecaseDocuments";
+import { uploadDocumentToCase, uploadDocumentVersion, findDocumentBySubject, checkDuplicateFilename } from "../services/singlecaseDocuments";
+import { createTimer } from "../services/singlecase";
 import { cacheFiledEmail, cacheFiledEmailBySubject } from "../utils/filedCache";
 import { recordRecipientsFiledToCase } from "../utils/recipientHistory";
 
@@ -54,6 +55,81 @@ function toBase64Utf8(text: string): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
+}
+
+function formatDateMidnight(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day} 00:00:00`;
+}
+
+function guessMimeType(filename: string): string {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    txt: "text/plain",
+    csv: "text/csv",
+    zip: "application/zip",
+    msg: "application/vnd.ms-outlook",
+  };
+  return map[ext] || "application/octet-stream";
+}
+
+function getAttachmentsRuntime(): Array<{ id: string; name: string }> {
+  try {
+    const item = Office.context.mailbox.item as any;
+    const atts = item?.attachments;
+    console.log("[getAttachmentsRuntime] Raw value:", {
+      isArray: Array.isArray(atts),
+      type: typeof atts,
+      length: Array.isArray(atts) ? atts.length : "n/a",
+      raw: atts,
+    });
+    if (!Array.isArray(atts)) return [];
+    const result = atts
+      .filter((a: any) => !a?.isInline && a?.id && a?.name)
+      .map((a: any) => ({ id: String(a.id), name: String(a.name) }));
+    console.log("[getAttachmentsRuntime] Filtered (non-inline):", result);
+    return result;
+  } catch (e) {
+    console.warn("[getAttachmentsRuntime] Error:", e);
+    return [];
+  }
+}
+
+async function getAttachmentContentRuntime(
+  attachmentId: string,
+  name: string
+): Promise<{ name: string; base64: string; mime: string }> {
+  const item = Office.context.mailbox.item as any;
+  if (typeof item?.getAttachmentContentAsync !== "function") {
+    throw new Error("getAttachmentContentAsync not available in this context");
+  }
+  return new Promise((resolve, reject) => {
+    item.getAttachmentContentAsync(attachmentId, (res: any) => {
+      if (res?.status === Office.AsyncResultStatus.Succeeded) {
+        resolve({
+          name,
+          base64: String(res.value?.content || ""),
+          mime: guessMimeType(name),
+        });
+      } else {
+        reject(new Error(`getAttachmentContentAsync failed: ${res?.error?.message || "unknown"}`));
+      }
+    });
+  });
 }
 
 function getConversationIdSafe(): string {
@@ -157,6 +233,8 @@ async function readIntentAny(
   filingOnSend: string;
   baseCaseId?: string;
   baseEmailDocId?: string;
+  attachments?: { id: string; name: string }[];
+  timerEntry?: { note: string; seconds: number } | null;
 } | null> {
   for (const k of itemKeys) {
     const key = `sc_intent:${k}`;
@@ -183,6 +261,16 @@ async function readIntentAny(
         }
       }
 
+      // localStorage fallback: setStored mirrors writes here when roamingSettings overflows (32KB OWA limit)
+      if (!raw && typeof localStorage !== "undefined") {
+        try {
+          raw = localStorage.getItem(key);
+          if (raw) console.log("[readIntentAny] Found in localStorage (roamingSettings overflow fallback)");
+        } catch (e) {
+          console.warn("[readIntentAny] localStorage.getItem failed:", e);
+        }
+      }
+
       if (!raw) continue;
 
       const obj = JSON.parse(String(raw));
@@ -191,6 +279,17 @@ async function readIntentAny(
       const filingOnSend = String(obj?.filingOnSend || "").trim();
       const baseCaseId = String(obj?.baseCaseId || "").trim();
       const baseEmailDocId = String(obj?.baseEmailDocId || "").trim();
+      const attachments: { id: string; name: string }[] = Array.isArray(obj?.attachments)
+        ? obj.attachments
+            .filter((a: any) => a?.id && a?.name)
+            .map((a: any) => ({ id: String(a.id), name: String(a.name) }))
+        : [];
+
+      const te = obj?.timerEntry;
+      const timerEntry: { note: string; seconds: number } | null =
+        te && typeof te.note === "string" && typeof te.seconds === "number" && te.seconds >= 60
+          ? { note: te.note, seconds: te.seconds }
+          : null;
 
       if (!caseId) continue;
 
@@ -200,6 +299,8 @@ async function readIntentAny(
         autoFileOnSend,
         filingOnSend,
         hasBase: !!(baseCaseId && baseEmailDocId),
+        attachmentCount: attachments.length,
+        hasTimer: !!timerEntry,
       });
 
       return {
@@ -209,6 +310,8 @@ async function readIntentAny(
         filingOnSend,
         baseCaseId: baseCaseId || undefined,
         baseEmailDocId: baseEmailDocId || undefined,
+        attachments,
+        timerEntry,
       };
     } catch (e) {
       console.warn("[readIntentAny] Failed to read intent for key:", key, e);
@@ -726,8 +829,78 @@ export async function onMessageSendHandler(event: SendEvent) {
       }
     }
 
+    // ─── Attachment upload ─────────────────────────────────────────────────────
+    // Primary: use attachment IDs saved in the intent from the taskpane (item.attachments is
+    // unavailable in OWA command context). Fallback: getAttachmentsRuntime() for Desktop Outlook
+    // where item.attachments IS synchronously available in the command frame.
+    const intentAttachments = intent.attachments ?? [];
+    const attachments = intentAttachments.length > 0 ? intentAttachments : getAttachmentsRuntime();
+    console.log("[onMessageSendHandler] Attachments:", {
+      source: intentAttachments.length > 0 ? "intent" : "runtime",
+      count: attachments.length,
+    });
+    if (attachments.length > 0) {
+      console.log("[onMessageSendHandler] Uploading", attachments.length, "attachment(s)");
+      for (const att of attachments) {
+        try {
+          const isDuplicate = await withTimeout(
+            checkDuplicateFilename(intent.caseId, att.name),
+            3000
+          ).catch(() => false);
+          if (isDuplicate) {
+            console.log("[onMessageSendHandler] Skipping duplicate attachment:", att.name);
+            continue;
+          }
+          const content = await withTimeout(
+            getAttachmentContentRuntime(att.id, att.name),
+            T_FETCH_MS
+          );
+          await withTimeout(
+            uploadDocumentToCase({
+              caseId: intent.caseId,
+              fileName: content.name,
+              mimeType: content.mime,
+              dataBase64: content.base64,
+            }),
+            T_FETCH_MS
+          );
+          console.log("[onMessageSendHandler] Attachment uploaded:", att.name);
+        } catch (e) {
+          console.warn("[onMessageSendHandler] Failed to upload attachment:", att.name, e);
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     console.log("[onMessageSendHandler] Upload successful");
-    await showInfo("SingleCase: email uložen při odeslání.");
+
+    // ─── Timer submission ──────────────────────────────────────────────────────
+    // Filed first (above), timer second. Non-blocking — a timer failure never
+    // cancels the send or the filing.
+    if (intent.timerEntry && intent.timerEntry.seconds >= 60 && intent.timerEntry.note.trim()) {
+      try {
+        await withTimeout(
+          createTimer(token, {
+            user_id: 21,
+            project_id: Number(intent.caseId),
+            date: formatDateMidnight(),
+            total_time: intent.timerEntry.seconds,
+            total_billed_time: intent.timerEntry.seconds,
+            sheet_activity_id: 1,
+            note: intent.timerEntry.note.trim(),
+          }),
+          T_FETCH_MS
+        );
+        console.log("[onMessageSendHandler] Timer entry created", { seconds: intent.timerEntry.seconds });
+        await showInfo("SingleCase: email uložen a čas zaznamenán.");
+      } catch (e) {
+        console.warn("[onMessageSendHandler] Timer creation failed (non-blocking):", e);
+        await showInfo("SingleCase: email uložen, čas se nepodařilo zaznamenat.");
+      }
+    } else {
+      await showInfo("SingleCase: email uložen při odeslání.");
+    }
+    // ──────────────────────────────────────────────────────────────────────────
 
     finish(true);
   } catch (e) {

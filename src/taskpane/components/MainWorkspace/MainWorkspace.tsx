@@ -38,6 +38,7 @@ import { loadUploadedLinks, saveUploadedLinks } from "../../../utils/uploadedLin
 import FiledSummaryCard from "./components/FiledSummaryCard";
 import AttachmentsStep from "./components/AttachmentsStep";
 import PromptBubble from "./components/PromptBubble";
+import TimeEntryOnSendPanel, { type PreparedTimerEntry } from "./components/TimeEntryOnSendPanel";
 import {
   applyFiledCategoryToCurrentEmailOfficeJs,
   applyUnfiledCategoryToCurrentEmailOfficeJs,
@@ -323,8 +324,19 @@ async function saveComposeIntent(params: {
   duplicates?: string;
   baseCaseId?: string;
   baseEmailDocId?: string;
+  timerEntry?: { note: string; seconds: number } | null;
 }) {
   try {
+    // Read non-inline attachments from the compose item while we're in the taskpane context.
+    // item.attachments is undefined in the OnSend command context (OWA limitation), so we
+    // capture the list here and embed it in the intent for the send handler to read.
+    const rawAtts = (Office?.context?.mailbox?.item as any)?.attachments;
+    const attachmentList: { id: string; name: string }[] = Array.isArray(rawAtts)
+      ? rawAtts
+          .filter((a: any) => !a?.isInline && a?.id && a?.name)
+          .map((a: any) => ({ id: String(a.id), name: String(a.name) }))
+      : [];
+
     const value = JSON.stringify({
       caseId: params.caseId,
       autoFileOnSend: params.autoFileOnSend,
@@ -332,6 +344,8 @@ async function saveComposeIntent(params: {
       duplicates: String(params.duplicates || ""),
       baseCaseId: String(params.baseCaseId || "").trim(),
       baseEmailDocId: String(params.baseEmailDocId || "").trim(),
+      attachments: attachmentList,
+      timerEntry: params.timerEntry ?? null,
     });
 
     const key = `sc_intent:${params.itemKey}`;
@@ -340,6 +354,7 @@ async function saveComposeIntent(params: {
       key,
       caseId: params.caseId,
       autoFileOnSend: params.autoFileOnSend,
+      attachmentCount: attachmentList.length,
       baseCaseId: String(params.baseCaseId || "").trim(),
       baseEmailDocId: String(params.baseEmailDocId || "").trim(),
     });
@@ -349,17 +364,23 @@ async function saveComposeIntent(params: {
       console.log("[saveComposeIntent] Saved to OfficeRuntime.storage");
     } else if (Office?.context?.roamingSettings) {
       Office.context.roamingSettings.set(key, value);
-      await new Promise<void>((resolve, reject) => {
-        Office.context.roamingSettings.saveAsync((result: any) => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            console.log("[saveComposeIntent] Saved to roamingSettings");
-            resolve();
-          } else {
-            console.error("[saveComposeIntent] roamingSettings.saveAsync failed:", result.error);
-            reject(new Error(result.error?.message || "saveAsync failed"));
-          }
+      try {
+        await new Promise<void>((resolve, reject) => {
+          Office.context.roamingSettings.saveAsync((result: any) => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              console.log("[saveComposeIntent] Saved to roamingSettings");
+              resolve();
+            } else {
+              console.error("[saveComposeIntent] roamingSettings.saveAsync failed:", result.error);
+              reject(new Error(result.error?.message || "saveAsync failed"));
+            }
+          });
         });
-      });
+      } catch {
+        // Roaming settings full (OWA 32KB limit) — mirror to localStorage so send handler finds it
+        localStorage.setItem(key, value);
+        console.warn("[saveComposeIntent] Roaming settings overflow, mirrored to localStorage");
+      }
     } else {
       localStorage.setItem(key, value);
       console.warn("[saveComposeIntent] Saved to localStorage (cross-context won't work)");
@@ -373,10 +394,21 @@ async function saveComposeIntent(params: {
         console.log("[saveComposeIntent] Saved fallback to OfficeRuntime.storage");
       } else if (Office?.context?.roamingSettings) {
         Office.context.roamingSettings.set(fallbackKey, value);
-        await new Promise<void>((resolve) => {
-          Office.context.roamingSettings.saveAsync(() => resolve());
-        });
-        console.log("[saveComposeIntent] Saved fallback to roamingSettings");
+        try {
+          await new Promise<void>((resolve, reject) => {
+            Office.context.roamingSettings.saveAsync((result: any) => {
+              if (result.status === Office.AsyncResultStatus.Succeeded) {
+                resolve();
+              } else {
+                reject(new Error(result.error?.message));
+              }
+            });
+          });
+          console.log("[saveComposeIntent] Saved fallback to roamingSettings");
+        } catch {
+          localStorage.setItem(fallbackKey, value);
+          console.warn("[saveComposeIntent] Fallback key: roaming settings overflow, mirrored to localStorage");
+        }
       } else {
         localStorage.setItem(fallbackKey, value);
         console.log("[saveComposeIntent] Saved fallback to localStorage");
@@ -1347,15 +1379,50 @@ const conversationKey = React.useMemo(
   [activeItemId, activeItemKey]
 );
 
+// Incremented by the AttachmentsChanged listener below — forces attachmentsLite to re-read
+// when the user adds/removes an attachment in compose mode.
+const [attachmentChangeCounter, setAttachmentChangeCounter] = React.useState(0);
+
 const attachmentsLite = React.useMemo(
   () => getOutlookAttachmentsLite(),
-  [activeItemId, activeItemKey]
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [activeItemId, activeItemKey, attachmentChangeCounter]
 );
 
 const attachmentIds = React.useMemo(
   () => (attachmentsLite || []).map((a) => String(a.id)).filter(Boolean),
   [attachmentsLite]
 );
+
+// Listen for attachment add/remove in compose mode so the intent is re-saved with the latest list.
+// AttachmentsChanged fires in OWA (requirement set 1.8+); Desktop exposes item.attachments directly.
+React.useEffect(() => {
+  if (!composeMode) return () => {};
+
+  const handler = () => {
+    setAttachmentChangeCounter((c) => c + 1);
+  };
+
+  try {
+    Office.context.mailbox.item?.addHandlerAsync(
+      Office.EventType.AttachmentsChanged,
+      handler
+    );
+  } catch {
+    // AttachmentsChanged not available in this host — polling via saveComposeIntent on case select
+  }
+
+  return () => {
+    try {
+      Office.context.mailbox.item?.removeHandlerAsync(
+        Office.EventType.AttachmentsChanged,
+        { handler } as any
+      );
+    } catch {
+      // ignore
+    }
+  };
+}, [composeMode, activeItemId, setAttachmentChangeCounter]);
 
   React.useEffect(() => {
     if (!composeMode) return;
@@ -1377,6 +1444,9 @@ const attachmentIds = React.useMemo(
 
 
   const [autoFileUserSet, setAutoFileUserSet] = React.useState(false);
+
+  // Timer entry prepared by the user in compose mode — submitted via OnSend handler after filing
+  const [preparedTimerEntry, setPreparedTimerEntry] = React.useState<PreparedTimerEntry | null>(null);
 
   const showFiledSummary = React.useMemo(() => {
     // Only show FiledSummary if we have actual data (sentPill or uploaded documents)
@@ -1702,6 +1772,7 @@ const attachmentIds = React.useMemo(
         duplicates: settings.duplicates,
         baseCaseId: shouldVersion ? replyBaseCaseId : "",
         baseEmailDocId: shouldVersion ? replyBaseEmailDocId : "",
+        timerEntry: preparedTimerEntry,
       });
     } else {
       void clearComposeIntent(storeKey);
@@ -1715,6 +1786,8 @@ const attachmentIds = React.useMemo(
     isUploadingNewVersion,
     replyBaseCaseId,
     replyBaseEmailDocId,
+    attachmentIds,      // re-save intent when attachments are added/removed
+    preparedTimerEntry, // re-save intent when timer entry is prepared/cleared
   ]);
 
   React.useEffect(() => {
@@ -2173,17 +2246,20 @@ const attachmentIds = React.useMemo(
         const { getFiledEmailFromCache, findFiledEmailBySubject } = await import("../../../utils/filedCache");
 
         let cacheEntry = null;
+        let matchedByExactConvId = false;
 
-        // Try conversationId lookup first
+        // Try conversationId lookup first (exact match)
         if (conversationId) {
           cacheEntry = await getFiledEmailFromCache(conversationId);
           console.log("[checkIfFiled] Cache lookup by conversationId:", cacheEntry ? "FOUND" : "NOT FOUND");
+          if (cacheEntry) matchedByExactConvId = true;
         }
 
-        // Fallback to subject lookup
+        // Fallback to subject lookup (recovery only — does NOT auto-apply category)
         if (!cacheEntry && subject) {
           cacheEntry = await findFiledEmailBySubject(subject, conversationId);
           console.log("[checkIfFiled] Cache lookup by subject:", cacheEntry ? "FOUND" : "NOT FOUND");
+          // matchedByExactConvId stays false — subject matches are ambiguous
         }
 
         // Step 3: Process cache result
@@ -2278,14 +2354,20 @@ const attachmentIds = React.useMemo(
           }
         }
 
-        // Step 6: Apply category via Office.js (not Graph API)
-        try {
-          console.log("[checkIfFiled] Applying filed category via Office.js");
-          const { applyFiledCategoryToCurrentEmailOfficeJs } = await import("../../../services/graphMail");
-          await applyFiledCategoryToCurrentEmailOfficeJs();
-          console.log("[checkIfFiled] Category applied successfully");
-        } catch (e) {
-          console.warn("[checkIfFiled] Failed to apply category (non-critical):", e);
+        // Step 6: Apply category via Office.js (exact conversationId match only).
+        // Subject-based fallback matches are ambiguous — a new email with the same
+        // subject (e.g. daily "test" emails) must NOT be auto-labeled SC:Filed.
+        if (matchedByExactConvId) {
+          try {
+            console.log("[checkIfFiled] Applying filed category via Office.js (exact convId match)");
+            const { applyFiledCategoryToCurrentEmailOfficeJs } = await import("../../../services/graphMail");
+            await applyFiledCategoryToCurrentEmailOfficeJs();
+            console.log("[checkIfFiled] Category applied successfully");
+          } catch (e) {
+            console.warn("[checkIfFiled] Failed to apply category (non-critical):", e);
+          }
+        } else {
+          console.log("[checkIfFiled] Skipping category apply — subject-based match only, not auto-labeling");
         }
 
         setFiledStatusChecked(true);
@@ -4423,6 +4505,11 @@ setSelectedSource("manual"); // important
             />
           ) : null}
 
+          {/* Time entry panel — compose reply with a recognised case only */}
+          {composeMode && Boolean(selectedCaseId) && Boolean(conversationKey) ? (
+            <TimeEntryOnSendPanel onEntryChange={setPreparedTimerEntry} />
+          ) : null}
+
           {viewMode === "pickCase" ? (
             <div>
               <CaseSelector
@@ -4440,6 +4527,7 @@ setSelectedSource("manual"); // important
                   setReplyBaseCaseId("");
                   setReplyBaseEmailDocId("");
                   setIsUploadingNewVersion(false);
+                  setPreparedTimerEntry(null); // clear prepared time entry when user picks a different case
                   if (settings.rememberLastCase) saveLastCaseId(id);
                   // case.selected.manual — fire-and-forget
                   void (async () => {

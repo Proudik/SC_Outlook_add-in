@@ -176,7 +176,7 @@ export function suggestCasesLocal(params: {
   cases: CaseOption[];
   topK?: number;
 }): { suggestions: CaseSuggestion[]; autoSelectCaseId: string } {
-  const topK = params.topK ?? 2;
+  const topK = params.topK ?? 3;
 
   const conversationKey = String(params.conversationKey || "").trim();
 
@@ -265,12 +265,29 @@ export function suggestCasesLocal(params: {
         // "Amazon services" for case "Amazon vs. Gebrüder Weiss" — the title has 4 tokens
         // so only 1/4 hit the subject (misses the >=2 threshold above), but "amazon"
         // covers 50% of the meaningful subject words, which is a strong content signal.
+        let altFired = false;
         const subjectSigTokens = tokenizeLoose(subjectRaw).filter((t) => t.length >= 5);
         if (subjectSigTokens.length > 0) {
           const { hits: sh, total: st } = tokenOverlapScore(subjectSigTokens, titleRaw);
           if (sh >= 1 && sh / st >= 0.5) {
             const boost = Math.round(35 + 25 * clamp(sh / st, 0, 1)); // 35..60
             add(caseId, boost, "Case name matches the email subject.");
+            altFired = true;
+          }
+        }
+        // 3b-alt2) Title-anchored check: any significant title token (≥6 chars) found
+        // in the subject is a weak entity-name signal. Catches long subjects like
+        // "Fwd: Amazon term sheet and due diligence materials" for case "Amazon vs. Gebrüder Weiss"
+        // where subject-side ratio (1/5=20%) misses the 50% threshold above, but the
+        // distinctive party name is clearly present in the subject.
+        if (!altFired) {
+          const titleSigTokens = titleTokens.filter((t) => t.length >= 6);
+          if (titleSigTokens.length > 0) {
+            const { hits: th } = tokenOverlapScore(titleSigTokens, subjectRaw);
+            if (th >= 1) {
+              const boost = 25 + 10 * Math.min(th - 1, 2); // 25 for 1 hit, 35 for 2, 45 for 3
+              add(caseId, boost, "Case name matches the email subject.");
+            }
           }
         }
       }
@@ -488,12 +505,25 @@ export function suggestCasesByContent(params: {
         add(caseId, boost, "Case name matches subject keywords");
       } else {
         // 2b-alt) Reverse direction: same logic as 3b-alt in suggestCasesLocal.
+        let altFired = false;
         const subjectSigTokens = tokenizeLoose(subjectRaw).filter((t) => t.length >= 5);
         if (subjectSigTokens.length > 0) {
           const { hits: sh, total: st } = tokenOverlapScore(subjectSigTokens, titleRaw);
           if (sh >= 1 && sh / st >= 0.5) {
             const boost = Math.round(35 + 25 * clamp(sh / st, 0, 1)); // 35..60
             add(caseId, boost, "Case name matches subject keywords");
+            altFired = true;
+          }
+        }
+        // 2b-alt2) Title-anchored check (same logic as 3b-alt2 in suggestCasesLocal).
+        if (!altFired) {
+          const titleSigTokens = titleTokens.filter((t) => t.length >= 6);
+          if (titleSigTokens.length > 0) {
+            const { hits: th } = tokenOverlapScore(titleSigTokens, subjectRaw);
+            if (th >= 1) {
+              const boost = 25 + 10 * Math.min(th - 1, 2); // 25..45
+              add(caseId, boost, "Case name matches subject keywords");
+            }
           }
         }
       }

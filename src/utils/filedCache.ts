@@ -248,7 +248,7 @@ export async function cacheFiledEmailBySubject(
  */
 export async function findFiledEmailBySubject(
   subject: string,
-  conversationId?: string
+  _conversationId?: string
 ): Promise<FiledEmailCache[string] | null> {
   if (!subject) {
     return null;
@@ -286,24 +286,10 @@ export async function findFiledEmailBySubject(
         documentId: entry.documentId,
         filedAt: new Date(entry.filedAt).toISOString(),
       });
-
-      // Upgrade cache: If we now have conversationId, store under that key too
-      if (conversationId) {
-        console.log("[findFiledEmailBySubject] Upgrading cache with conversationId:", conversationId.substring(0, 30) + "...");
-        cache[conversationId] = entry;
-        // Keep the subject-based entry for a while (don't delete)
-        lsSet(JSON.stringify(cache));
-
-        // Verify upgrade succeeded
-        const verification = lsGet();
-        const verifiedCache = verification ? JSON.parse(String(verification)) : {};
-        const upgradeSuccess = !!verifiedCache[conversationId];
-        console.log("[findFiledEmailBySubject] Cache upgrade verification:", {
-          success: upgradeSuccess,
-          cacheSize: Object.keys(verifiedCache).length,
-        });
-      }
-
+      // NOTE: Do NOT upgrade the cache by associating conversationId here.
+      // Subject-based lookup is a recovery fallback for the exact email that was filed.
+      // Writing cache[newConvId] = entry would falsely mark NEW emails with the same
+      // subject (e.g. every new "test" email) as filed to the same case.
       return entry;
     }
 

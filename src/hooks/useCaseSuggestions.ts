@@ -81,7 +81,7 @@ export function useCaseSuggestions(params: {
       attachmentNames,
       fromEmail,
       cases,
-      topK: topK ?? 2,
+      topK: topK ?? 3,
     });
 
     console.log("[SC suggest] cases:", cases.length);
