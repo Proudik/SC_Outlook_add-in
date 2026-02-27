@@ -81,7 +81,7 @@ const subLabelStyle: React.CSSProperties = {
 
 const TimeEntryOnSendPanel: React.FC<Props> = ({ onEntryChange }) => {
   const [description, setDescription] = React.useState("");
-  const [hours, setHours] = React.useState("");
+  const [hours, setHours] = React.useState("0");
   const [minutes, setMinutes] = React.useState("5");
 
   // Derive totalSeconds and propagate to parent on every field change

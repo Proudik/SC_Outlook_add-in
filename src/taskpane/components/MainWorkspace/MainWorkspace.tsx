@@ -19,7 +19,7 @@ import CaseSelector from "../CaseSelector";
 import {
   listCases,
   listClients,
-  submitEmailToCase,
+  submitEmailToCase, 
   CaseOption,
 } from "../../../services/singlecase";
 import { useCaseSuggestions } from "../../../hooks/useCaseSuggestions";
