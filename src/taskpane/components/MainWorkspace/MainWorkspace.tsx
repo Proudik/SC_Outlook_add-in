@@ -123,7 +123,9 @@ type QuickAction = {
     | "enable_filing_on_send"
     | "confirm_file_now"
     | "skip_pending_filing"
-    | "file_now";
+    | "file_now"
+    | "confirm_dont_file"
+    | "file_anyway";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -1205,6 +1207,10 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
 
   const dismissedRef = React.useRef<Set<string>>(new Set());
 
+  // Kept in sync every render so evaluateItem ([] deps) can read the current setting.
+  const internalHandlingRef = React.useRef(settings.internalEmailHandling);
+  internalHandlingRef.current = settings.internalEmailHandling;
+
   const chatBodyRef = React.useRef<HTMLDivElement | null>(null);
   const attachmentsRef = React.useRef<HTMLDivElement | null>(null);
   const chatEndRef = React.useRef<HTMLDivElement | null>(null);
@@ -2085,18 +2091,29 @@ const attachmentIds = React.useMemo(
     setIsInternalEmailDetected(isInternal);
 
     // Immediately update a "Checking…" or generic unfiled prompt to reflect internal status
-    const showBanner = isInternal && settings.internalEmailHandling === "doNotSuggest";
+    const doNotSuggest = settings.internalEmailHandling === "doNotSuggest";
+    const showDontFile = isInternal && doNotSuggest;
     setPrompt(prev => {
       if (prev.kind === "unfiled" && (prev.text === "Checking..." || prev.text.includes("isn't filed yet"))) {
         return {
           ...prev,
-          text: showBanner
-            ? "This looks like an internal email."
+          text: showDontFile
+            ? "This looks like an internal email — would you like to skip filing it?"
             : "This email isn't filed yet. Would you like me to file it to a case?",
         };
       }
       return prev;
     });
+    if (showDontFile) {
+      setQuickActions(prev => {
+        // Only inject if no actions are already set (don't override evaluateItem's actions)
+        if (prev.length > 0) return prev;
+        return [
+          { id: "df1", label: "Don't File", intent: "confirm_dont_file" },
+          { id: "fa1", label: "File anyway", intent: "file_anyway" },
+        ];
+      });
+    }
   }, [composeMode, activeItemId, activeItemKey, settings.internalEmailHandling]);
 
   // Effect: Preselect the last chosen case in read mode when "Remember last selected case" is ON.
@@ -3104,13 +3121,27 @@ React.useEffect(() => {
             ? isInternalEmail(userEmailNow, participantsNow)
             : false;
 
-        setPrompt({
-          itemId: itemKey,
-          kind: "unfiled",
-          text: internalNow
-            ? "This looks like an internal email."
-            : "This email isn't filed yet. Would you like me to file it to a case?",
-        });
+        const doNotSuggest = internalHandlingRef.current === "doNotSuggest";
+
+        if (internalNow && doNotSuggest) {
+          setQuickActions([
+            { id: "df1", label: "Don't File", intent: "confirm_dont_file" },
+            { id: "fa1", label: "File anyway", intent: "file_anyway" },
+          ]);
+          setPrompt({
+            itemId: itemKey,
+            kind: "unfiled",
+            text: "This looks like an internal email — would you like to skip filing it?",
+          });
+        } else {
+          setPrompt({
+            itemId: itemKey,
+            kind: "unfiled",
+            text: internalNow
+              ? "This looks like an internal email."
+              : "This email isn't filed yet. Would you like me to file it to a case?",
+          });
+        }
       } else {
         setPrompt({
           itemId: itemKey,
@@ -3437,6 +3468,38 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
 
+  setViewMode("pickCase");
+  setPickStep("case");
+  setSelectedCaseId("");
+  setSelectedSource("");
+  setSelectedAttachments([]);
+  setIsUploadingNewVersion(false);
+  return;
+}
+
+      if (intent === "confirm_dont_file") {
+  // User confirmed "Don't File" for an internal email — dismiss and show confirmation.
+  if (storeKey) dismissedRef.current.add(storeKey);
+  if (activeItemKey) dismissedRef.current.add(activeItemKey);
+  if (activeItemId) dismissedRef.current.add(activeItemId);
+
+  // Apply the "SC: Unfiled" Outlook category so the email is visually marked.
+  void applyUnfiledCategoryToCurrentEmailOfficeJs().catch(() => {/* non-blocking */});
+
+  setViewMode("prompt");
+  setPickStep("case");
+  setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
+  setPrompt({
+    itemId: activeItemId,
+    kind: "unfiled",
+    text: "Got it — this email won't be filed. You can still file it manually if needed.",
+  });
+  return;
+}
+
+      if (intent === "file_anyway") {
+  // User wants to file despite internal detection — open the case picker normally.
+  dismissedRef.current.delete(storeKey);
   setViewMode("pickCase");
   setPickStep("case");
   setSelectedCaseId("");
