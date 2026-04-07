@@ -2859,6 +2859,8 @@ React.useEffect(() => {
       // Priority 0: Internal email guard — runs before any filing detection.
       // When "doNotSuggest" is on and the email is internal, show "Don't File" prompt
       // immediately, bypassing sentPill / conversation recovery entirely.
+      // EXCEPTION: if the email is already in filedCache (genuinely filed), skip the
+      // guard and let normal filing detection show the filed card.
       if (internalHandlingRef.current === "doNotSuggest") {
         const userEmailNow = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
         const fromEmailNow = getOutlookFromEmail();
@@ -2869,6 +2871,23 @@ React.useEffect(() => {
         const internalNow = userEmailNow && participantsNow.length > 0
           ? isInternalEmail(userEmailNow, participantsNow)
           : false;
+
+        // Quick cache check: if the email is already filed, bypass the internal guard.
+        if (internalNow && !internalFiledAnywayRef.current.has(itemKey)) {
+          try {
+            const { getFiledEmailFromCache } = await import("../../../utils/filedCache");
+            const outlookItem = Office?.context?.mailbox?.item as any;
+            const convId = String(outlookItem?.conversationId || "").trim();
+            if (convId) {
+              const cached = await getFiledEmailFromCache(convId);
+              if (cached) {
+                // Already filed — treat like "file anyway" so the filed card shows normally.
+                internalFiledAnywayRef.current.add(itemKey);
+                console.log("[Priority0] Internal email is already filed — skipping Don't File prompt");
+              }
+            }
+          } catch { /* ignore — fall through to guard check */ }
+        }
 
         if (
           internalNow &&
