@@ -2897,7 +2897,7 @@ React.useEffect(() => {
           setPrompt({
             itemId: itemKey,
             kind: "unfiled",
-            text: "This looks like an internal email. Would you like to file it to a case?",
+            text: "This looks like an internal email. Mark as Unfiled?",
           });
           return;
         }
@@ -4652,22 +4652,82 @@ setSelectedSource("manual"); // important
         {/* RECEIVED MODE ACTIONS (hidden when dismissed — dismissal shows its own inline actions) */}
         {viewMode === "prompt" && (prompt.kind === "unfiled" || prompt.kind === "deleted") && !composeMode && !dismissedRef.current.has(prompt.itemId) ? (
           <div className="mwActionsBar">
-            <>
-                {/* No / Yes, file it */}
+            {isInternalEmailDetected ? (
+              <>
+                {/* Internal email: "File anyway" (ghost) | "Yes" (primary = confirm unfiled) */}
+                <button
+                  className="mwGhostBtn"
+                  type="button"
+                  onClick={() => {
+                    console.log("[UI] File anyway — proceeding with filing for internal email");
+                    if (prompt.itemId) internalFiledAnywayRef.current.add(prompt.itemId);
+                    if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
+                    if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
+                    // Clear any stale sentPill so State A doesn't show the wrong case later.
+                    void (async () => {
+                      try {
+                        if (activeItemKey) await clearSentPill(activeItemKey);
+                        if (activeItemId && activeItemId !== activeItemKey) await clearSentPill(activeItemId);
+                      } catch { /* non-critical */ }
+                    })();
+                    setAllowRefilingOverride(true);
+                    setViewMode("pickCase");
+                    setPickStep("case");
+                    setSelectedCaseId("");
+                    setSelectedSource("");
+                    setSelectedAttachments([]);
+                    setIsUploadingNewVersion(false);
+                  }}
+                >
+                  File anyway
+                </button>
+
+                <button
+                  className="mwPrimaryBtn"
+                  type="button"
+                  onClick={() => {
+                    console.log("[UI] Yes — marking internal email as Unfiled");
+                    // Persist dismissed (unfiled) state + apply SC: Unfiled Outlook category.
+                    dismissedRef.current.add(prompt.itemId);
+                    if (conversationKey) dismissedRef.current.add(`conv:${conversationKey}`);
+
+                    void (async () => {
+                      try {
+                        await applyUnfiledCategoryToCurrentEmailOfficeJs();
+                      } catch (e) {
+                        console.warn("[Yes/internal] Office.js applyUnfiledCategory failed:", e);
+                      }
+                      try {
+                        await applyUnfiledCategoryToCurrentEmailGraph();
+                      } catch (e) {
+                        console.warn("[Yes/internal] Graph applyUnfiledCategory failed:", e);
+                      }
+                      setForceUnfiledLabel(true);
+                    })();
+
+                    setQuickActions([
+                      { id: "fm1", label: "File manually", intent: "file_manually" },
+                    ]);
+                    setPrompt({
+                      itemId: prompt.itemId,
+                      kind: "unfiled",
+                      text: "Marked as Unfiled. You can still file it manually if needed.",
+                    });
+                  }}
+                >
+                  Yes
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Non-internal email: "No" (ghost) | "Yes, file it" (primary) */}
                 <button
                   className="mwGhostBtn"
                   type="button"
                   onClick={() => {
                     dismissedRef.current.add(prompt.itemId);
-                    // Exchange changes the item ID after the category is applied,
-                    // so also key by conversation so the dismissal survives the ID change.
-                    if (conversationKey) {
-                      dismissedRef.current.add(`conv:${conversationKey}`);
-                    }
+                    if (conversationKey) dismissedRef.current.add(`conv:${conversationKey}`);
 
-                    // Apply SC: Unfiled category.
-                    // Office.js: updates Outlook UI immediately (best-effort).
-                    // Graph: persists to Exchange — reliable on Mac Desktop and OWA.
                     void (async () => {
                       try {
                         await applyUnfiledCategoryToCurrentEmailOfficeJs();
@@ -4682,18 +4742,13 @@ setSelectedSource("manual"); // important
                       setForceUnfiledLabel(true);
                     })();
 
-                    // Show dismissal message with manual filing option
-                    const dismissMsg = isInternalEmailDetected
-                      ? "Got it — not filing this internal email. You can still file it manually if needed."
-                      : "Got it. I'll step back for this email, but you can still file it later.";
-
                     setQuickActions([
                       { id: "fm1", label: "File manually", intent: "file_manually" },
                     ]);
                     setPrompt({
                       itemId: prompt.itemId,
                       kind: "unfiled",
-                      text: dismissMsg,
+                      text: "Got it. I'll step back for this email, but you can still file it later.",
                     });
                   }}
                 >
@@ -4704,20 +4759,8 @@ setSelectedSource("manual"); // important
                   className="mwPrimaryBtn"
                   type="button"
                   onClick={() => {
-                    console.log("[UI] Yes, file it - setting refiling override");
-                    // Prevent Priority 0 from re-showing "Don't File" on the next polling cycle.
-                    if (prompt.itemId) internalFiledAnywayRef.current.add(prompt.itemId);
-                    if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
-                    if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
-                    // Clear any stale sentPill from a previous session so evaluateItem's
-                    // State A doesn't immediately re-show the wrong case after the case picker closes.
-                    void (async () => {
-                      try {
-                        if (activeItemKey) await clearSentPill(activeItemKey);
-                        if (activeItemId && activeItemId !== activeItemKey) await clearSentPill(activeItemId);
-                      } catch { /* non-critical */ }
-                    })();
-                    setAllowRefilingOverride(true); // Allow bypassing duplicate guard
+                    console.log("[UI] Yes, file it");
+                    setAllowRefilingOverride(true);
                     setViewMode("pickCase");
                     setPickStep("case");
                     setSelectedCaseId("");
@@ -4728,7 +4771,8 @@ setSelectedSource("manual"); // important
                 >
                   Yes, file it
                 </button>
-            </>
+              </>
+            )}
           </div>
         ) : null}
 
