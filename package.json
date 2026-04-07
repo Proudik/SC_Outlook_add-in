@@ -8,7 +8,7 @@
   "license": "MIT",
   "config": {
     "app_to_debug": "outlook",
-    "app_type_to_debug": "desktop",
+    "app_type_to_debug": "web",
     "dev_server_port": 3000
   },
   "scripts": {
@@ -20,8 +20,8 @@
     "prettier": "office-addin-lint prettier",
     "signin": "office-addin-dev-settings m365-account login",
     "signout": "office-addin-dev-settings m365-account logout",
-    "start": "office-addin-debugging start manifest.xml",
-    "stop": "office-addin-debugging stop manifest.xml",
+    "start": "office-addin-debugging start manifest.xml --app outlook web --document https://outlook.office.com/mail/",
+    "stop": "office-addin-debugging stop manifest.xml --app outlook web",
     "validate": "office-addin-manifest validate manifest.xml",
     "watch": "webpack --mode development --watch"
   },
@@ -72,7 +72,7 @@
   },
   "overrides": {
     "tmp": "0.2.5",
-    "serialize-javascript": "7.0.3"
+    "serialize-javascript": "7.0.5"
   },
   "prettier": "office-addin-prettier-config",
   "browserslist": [
