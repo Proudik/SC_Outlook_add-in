@@ -2167,6 +2167,9 @@ const attachmentIds = React.useMemo(
 
     const checkIfFiled = async () => {
       try {
+        // Don't run while user is actively picking a case — prevents overriding the case picker.
+        if (viewMode === "pickCase") return;
+
         // Internal email guard: if the email is internal and "doNotSuggest" is on,
         // skip filing detection entirely so the "Don't File" prompt is not overridden.
         if (internalHandlingRef.current === "doNotSuggest") {
