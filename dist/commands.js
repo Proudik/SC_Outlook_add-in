@@ -1,3 +1,5276 @@
-/*! For license information please see commands.js.LICENSE.txt */
-!function(){var e={64583:function(e,t,n){e.exports=function(){"use strict";function e(e){return"function"==typeof e}var t=Array.isArray?Array.isArray:function(e){return"[object Array]"===Object.prototype.toString.call(e)},o=0,r=void 0,i=void 0,s=function(e,t){g[o]=e,g[o+1]=t,2===(o+=2)&&(i?i(m):b())};var c="undefined"!=typeof window?window:void 0,a=c||{},l=a.MutationObserver||a.WebKitMutationObserver,u="undefined"==typeof self&&"undefined"!=typeof process&&"[object process]"==={}.toString.call(process),f="undefined"!=typeof Uint8ClampedArray&&"undefined"!=typeof importScripts&&"undefined"!=typeof MessageChannel;function d(){var e=setTimeout;return function(){return e(m,1)}}var g=new Array(1e3);function m(){for(var e=0;e<o;e+=2)(0,g[e])(g[e+1]),g[e]=void 0,g[e+1]=void 0;o=0}var v,h,p,y,b=void 0;function S(e,t){var n=this,o=new this.constructor(I);void 0===o[O]&&F(o);var r=n._state;if(r){var i=arguments[r-1];s(function(){return N(r,o,i,n._result)})}else E(n,o,e,t);return o}function w(e){if(e&&"object"==typeof e&&e.constructor===this)return e;var t=new this(I);return A(t,e),t}b=u?function(){return process.nextTick(m)}:l?(h=0,p=new l(m),y=document.createTextNode(""),p.observe(y,{characterData:!0}),function(){y.data=h=++h%2}):f?((v=new MessageChannel).port1.onmessage=m,function(){return v.port2.postMessage(0)}):void 0===c?function(){try{var e=Function("return this")().require("vertx");return void 0!==(r=e.runOnLoop||e.runOnContext)?function(){r(m)}:d()}catch(e){return d()}}():d();var O=Math.random().toString(36).substring(2);function I(){}var x=void 0,k=1,_=2;function j(t,n,o){n.constructor===t.constructor&&o===S&&n.constructor.resolve===w?function(e,t){t._state===k?C(e,t._result):t._state===_?T(e,t._result):E(t,void 0,function(t){return A(e,t)},function(t){return T(e,t)})}(t,n):void 0===o?C(t,n):e(o)?function(e,t,n){s(function(e){var o=!1,r=function(e,t,n,o){try{e.call(t,n,o)}catch(e){return e}}(n,t,function(n){o||(o=!0,t!==n?A(e,n):C(e,n))},function(t){o||(o=!0,T(e,t))},e._label);!o&&r&&(o=!0,T(e,r))},e)}(t,n,o):C(t,n)}function A(e,t){if(e===t)T(e,new TypeError("You cannot resolve a promise with itself"));else if(r=typeof(o=t),null===o||"object"!==r&&"function"!==r)C(e,t);else{var n=void 0;try{n=t.then}catch(t){return void T(e,t)}j(e,t,n)}var o,r}function R(e){e._onerror&&e._onerror(e._result),M(e)}function C(e,t){e._state===x&&(e._result=t,e._state=k,0!==e._subscribers.length&&s(M,e))}function T(e,t){e._state===x&&(e._state=_,e._result=t,s(R,e))}function E(e,t,n,o){var r=e._subscribers,i=r.length;e._onerror=null,r[i]=t,r[i+k]=n,r[i+_]=o,0===i&&e._state&&s(M,e)}function M(e){var t=e._subscribers,n=e._state;if(0!==t.length){for(var o=void 0,r=void 0,i=e._result,s=0;s<t.length;s+=3)o=t[s],r=t[s+n],o?N(n,o,r,i):r(i);e._subscribers.length=0}}function N(t,n,o,r){var i=e(o),s=void 0,c=void 0,a=!0;if(i){try{s=o(r)}catch(e){a=!1,c=e}if(n===s)return void T(n,new TypeError("A promises callback cannot return that same promise."))}else s=r;n._state!==x||(i&&a?A(n,s):!1===a?T(n,c):t===k?C(n,s):t===_&&T(n,s))}var H=0;function F(e){e[O]=H++,e._state=void 0,e._result=void 0,e._subscribers=[]}var D=function(){function e(e,n){this._instanceConstructor=e,this.promise=new e(I),this.promise[O]||F(this.promise),t(n)?(this.length=n.length,this._remaining=n.length,this._result=new Array(this.length),0===this.length?C(this.promise,this._result):(this.length=this.length||0,this._enumerate(n),0===this._remaining&&C(this.promise,this._result))):T(this.promise,new Error("Array Methods must be provided an Array"))}return e.prototype._enumerate=function(e){for(var t=0;this._state===x&&t<e.length;t++)this._eachEntry(e[t],t)},e.prototype._eachEntry=function(e,t){var n=this._instanceConstructor,o=n.resolve;if(o===w){var r=void 0,i=void 0,s=!1;try{r=e.then}catch(e){s=!0,i=e}if(r===S&&e._state!==x)this._settledAt(e._state,t,e._result);else if("function"!=typeof r)this._remaining--,this._result[t]=e;else if(n===P){var c=new n(I);s?T(c,i):j(c,e,r),this._willSettleAt(c,t)}else this._willSettleAt(new n(function(t){return t(e)}),t)}else this._willSettleAt(o(e),t)},e.prototype._settledAt=function(e,t,n){var o=this.promise;o._state===x&&(this._remaining--,e===_?T(o,n):this._result[t]=n),0===this._remaining&&C(o,this._result)},e.prototype._willSettleAt=function(e,t){var n=this;E(e,void 0,function(e){return n._settledAt(k,t,e)},function(e){return n._settledAt(_,t,e)})},e}();var P=function(){function t(e){this[O]=H++,this._result=this._state=void 0,this._subscribers=[],I!==e&&("function"!=typeof e&&function(){throw new TypeError("You must pass a resolver function as the first argument to the promise constructor")}(),this instanceof t?function(e,t){try{t(function(t){A(e,t)},function(t){T(e,t)})}catch(t){T(e,t)}}(this,e):function(){throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.")}())}return t.prototype.catch=function(e){return this.then(null,e)},t.prototype.finally=function(t){var n=this,o=n.constructor;return e(t)?n.then(function(e){return o.resolve(t()).then(function(){return e})},function(e){return o.resolve(t()).then(function(){throw e})}):n.then(t,t)},t}();return P.prototype.then=S,P.all=function(e){return new D(this,e).promise},P.race=function(e){var n=this;return t(e)?new n(function(t,o){for(var r=e.length,i=0;i<r;i++)n.resolve(e[i]).then(t,o)}):new n(function(e,t){return t(new TypeError("You must pass an array to race."))})},P.resolve=w,P.reject=function(e){var t=new this(I);return T(t,e),t},P._setScheduler=function(e){i=e},P._setAsap=function(e){s=e},P._asap=s,P.polyfill=function(){var e=void 0;if(void 0!==n.g)e=n.g;else if("undefined"!=typeof self)e=self;else try{e=Function("return this")()}catch(e){throw new Error("polyfill failed because global object is unavailable in this environment")}var t=e.Promise;if(t){var o=null;try{o=Object.prototype.toString.call(t.resolve())}catch(e){}if("[object Promise]"===o&&!t.cast)return}e.Promise=P},P.Promise=P,P}()}},t={};function n(o){var r=t[o];if(void 0!==r)return r.exports;var i=t[o]={exports:{}};return e[o].call(i.exports,i,i.exports,n),i.exports}n.g=function(){if("object"==typeof globalThis)return globalThis;try{return this||new Function("return this")()}catch(e){if("object"==typeof window)return window}}(),function(){"use strict";var e=n(64583).Promise,t=function(t,n,o,r){return new(o||(o=e))(function(e,i){function s(e){try{a(r.next(e))}catch(e){i(e)}}function c(e){try{a(r.throw(e))}catch(e){i(e)}}function a(t){var n;t.done?e(t.value):(n=t.value,n instanceof o?n:new o(function(e){e(n)})).then(s,c)}a((r=r.apply(t,n||[])).next())})},o=function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}},r="singlecase_token",i="singlecase_user_email",s="singlecase_auth_issued_at",c="sc_token",a="sc_user_email",l="sc_auth_issued_at";function u(e){var t=(e||"").trim().toLowerCase();return t.length>0?t:"unknown@singlecase.local"}function f(e){return t(this,void 0,void 0,function(){var t,n,r;return o(this,function(o){switch(o.label){case 0:if("undefined"==typeof OfficeRuntime||!(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage))return[3,4];o.label=1;case 1:return o.trys.push([1,3,,4]),[4,OfficeRuntime.storage.getItem(e)];case 2:return"string"==typeof(n=o.sent())?[2,n]:[3,4];case 3:return t=o.sent(),console.warn("[rtGet] OfficeRuntime.storage.getItem failed:",t),[3,4];case 4:if(null===(r=null===Office||void 0===Office?void 0:Office.context)||void 0===r?void 0:r.roamingSettings)try{if("string"==typeof(n=Office.context.roamingSettings.get(e)))return[2,n]}catch(e){console.warn("[rtGet] roamingSettings.get failed:",e)}return[2,null]}})})}function d(e){return t(this,void 0,void 0,function(){return o(this,function(t){switch(t.label){case 0:return t.trys.push([0,2,,3]),[4,OfficeRuntime.storage.removeItem(e)];case 1:case 2:return t.sent(),[3,3];case 3:return[2]}})})}function g(){return t(this,void 0,void 0,function(){var t,n,r,i;return o(this,function(o){switch(o.label){case 0:return[4,e.all([f(c),f(a),f(l)])];case 1:return t=o.sent(),n=t[0],r=t[1],i=t[2],[2,{token:n,email:u(r),issuedAt:i?Number(i):0}]}})})}function m(){return t(this,void 0,void 0,function(){var e,t,n,r;return o(this,function(o){switch(o.label){case 0:return[4,g()];case 1:return e=o.sent(),t=e.token,n=e.issuedAt,t?(r=Date.now()-(n||0),!n||r>288e5?[4,v()]:[3,3]):[2];case 2:o.sent(),o.label=3;case 3:return[2]}})})}function v(){return t(this,void 0,void 0,function(){return o(this,function(t){switch(t.label){case 0:return sessionStorage.removeItem(r),sessionStorage.removeItem(i),sessionStorage.removeItem(s),[4,e.all([d(c),d(a),d(l)])];case 1:return t.sent(),[2]}})})}var h=n(64583).Promise;function p(e){return p="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(e){return typeof e}:function(e){return e&&"function"==typeof Symbol&&e.constructor===Symbol&&e!==Symbol.prototype?"symbol":typeof e},p(e)}var y=function(e,t,n,o){return new(n||(n=h))(function(r,i){function s(e){try{a(o.next(e))}catch(e){i(e)}}function c(e){try{a(o.throw(e))}catch(e){i(e)}}function a(e){var t;e.done?r(e.value):(t=e.value,t instanceof n?t:new n(function(e){e(t)})).then(s,c)}a((o=o.apply(e,t||[])).next())})},b=function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}},S=!1,w="sc:debugLog";function O(){try{return"undefined"!=typeof OfficeRuntime&&!!(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage)}catch(e){return!1}}function I(){var e;try{return!!(null===(e=null===Office||void 0===Office?void 0:Office.context)||void 0===e?void 0:e.roamingSettings)}catch(e){return!1}}function x(){return y(this,void 0,void 0,function(){var e;return b(this,function(t){switch(t.label){case 0:return e=Date.now(),[4,new h(function(t,n){try{Office.context.roamingSettings.saveAsync(function(o){var r,i,s,c=Date.now()-e;if((null==o?void 0:o.status)===Office.AsyncResultStatus.Succeeded)t();else{var a=(null===(r=null==o?void 0:o.error)||void 0===r?void 0:r.message)||"roamingSettings.saveAsync failed";console.error("[saveRoamingSettings] ❌ Failed in ".concat(c,"ms:"),a,{status:null==o?void 0:o.status,errorCode:null===(i=null==o?void 0:o.error)||void 0===i?void 0:i.code,errorName:null===(s=null==o?void 0:o.error)||void 0===s?void 0:s.name}),n(new Error(a))}})}catch(t){var o=Date.now()-e;console.error("[saveRoamingSettings] ❌ Exception in ".concat(o,"ms:"),t),n(t)}})];case 1:return t.sent(),[4,new h(function(e){return setTimeout(e,100)})];case 2:return t.sent(),[2]}})})}function k(e){return y(this,arguments,void 0,function(e,t){var n,o,r,i,s,c,a,l,u;return void 0===t&&(t=!1),b(this,function(f){switch(f.label){case 0:if(!(n=String(e||"").trim()))return[2,null];o=O()?"OfficeRuntime.storage":I()?"roamingSettings":"localStorage",(r=S)&&console.log("[getStored] Using storage backend:",o,"for key:",n,t?"(force fresh)":""),i=function(){try{return"undefined"!=typeof localStorage?localStorage.getItem(n):null}catch(e){return null}},f.label=1;case 1:return f.trys.push([1,7,,8]),O()?[4,OfficeRuntime.storage.getItem(n)]:[3,3];case 2:return s=f.sent(),r&&console.log("[getStored] Got from OfficeRuntime.storage:",n,s?"found (".concat(s.length," chars)"):"not found"),"string"==typeof s?[2,s]:I()&&"string"==typeof(c=Office.context.roamingSettings.get(n))?[2,c]:[2,i()];case 3:return I()?[3,5]:[3,6];case 4:f.sent(),f.label=5;case 5:return a=Office.context.roamingSettings.get(n),r&&console.log("[getStored] Got from roamingSettings:",n,a?"found (".concat(String(a).length," chars)"):"not found"),"string"==typeof a?[2,a]:[2,i()];case 6:return l=localStorage.getItem(n),r&&console.warn("[getStored] No Office storage, using localStorage:",n,l?"found (".concat(l.length," chars)"):"not found"),[2,l];case 7:return u=f.sent(),console.warn("[getStored] Failed, falling back to localStorage:",u),[2,i()];case 8:return[2]}})})}function _(e,t){return y(this,arguments,void 0,function(e,t,n){var o,r,i,s,c,a,l,u,f,d;return void 0===n&&(n=0),b(this,function(g){switch(g.label){case 0:if(!(o=String(e||"").trim()))return[2];r=String(null!=t?t:""),i=2,O()||I(),s=function(){try{"undefined"!=typeof localStorage&&localStorage.setItem(o,r)}catch(e){}},g.label=1;case 1:return g.trys.push([1,14,,15]),O()?[4,OfficeRuntime.storage.setItem(o,r)]:[3,3];case 2:return g.sent(),s(),[2];case 3:if(!I())return[3,13];Office.context.roamingSettings.set(o,r),g.label=4;case 4:return g.trys.push([4,6,,13]),[4,x()];case 5:return g.sent(),s(),[2];case 6:if(c=g.sent(),console.error("[setStored] saveAsync failed:",c),!(null===(f=null==c?void 0:c.message)||void 0===f?void 0:f.includes("32 KB"))&&!(null===(d=null==c?void 0:c.message)||void 0===d?void 0:d.includes("size limit"))||0!==n)return[3,10];console.warn("[setStored] roamingSettings overflow — emergency pruning and retrying"),function(){var e,t,n;try{Office.context.roamingSettings.remove(w)}catch(e){}try{var o=Office.context.roamingSettings,r=null!==(n=null!==(e=o._data)&&void 0!==e?e:null===(t=o._settings)||void 0===t?void 0:t.data)&&void 0!==n?n:null;if(r&&"object"===p(r)){for(var i=Object.keys(r),s=0,c=0,a=i;c<a.length;c++){var l=a[c];if(l.startsWith("sc:sent:")||l.startsWith("sc_conv_ctx:")||l===w)try{Office.context.roamingSettings.remove(l),s++}catch(e){}}s>0&&console.warn("[emergencyPrune] Removed",s,"legacy individual storage entries")}}catch(e){}try{if(d=Office.context.roamingSettings.get("sc:sentPills")){var u=JSON.parse(String(d));if((g=Object.entries(u)).length>3){g.sort(function(e,t){return(t[1]._savedAt||0)-(e[1]._savedAt||0)});var f={};g.slice(0,3).forEach(function(e){var t=e[0],n=e[1];f[t]=n}),Office.context.roamingSettings.set("sc:sentPills",JSON.stringify(f)),console.warn("[emergencyPrune] Pruned sentPills from",g.length,"to 3 entries")}}}catch(e){}try{var d;if(d=Office.context.roamingSettings.get("sc:filedEmailsCache")){var g,m=JSON.parse(String(d));if((g=Object.entries(m)).length>3){g.sort(function(e,t){return(t[1].filedAt||0)-(e[1].filedAt||0)});var v={};g.slice(0,3).forEach(function(e){var t=e[0],n=e[1];v[t]=n}),Office.context.roamingSettings.set("sc:filedEmailsCache",JSON.stringify(v)),console.warn("[emergencyPrune] Pruned filedCache from",g.length,"to 3 entries")}}}catch(e){}}(),g.label=7;case 7:return g.trys.push([7,9,,10]),[4,x()];case 8:return g.sent(),console.log("[setStored] ✅ saveAsync succeeded after emergency prune"),[2];case 9:return a=g.sent(),console.warn("[setStored] saveAsync still failed after emergency prune:",a),[3,10];case 10:return n<i?(l=200*(n+1),[4,new h(function(e){return setTimeout(e,l)})]):[3,12];case 11:return g.sent(),[2,_(e,t,n+1)];case 12:throw c;case 13:return localStorage.setItem(o,r),[3,15];case 14:return u=g.sent(),console.warn("[setStored] ❌ Failed after retries, falling back to localStorage:",u),localStorage.setItem(o,r),[3,15];case 15:return[2]}})})}var j="sc:workspaceHost",A=n(64583).Promise,R=function(){return R=Object.assign||function(e){for(var t,n=1,o=arguments.length;n<o;n++)for(var r in t=arguments[n])Object.prototype.hasOwnProperty.call(t,r)&&(e[r]=t[r]);return e},R.apply(this,arguments)},C=function(e,t,n,o){return new(n||(n=A))(function(r,i){function s(e){try{a(o.next(e))}catch(e){i(e)}}function c(e){try{a(o.throw(e))}catch(e){i(e)}}function a(e){var t;e.done?r(e.value):(t=e.value,t instanceof n?t:new n(function(e){e(t)})).then(s,c)}a((o=o.apply(e,t||[])).next())})},T=function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}};function E(){return C(this,void 0,void 0,function(){var e,t,n;return T(this,function(o){switch(o.label){case 0:return console.log("[resolveApiBaseUrl] Reading workspaceHost from storage key:",j),[4,k(j)];case 1:if(e=o.sent(),console.log("[resolveApiBaseUrl] Raw stored host:",e),t=function(e){var t=(e||"").trim().toLowerCase();return t?t.replace(/^https?:\/\//i,"").split("/")[0]:""}(e||""),console.log("[resolveApiBaseUrl] Normalized host:",t),!t)throw console.error("[resolveApiBaseUrl] Workspace host is missing"),new Error("Workspace host is missing.");return n="/singlecase/".concat(encodeURIComponent(t),"/publicapi/v1"),console.log("[resolveApiBaseUrl] Resolved base URL:",n),[2,n]}})})}function M(){return C(this,void 0,void 0,function(){var e,t;return T(this,function(n){switch(n.label){case 0:return(null==(o=sessionStorage.getItem(r),c=sessionStorage.getItem(i),a=sessionStorage.getItem(s),e={token:o,email:u(c),issuedAt:a?Number(a):0})?void 0:e.token)?(console.log("[getToken] Using sessionStorage token"),[2,e.token]):(console.log("[getToken] sessionStorage token not available, trying OfficeRuntime.storage"),[4,g()]);case 1:if(null==(t=n.sent())?void 0:t.token)return console.log("[getToken] Using OfficeRuntime.storage token"),[2,t.token];throw console.error("[getToken] No token found in either sessionStorage or OfficeRuntime.storage"),new Error("Missing auth token.")}var o,c,a})})}function N(e,t){return C(this,void 0,void 0,function(){var n,o;return T(this,function(r){switch(r.label){case 0:return[4,e.text().catch(function(){return""})];case 1:if(n=r.sent(),!e.ok){if(423===e.status)throw new Error("Dokument je momentálně uzamčen. Někdo jej právě upravuje. Počkejte prosím, než se dokument odemkne, a zkuste to znovu.");throw new Error("".concat(t," (").concat(e.status,"): ").concat(n||e.statusText))}if(!(o=e.headers.get("content-type")||"").includes("application/json"))throw new Error("".concat(t,": expected JSON but got ").concat(o||"no content-type","."));return[2,JSON.parse(n)]}})})}function H(e){return C(this,void 0,void 0,function(){var t,n,o,r,i,s,c,a,l,u,f,d,g,m,v,h;return T(this,function(p){switch(p.label){case 0:return t=e.documentId,n=e.fileName,o=e.mimeType,r=e.dataBase64,i=e.directoryId,[4,M()];case 1:return s=p.sent(),[4,E()];case 2:c=p.sent(),a=encodeURIComponent(String(t)),l={name:n,mime_type:o,data_base64:r},i&&(l.dir_id=i),u=JSON.stringify(l),f=[{url:"".concat(c,"/documents/").concat(a,"/version"),method:"POST"},{url:"".concat(c,"/documents/").concat(a,"/versions"),method:"POST"},{url:"".concat(c,"/documents/").concat(a,"/versions"),method:"PUT"},{url:"".concat(c,"/documents/").concat(a,"/version"),method:"PUT"},{url:"".concat(c,"/documents/").concat(a,"/versions"),method:"PATCH"},{url:"".concat(c,"/documents/").concat(a,"/version"),method:"PATCH"}],d=null,g=0,m=f,p.label=3;case 3:return g<m.length?(v=m[g],[4,fetch(v.url,{method:v.method,headers:{"Content-Type":"application/json",Authentication:s,"Accept-Encoding":"identity"},body:u})]):[3,7];case 4:return 404===(h=p.sent()).status||405===h.status?(d=new Error("Endpoint not available: ".concat(v.method," ").concat(v.url," (").concat(h.status,")")),[3,6]):[4,N(h,"Upload version failed")];case 5:return[2,p.sent()];case 6:return g++,[3,3];case 7:throw d instanceof Error?d:new Error("Upload version failed: no supported endpoint found")}})})}function F(e){return C(this,void 0,void 0,function(){var t,n,o,r,i,s,c,a,l,u,f,d,g,m,v,h,p,y;return T(this,function(b){switch(b.label){case 0:t=e.caseId,n=e.fileName,o=e.mimeType,r=e.dataBase64,i=e.directoryId,s=e.metadata,console.log("[uploadDocumentToCase] Starting upload",{caseId:t,fileName:n,mimeType:o,dataLength:r.length}),b.label=1;case 1:return b.trys.push([1,3,,4]),[4,M()];case 2:return c=b.sent(),console.log("[uploadDocumentToCase] Token retrieved",{hasToken:!!c,tokenPrefix:c.slice(0,10)}),[3,4];case 3:throw a=b.sent(),console.error("[uploadDocumentToCase] Failed to get token:",a),a;case 4:return b.trys.push([4,6,,7]),[4,E()];case 5:return l=b.sent(),console.log("[uploadDocumentToCase] Base URL resolved:",l),[3,7];case 6:throw u=b.sent(),console.error("[uploadDocumentToCase] Failed to resolve base URL:",u),u;case 7:f="".concat(l,"/documents"),console.log("[uploadDocumentToCase] Full URL:",f),d={case_id:t,documents:[R(R({name:n,mime_type:o,data_base64:r},i?{dir_id:i}:{}),s?{metadata:s}:{})]},console.log("[uploadDocumentToCase] Payload structure:",{case_id:d.case_id,documentCount:d.documents.length,firstDoc:{name:d.documents[0].name,mime_type:d.documents[0].mime_type,data_base64_length:d.documents[0].data_base64.length}}),b.label=8;case 8:return b.trys.push([8,10,,11]),[4,fetch(f,{method:"POST",headers:{"Content-Type":"application/json",Authentication:c,"Accept-Encoding":"identity"},body:JSON.stringify(d)})];case 9:return g=b.sent(),console.log("[uploadDocumentToCase] Fetch completed",{status:g.status,statusText:g.statusText,ok:g.ok}),[3,11];case 10:throw m=b.sent(),console.error("[uploadDocumentToCase] Fetch failed:",m),new Error("Network request failed: ".concat(m instanceof Error?m.message:String(m)));case 11:return g.ok?[3,13]:[4,g.text().catch(function(){return""})];case 12:v=b.sent(),h=v.slice(0,300),console.error("[uploadDocumentToCase] Upload failed",{status:g.status,statusText:g.statusText,url:f,responseSnippet:h}),b.label=13;case 13:return[4,N(g,"Upload failed")];case 14:return p=b.sent(),console.log("[uploadDocumentToCase] Upload successful",{documentIds:null===(y=p.documents)||void 0===y?void 0:y.map(function(e){return e.id})}),[2,p]}})})}function D(e,t){if(void 0===t&&(t=!0),!e)return"";var n=e.trim().toLowerCase();if(n=n.replace(/\s+/g," "),t){var o=void 0;do{o=n.length,n=n.replace(/^(re|fw|fwd):\s*/i,"")}while(n.length!==o&&n.length>0)}return n.trim()}function P(e,t){return C(this,void 0,void 0,function(){var n,o,r,i,s,c,a,l,u,f,d,g,m,v,h,p,y,b;return T(this,function(S){switch(S.label){case 0:return console.log("[findDocumentBySubject] Searching for subject in case",{caseId:e,subject:t}),[4,M()];case 1:return n=S.sent(),[4,E()];case 2:o=S.sent(),r=["".concat(o,"/cases/").concat(encodeURIComponent(e),"/documents"),"".concat(o,"/documents?case_id=").concat(encodeURIComponent(e)),"".concat(o,"/cases/").concat(encodeURIComponent(e),"/files")],i=[],s=0,c=r,S.label=3;case 3:if(!(s<c.length))return[3,9];a=c[s],S.label=4;case 4:return S.trys.push([4,7,,8]),[4,fetch(a,{method:"GET",headers:{Authentication:n,"Content-Type":"application/json","Accept-Encoding":"identity"}})];case 5:return 404===(l=S.sent()).status||405===l.status?[3,8]:l.ok?[4,l.json()]:[3,8];case 6:return u=S.sent(),(i=Array.isArray(u)?u:Array.isArray(u.documents)?u.documents:Array.isArray(u.files)?u.files:Array.isArray(u.items)?u.items:[]).length>=0?(console.log("[findDocumentBySubject] Found",i.length,"documents in case"),[3,9]):[3,8];case 7:return S.sent(),[3,8];case 8:return s++,[3,3];case 9:if(0===i.length)return console.log("[findDocumentBySubject] No documents found in case"),[2,null];if(f=D(t),console.log("[findDocumentBySubject] Normalized search subject:",f),!f)return console.warn("[findDocumentBySubject] Empty normalized subject, skipping"),[2,null];for(d=0,g=i;d<g.length;d++)if(m=g[d],(v=String(m.name||m.filename||"")).toLowerCase().endsWith(".eml")&&((h=(null===(y=m.metadata)||void 0===y?void 0:y.subject)||m.subject||(null===(b=m.properties)||void 0===b?void 0:b.subject)||"")||(h=v.replace(/\.eml$/i,"")),p=D(h),console.log("[findDocumentBySubject] Comparing",{fileName:v,docSubject:h,normalizedDocSubject:p,matches:p===f}),p===f))return console.log("[findDocumentBySubject] Match found!",{id:m.id,name:v}),[2,{id:String(m.id||m._id),name:v,subject:h}];return console.log("[findDocumentBySubject] No matching document found"),[2,null]}})})}var U=n(64583).Promise,B=function(e,t,n,o){return new(n||(n=U))(function(r,i){function s(e){try{a(o.next(e))}catch(e){i(e)}}function c(e){try{a(o.throw(e))}catch(e){i(e)}}function a(e){var t;e.done?r(e.value):(t=e.value,t instanceof n?t:new n(function(e){e(t)})).then(s,c)}a((o=o.apply(e,t||[])).next())})},K=function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}},L="sc:filedEmailsCache";function z(e,t,n,o,r,i){return B(this,void 0,void 0,function(){var s,c,a,l,u,f,d,g,m,v,h,p,y,b,S,w,O;return K(this,function(I){switch(I.label){case 0:if(!e)return console.warn("[cacheFiledEmail] No conversationId provided, skipping cache"),[2];I.label=1;case 1:return I.trys.push([1,5,,6]),s={host:null===(y=null===(p=null===(h=null===Office||void 0===Office?void 0:Office.context)||void 0===h?void 0:h.mailbox)||void 0===p?void 0:p.diagnostics)||void 0===y?void 0:y.hostName,hostVersion:null===(w=null===(S=null===(b=null===Office||void 0===Office?void 0:Office.context)||void 0===b?void 0:b.mailbox)||void 0===S?void 0:S.diagnostics)||void 0===w?void 0:w.hostVersion,platform:null===(O=null===Office||void 0===Office?void 0:Office.context)||void 0===O?void 0:O.platform},console.log("[cacheFiledEmail] Platform info:",s),[4,k(L)];case 2:return c=I.sent(),a=c?JSON.parse(String(c)):{},console.log("[cacheFiledEmail] Current cache size:",Object.keys(a).length),a[e]={caseId:t,documentId:n,subject:o,caseName:r,caseKey:i,filedAt:Date.now()},(l=Object.entries(a)).sort(function(e,t){return t[1].filedAt-e[1].filedAt}),u=l.slice(0,8),f={},u.forEach(function(e){var t=e[0],n=e[1];f[t]=n}),[4,_(L,JSON.stringify(f))];case 3:return I.sent(),l.length>8&&console.log("[cacheFiledEmail] Pruned cache from",l.length,"to 8 entries"),[4,k(L)];case 4:return d=I.sent(),g=d?JSON.parse(String(d)):{},m=!!g[e],console.log("[cacheFiledEmail] Write verification:",{success:m,cacheSize:Object.keys(g).length}),console.log("[cacheFiledEmail] Cached filed email",{conversationId:e.substring(0,20)+"...",caseId:t,documentId:n,subject:o,writeVerified:m}),[3,6];case 5:return v=I.sent(),console.warn("[cacheFiledEmail] Failed to cache:",v),[3,6];case 6:return[2]}})})}function J(e,t,n,o,r){return B(this,void 0,void 0,function(){var i,s,c,a,l,u,f,d,g,m,v,h,p,y,b,S,w,O;return K(this,function(I){switch(I.label){case 0:if(!e)return console.warn("[cacheFiledEmailBySubject] No subject provided, skipping cache"),[2];I.label=1;case 1:return I.trys.push([1,5,,6]),i={host:null===(y=null===(p=null===(h=null===Office||void 0===Office?void 0:Office.context)||void 0===h?void 0:h.mailbox)||void 0===p?void 0:p.diagnostics)||void 0===y?void 0:y.hostName,hostVersion:null===(w=null===(S=null===(b=null===Office||void 0===Office?void 0:Office.context)||void 0===b?void 0:b.mailbox)||void 0===S?void 0:S.diagnostics)||void 0===w?void 0:w.hostVersion,platform:null===(O=null===Office||void 0===Office?void 0:Office.context)||void 0===O?void 0:O.platform},console.log("[cacheFiledEmailBySubject] Platform info:",i),[4,k(L)];case 2:return s=I.sent(),c=s?JSON.parse(String(s)):{},console.log("[cacheFiledEmailBySubject] Current cache size:",Object.keys(c).length),a="subj:".concat(e.trim().toLowerCase()),console.log("[cacheFiledEmailBySubject] Using temp key:",a),c[a]={caseId:t,documentId:n,subject:e,caseName:o,caseKey:r,filedAt:Date.now()},(l=Object.entries(c)).sort(function(e,t){return t[1].filedAt-e[1].filedAt}),u=l.slice(0,8),f={},u.forEach(function(e){var t=e[0],n=e[1];f[t]=n}),[4,_(L,JSON.stringify(f))];case 3:return I.sent(),l.length>8&&console.log("[cacheFiledEmailBySubject] Pruned cache from",l.length,"to 8 entries"),[4,k(L)];case 4:return d=I.sent(),g=d?JSON.parse(String(d)):{},m=!!g[a],console.log("[cacheFiledEmailBySubject] Write verification:",{success:m,cacheSize:Object.keys(g).length,tempKey:a}),console.log("[cacheFiledEmailBySubject] Cached filed email by subject",{subject:e,caseId:t,documentId:n,writeVerified:m}),[3,6];case 5:return v=I.sent(),console.warn("[cacheFiledEmailBySubject] Failed to cache:",v),[3,6];case 6:return[2]}})})}var G=n(64583).Promise,V=function(e,t,n,o){return new(n||(n=G))(function(r,i){function s(e){try{a(o.next(e))}catch(e){i(e)}}function c(e){try{a(o.throw(e))}catch(e){i(e)}}function a(e){var t;e.done?r(e.value):(t=e.value,t instanceof n?t:new n(function(e){e(t)})).then(s,c)}a((o=o.apply(e,t||[])).next())})},W=function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}},Y=1e4;function q(e,t){return new G(function(n,o){var r=setTimeout(function(){return o(new Error("timeout"))},t);e.then(function(e){clearTimeout(r),n(e)},function(e){clearTimeout(r),o(e)})})}function $(){try{var e=Office.context.mailbox.item;return String((null==e?void 0:e.conversationId)||(null==e?void 0:e.conversationKey)||"").trim()}catch(e){return""}}function Q(e,t){return V(this,void 0,void 0,function(){var n,o,r,i;return W(this,function(s){switch(s.label){case 0:if(n=String(e||"").trim(),o=String(t||"").trim(),!n||!o)return[2];r=JSON.stringify({caseId:n,emailDocId:o}),s.label=1;case 1:return s.trys.push([1,3,,4]),[4,_("sc_last_filed_ctx",r)];case 2:case 3:return s.sent(),[3,4];case 4:return s.trys.push([4,7,,8]),(i=$())?[4,_("".concat("sc_conv_ctx:").concat(i),r)]:[3,6];case 5:s.sent(),s.label=6;case 6:return[3,8];case 7:return s.sent(),[3,8];case 8:return[2]}})})}function X(){return V(this,void 0,void 0,function(){var e,t,n,o,r,i,s;return W(this,function(c){switch(c.label){case 0:if(!(e=Office.context.mailbox.item))return console.warn("[getCandidateItemKeysRuntime] No item available"),[2,[]];if(console.log("[getCandidateItemKeysRuntime] Item properties:",{hasItemId:!!e.itemId,itemId:String(e.itemId||"").substring(0,20),hasConversationId:!!e.conversationId,conversationId:String(e.conversationId||"").substring(0,20),hasConversationKey:!!e.conversationKey,hasDateTimeCreated:!!e.dateTimeCreated,hasGetItemIdAsync:"function"==typeof e.getItemIdAsync,itemType:e.itemType}),t=[],(n=String(e.itemId||"").trim())&&t.push(n),"function"!=typeof e.getItemIdAsync)return[3,4];c.label=1;case 1:return c.trys.push([1,3,,4]),[4,new G(function(t){e.getItemIdAsync(function(e){(null==e?void 0:e.status)===Office.AsyncResultStatus.Succeeded?t(String(e.value||"")):t("")})})];case 2:return(o=c.sent())&&(console.log("[getCandidateItemKeysRuntime] getItemIdAsync returned:",o.substring(0,20)),t.push(o)),[3,4];case 3:return r=c.sent(),console.warn("[getCandidateItemKeysRuntime] getItemIdAsync failed:",r),[3,4];case 4:return(i=String(e.conversationId||e.conversationKey||"").trim())&&t.push("draft:".concat(i)),(s=String(e.dateTimeCreated||"").trim())&&t.push("draft:".concat(s)),t.push("draft:current"),t.push("last_compose"),console.log("[getCandidateItemKeysRuntime] Generated keys:",t),[2,Array.from(new Set(t.filter(Boolean)))]}})})}function Z(e){return V(this,void 0,void 0,function(){var t,n,o,r,i,s,c,a,l,u,f,d,g;return W(this,function(m){switch(m.label){case 0:t=0,n=e,m.label=1;case 1:if(!(t<n.length))return[3,9];o=n[t],r="sc_intent:".concat(o),console.log("[readIntentAny] Trying key:",r),m.label=2;case 2:if(m.trys.push([2,7,,8]),i=null,"undefined"==typeof OfficeRuntime||!(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage))return[3,6];m.label=3;case 3:return m.trys.push([3,5,,6]),[4,OfficeRuntime.storage.getItem(r)];case 4:return(i=m.sent())&&console.log("[readIntentAny] Found in OfficeRuntime.storage"),[3,6];case 5:return s=m.sent(),console.warn("[readIntentAny] OfficeRuntime.storage.getItem failed:",s),[3,6];case 6:if(!i&&(null===(g=null===Office||void 0===Office?void 0:Office.context)||void 0===g?void 0:g.roamingSettings))try{(i=Office.context.roamingSettings.get(r))&&console.log("[readIntentAny] Found in roamingSettings")}catch(e){console.warn("[readIntentAny] roamingSettings.get failed:",e)}return i?(c=JSON.parse(String(i)),a=String((null==c?void 0:c.caseId)||"").trim(),l=Boolean(null==c?void 0:c.autoFileOnSend),u=String((null==c?void 0:c.baseCaseId)||"").trim(),f=String((null==c?void 0:c.baseEmailDocId)||"").trim(),a?(console.log("[readIntentAny] Intent found:",{itemKey:o,caseId:a,autoFileOnSend:l,hasBase:!(!u||!f)}),[2,{itemKey:o,caseId:a,autoFileOnSend:l,baseCaseId:u||void 0,baseEmailDocId:f||void 0}]):[3,8]):[3,8];case 7:return d=m.sent(),console.warn("[readIntentAny] Failed to read intent for key:",r,d),[3,8];case 8:return t++,[3,1];case 9:return console.warn("[readIntentAny] No intent found for any key"),[2,null]}})})}function ee(){return V(this,void 0,void 0,function(){var e,t,n;return W(this,function(o){switch(o.label){case 0:return(e=Office.context.mailbox.item)?(console.log("[getSubjectRuntime] Item type:",e.itemType,"Mode:",e.itemClass),"string"==typeof e.subject?(t=String(e.subject||""),console.log("[getSubjectRuntime] Direct string subject:",t),[2,t]):(null===(n=null==e?void 0:e.subject)||void 0===n?void 0:n.getAsync)?[4,new G(function(t){e.subject.getAsync(function(e){if((null==e?void 0:e.status)===Office.AsyncResultStatus.Succeeded){var n=String(e.value||"");console.log("[getSubjectRuntime] Async subject:",n),t(n)}else console.warn("[getSubjectRuntime] getAsync failed:",null==e?void 0:e.error),t("")})})]:[3,2]):(console.warn("[getSubjectRuntime] No item available"),[2,""]);case 1:return[2,o.sent()||""];case 2:return console.warn("[getSubjectRuntime] No subject API available"),[2,""]}})})}function te(){return V(this,void 0,void 0,function(){var e,t,n;return W(this,function(o){switch(o.label){case 0:return e=Office.context.mailbox.item,(null===(n=null==e?void 0:e.body)||void 0===n?void 0:n.getAsync)?[4,new G(function(t){e.body.getAsync(Office.CoercionType.Text,function(e){(null==e?void 0:e.status)===Office.AsyncResultStatus.Succeeded?t(String(e.value||"")):t("")})})]:[2,""];case 1:return t=o.sent(),[2,String(t||"")]}})})}function ne(e){return V(this,void 0,void 0,function(){var t,n;return W(this,function(o){switch(o.label){case 0:return o.trys.push([0,2,,3]),t=Office.context.mailbox.item,(null===(n=null==t?void 0:t.notificationMessages)||void 0===n?void 0:n.replaceAsync)?[4,new G(function(n){t.notificationMessages.replaceAsync("sc_send",{type:"informationalMessage",message:e,icon:"Icon.16x16",persistent:!1},function(){return n()})})]:[2];case 1:case 2:return o.sent(),[3,3];case 3:return[2]}})})}function oe(e){return V(this,void 0,void 0,function(){var t,n,o,r,i,s,c,a,l,u,f,d,v,h,p,y,b,S,w,O,I,x,_,A,R,C,T,E,M,N,D,U,B,K,L,V,oe,re,ie,se,ce,ae,le,ue,fe,de,ge,me;return W(this,function(W){switch(W.label){case 0:console.log("[onMessageSendHandler] Handler fired"),console.log("[onMessageSendHandler] Platform info",{hasOfficeRuntime:"undefined"!=typeof OfficeRuntime,hasOfficeRuntimeStorage:void 0!==(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage),hasRoamingSettings:!!(null===(B=null===Office||void 0===Office?void 0:Office.context)||void 0===B?void 0:B.roamingSettings),host:null===(V=null===(L=null===(K=null===Office||void 0===Office?void 0:Office.context)||void 0===K?void 0:K.mailbox)||void 0===L?void 0:L.diagnostics)||void 0===V?void 0:V.hostName,hostVersion:null===(ie=null===(re=null===(oe=null===Office||void 0===Office?void 0:Office.context)||void 0===oe?void 0:oe.mailbox)||void 0===re?void 0:re.diagnostics)||void 0===ie?void 0:ie.hostVersion}),t=!1,n=function(n,o){if(!t){t=!0,console.log("[onMessageSendHandler] Finishing",{allowEvent:n,hasErrorMessage:!!o});try{o?e.completed({allowEvent:n,errorMessage:o}):e.completed({allowEvent:n})}catch(e){console.error("[onMessageSendHandler] Error in event.completed:",e)}}},W.label=1;case 1:return W.trys.push([1,42,,47]),console.log("[onMessageSendHandler] Clearing expired auth"),[4,q(m(),700)];case 2:return W.sent(),console.log("[onMessageSendHandler] Getting candidate item keys"),[4,q(X(),2e3)];case 3:return o=W.sent(),console.log("[onMessageSendHandler] Item keys:",o),0===o.length?(console.log("[onMessageSendHandler] No item keys found, skipping"),n(!0),[2]):(console.log("[onMessageSendHandler] Reading intent from storage",{storageType:"undefined"!=typeof OfficeRuntime&&(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage)?"OfficeRuntime":"roamingSettings",keysToTry:o}),[4,q(Z(o),1500)]);case 4:if(r=W.sent(),console.log("[onMessageSendHandler] Intent:",r,{found:!!r,foundUnderKey:null==r?void 0:r.itemKey}),!(null==r?void 0:r.autoFileOnSend)||!r.caseId)return console.log("[onMessageSendHandler] No auto-file intent or case ID, skipping"),n(!0),[2];W.label=5;case 5:return W.trys.push([5,14,,15]),("draft:current"===r.itemKey||"last_compose"===r.itemKey)&&(i=o.find(function(e){return!e.startsWith("draft:")&&"last_compose"!==e}))?(console.log("[onMessageSendHandler] Migrating intent from fallback",{from:r.itemKey,to:i}),s=JSON.stringify({caseId:r.caseId,autoFileOnSend:r.autoFileOnSend,baseCaseId:r.baseCaseId||"",baseEmailDocId:r.baseEmailDocId||""}),c="sc_intent:".concat(i),"undefined"!=typeof OfficeRuntime&&(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage)?[4,OfficeRuntime.storage.setItem(c,s)]:[3,7]):[3,13];case 6:return W.sent(),console.log("[onMessageSendHandler] Migrated to OfficeRuntime.storage"),[3,9];case 7:return(null===(se=null===Office||void 0===Office?void 0:Office.context)||void 0===se?void 0:se.roamingSettings)?(Office.context.roamingSettings.set(c,s),[4,new G(function(e){Office.context.roamingSettings.saveAsync(function(){return e()})})]):[3,9];case 8:W.sent(),console.log("[onMessageSendHandler] Migrated to roamingSettings"),W.label=9;case 9:return a="sc_intent:".concat(r.itemKey),"undefined"!=typeof OfficeRuntime&&(null===OfficeRuntime||void 0===OfficeRuntime?void 0:OfficeRuntime.storage)?[4,OfficeRuntime.storage.removeItem(a)]:[3,11];case 10:return W.sent(),console.log("[onMessageSendHandler] Cleared fallback key from OfficeRuntime.storage"),[3,13];case 11:return(null===(ce=null===Office||void 0===Office?void 0:Office.context)||void 0===ce?void 0:ce.roamingSettings)?(Office.context.roamingSettings.remove(a),[4,new G(function(e){Office.context.roamingSettings.saveAsync(function(){return e()})})]):[3,13];case 12:W.sent(),console.log("[onMessageSendHandler] Cleared fallback key from roamingSettings"),W.label=13;case 13:return[3,15];case 14:return l=W.sent(),console.warn("[onMessageSendHandler] Intent migration failed (non-critical):",l),[3,15];case 15:return console.log("[onMessageSendHandler] Getting auth token"),[4,q(g(),900)];case 16:return(u=W.sent().token)?[3,18]:(console.error("[onMessageSendHandler] No auth token available"),[4,ne("SingleCase: chybí přihlášení, nelze zařadit při odeslání.")]);case 17:return W.sent(),n(!0),[2];case 18:return console.log("[onMessageSendHandler] Token retrieved",{tokenPrefix:u.slice(0,10)}),console.log("[onMessageSendHandler] Getting workspace host"),[4,k(j)];case 19:return f=W.sent()||"",d=function(e){var t=(e||"").trim().toLowerCase();return t?t.replace(/^https?:\/\//i,"").split("/")[0]:""}(f),console.log("[onMessageSendHandler] Workspace host",{hostRaw:f,normalized:d}),d?[3,21]:(console.error("[onMessageSendHandler] No workspace host configured"),[4,ne("SingleCase: chybí workspace URL, nelze zařadit při odeslání.")]);case 20:return W.sent(),n(!0),[2];case 21:return console.log("[onMessageSendHandler] Skipping pre-flight check, proceeding to upload"),console.log("[onMessageSendHandler] Reading email metadata"),console.log("[onMessageSendHandler] Current item info:",{itemType:null===(ae=Office.context.mailbox.item)||void 0===ae?void 0:ae.itemType,itemClass:null===(le=Office.context.mailbox.item)||void 0===le?void 0:le.itemClass,hasSubject:!!(null===(ue=Office.context.mailbox.item)||void 0===ue?void 0:ue.subject)}),[4,q(ee(),1500)];case 22:return v=W.sent(),[4,q(te(),2500)];case 23:h=W.sent(),p=null===(fe=Office.context.mailbox.item)||void 0===fe?void 0:fe.from,y=String((null==p?void 0:p.emailAddress)||(null===(de=Office.context.mailbox.userProfile)||void 0===de?void 0:de.emailAddress)||""),b=String((null==p?void 0:p.displayName)||(null===(ge=Office.context.mailbox.userProfile)||void 0===ge?void 0:ge.displayName)||""),S=$(),console.log("[onMessageSendHandler] Email metadata",{subject:v,fromEmail:y,fromName:b,bodyLength:h.length,hasConversationId:!!S,conversationIdPreview:S?S.substring(0,30)+"...":"(none)"}),w=(v||"email").trim().replace(/[<>:"/\\|?*\x00-\x1F]/g," ").replace(/\s+/g," ").trim().slice(0,80)||"email",O="From: ".concat(b," <").concat(y,">\r\n")+"To: SingleCase <noreply@singlecase>\r\n"+"Subject: ".concat(v,"\r\n")+"Date: ".concat((new Date).toUTCString(),"\r\n")+"Message-ID: <".concat(o[0],"@outlook>\r\n")+"MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"+"".concat((h||"").trim(),"\r\n"),I=function(e){for(var t=(new TextEncoder).encode(e),n="",o=0;o<t.length;o+=1)n+=String.fromCharCode(t[o]);return btoa(n)}(O),console.log("[onMessageSendHandler] EML built",{length:I.length}),x=null,W.label=24;case 24:return W.trys.push([24,26,,27]),console.log("[onMessageSendHandler] Checking for existing document with same subject"),[4,q(P(r.caseId,v),Y)];case 25:return(x=W.sent())?console.log("[onMessageSendHandler] Found existing document",{docId:x.id,docName:x.name,docSubject:x.subject}):console.log("[onMessageSendHandler] No existing document with this subject found"),[3,27];case 26:return _=W.sent(),console.warn("[onMessageSendHandler] Failed to check for existing document:",_),x=null,[3,27];case 27:return A=!!x,console.log("[onMessageSendHandler] Version decision",{caseId:r.caseId,subject:v,existingDocId:null==x?void 0:x.id,existingDocName:null==x?void 0:x.name,shouldUploadVersion:A}),A&&x?(console.log("[onMessageSendHandler] Uploading as version of existing document:",x.id),[4,q(H({documentId:x.id,fileName:"".concat(w,".eml"),mimeType:"message/rfc822",dataBase64:I}),Y)]):[3,34];case 28:return W.sent(),console.log("[onMessageSendHandler] Version uploaded successfully"),[4,Q(r.caseId,x.id)];case 29:return W.sent(),(R=$())?[4,z(R,r.caseId,x.id,v)]:[3,31];case 30:return W.sent(),console.log("[onMessageSendHandler] Cached filed email (version)",{conversationId:R.substring(0,20)+"..."}),[3,33];case 31:return[4,J(v,r.caseId,x.id)];case 32:W.sent(),console.log("[onMessageSendHandler] Cached filed email by subject (version)",{subject:v}),W.label=33;case 33:return[3,40];case 34:return console.log("[onMessageSendHandler] Uploading as new document"),[4,q(F({caseId:r.caseId,fileName:"".concat(w,".eml"),mimeType:"message/rfc822",dataBase64:I,metadata:{subject:v,fromEmail:y,fromName:b,conversationId:S||void 0}}),Y)];case 35:return C=W.sent(),T=null==C?void 0:C.documents,E=Array.isArray(T)&&(null===(me=T[0])||void 0===me?void 0:me.id)?String(T[0].id):"",console.log("[onMessageSendHandler] Created docId",{createdDocId:E,rawResponse:C}),E?[4,Q(r.caseId,E)]:[3,40];case 36:return W.sent(),(M=$())?[4,z(M,r.caseId,E,v)]:[3,38];case 37:return W.sent(),console.log("[onMessageSendHandler] Cached filed email (new doc)",{conversationId:M.substring(0,20)+"..."}),[3,40];case 38:return[4,J(v,r.caseId,E)];case 39:W.sent(),console.log("[onMessageSendHandler] Cached filed email by subject (new doc)",{subject:v}),W.label=40;case 40:return console.log("[onMessageSendHandler] Upload successful"),[4,ne("SingleCase: email uložen při odeslání.")];case 41:return W.sent(),n(!0),[3,47];case 42:N=W.sent(),console.error("[onMessageSendHandler] Error during filing",N),W.label=43;case 43:return W.trys.push([43,45,,46]),D=N instanceof Error?N.message:String(N),U="",D.includes("timeout")?U=" (timeout)":D.toLowerCase().includes("workspace")?U=" (není nastaven workspace)":D.toLowerCase().includes("token")?U=" (přihlaste se znovu)":D.toLowerCase().includes("network")&&(U=" (problém se sítí)"),[4,ne("SingleCase: nepodařilo se uložit".concat(U))];case 44:case 45:return W.sent(),[3,46];case 46:return n(!0),[3,47];case 47:return[2]}})})}var re=n(64583).Promise;console.log("[commands.ts] Script loaded");var ie=!1;function se(){var e;if(!ie){ie=!0;try{if(!(null===(e=null===Office||void 0===Office?void 0:Office.actions)||void 0===e?void 0:e.associate))return void console.warn("[commands.ts] Office.actions.associate not available");console.log("[commands.ts] Associating onMessageSendHandler"),Office.actions.associate("onMessageSendHandler",oe),console.log("[commands.ts] Handler associated successfully")}catch(e){console.error("[commands.ts] Failed to associate handler:",e)}}}!function(){var e,t,n,o;e=this,t=void 0,o=function(){var e;return function(e,t){var n,o,r,i={label:0,sent:function(){if(1&r[0])throw r[1];return r[1]},trys:[],ops:[]},s=Object.create(("function"==typeof Iterator?Iterator:Object).prototype);return s.next=c(0),s.throw=c(1),s.return=c(2),"function"==typeof Symbol&&(s[Symbol.iterator]=function(){return this}),s;function c(c){return function(a){return function(c){if(n)throw new TypeError("Generator is already executing.");for(;s&&(s=0,c[0]&&(i=0)),i;)try{if(n=1,o&&(r=2&c[0]?o.return:c[0]?o.throw||((r=o.return)&&r.call(o),0):o.next)&&!(r=r.call(o,c[1])).done)return r;switch(o=0,r&&(c=[2&c[0],r.value]),c[0]){case 0:case 1:r=c;break;case 4:return i.label++,{value:c[1],done:!1};case 5:i.label++,o=c[1],c=[0];continue;case 7:c=i.ops.pop(),i.trys.pop();continue;default:if(!((r=(r=i.trys).length>0&&r[r.length-1])||6!==c[0]&&2!==c[0])){i=0;continue}if(3===c[0]&&(!r||c[1]>r[0]&&c[1]<r[3])){i.label=c[1];break}if(6===c[0]&&i.label<r[1]){i.label=r[1],r=c;break}if(r&&i.label<r[2]){i.label=r[2],i.ops.push(c);break}r[2]&&i.ops.pop(),i.trys.pop();continue}c=t.call(e,i)}catch(e){c=[6,e],o=0}finally{n=r=0}if(5&c[0])throw c[1];return{value:c[0]?c[1]:void 0,done:!0}}([c,a])}}}(this,function(t){switch(t.label){case 0:return t.trys.push([0,4,5,6]),"function"!=typeof(null===Office||void 0===Office?void 0:Office.onReady)?[3,2]:[4,Office.onReady()];case 1:return t.sent(),console.log("[commands.ts] Office.onReady fired"),console.log("[commands.ts] Office.context:",Office.context),[3,3];case 2:console.warn("[commands.ts] Office.onReady not available"),t.label=3;case 3:return[3,6];case 4:return e=t.sent(),console.error("[commands.ts] Office.onReady failed:",e),[3,6];case 5:return se(),[7];case 6:return[2]}})},new((n=void 0)||(n=re))(function(r,i){function s(e){try{a(o.next(e))}catch(e){i(e)}}function c(e){try{a(o.throw(e))}catch(e){i(e)}}function a(e){var t;e.done?r(e.value):(t=e.value,t instanceof n?t:new n(function(e){e(t)})).then(s,c)}a((o=o.apply(e,t||[])).next())})}();try{"function"==typeof(null===Office||void 0===Office?void 0:Office.onReady)&&Office.onReady(function(){se()})}catch(e){}}()}();
+/******/ (function() { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./src/commands/onMessageSendHandler.ts":
+/*!**********************************************!*\
+  !*** ./src/commands/onMessageSendHandler.ts ***!
+  \**********************************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   onMessageSendHandler: function() { return /* binding */ onMessageSendHandler; }
+/* harmony export */ });
+/* harmony import */ var _services_auth__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../services/auth */ "./src/services/auth.ts");
+/* harmony import */ var _utils_storage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/storage */ "./src/utils/storage.ts");
+/* harmony import */ var _utils_constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/constants */ "./src/utils/constants.ts");
+/* harmony import */ var _services_singlecaseDocuments__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/singlecaseDocuments */ "./src/services/singlecaseDocuments.ts");
+/* harmony import */ var _utils_filedCache__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../utils/filedCache */ "./src/utils/filedCache.ts");
+/* harmony import */ var _utils_recipientHistory__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/recipientHistory */ "./src/utils/recipientHistory.ts");
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+/* global Office, OfficeRuntime */
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+var __spreadArray = undefined && undefined.__spreadArray || function (to, from, pack) {
+  if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+    if (ar || !(i in from)) {
+      if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+      ar[i] = from[i];
+    }
+  }
+  return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+
+
+
+var T_ITEMKEY_MS = 2000;
+var T_STORAGE_MS = 1500;
+var T_FETCH_MS = 10000;
+var T_SUBJECT_MS = 1500;
+var T_BODY_MS = 2500;
+var CONV_CTX_KEY_PREFIX = "sc_conv_ctx:";
+var LAST_FILED_CTX_KEY = "sc_last_filed_ctx";
+function withTimeout(p, ms) {
+  return new Promise(function (resolve, reject) {
+    var t = setTimeout(function () {
+      return reject(new Error("timeout"));
+    }, ms);
+    p.then(function (v) {
+      clearTimeout(t);
+      resolve(v);
+    }, function (e) {
+      clearTimeout(t);
+      reject(e);
+    });
+  });
+}
+function normalizeHost(host) {
+  var v = (host || "").trim().toLowerCase();
+  if (!v) return "";
+  return v.replace(/^https?:\/\//i, "").split("/")[0];
+}
+function safeFileName(value) {
+  var v = (value || "").trim();
+  var cleaned = v.replace(/[<>:"/\\|?*\x00-\x1F]/g, " ").replace(/\s+/g, " ").trim();
+  return cleaned.slice(0, 80) || "email";
+}
+function toBase64Utf8(text) {
+  var bytes = new TextEncoder().encode(text);
+  var binary = "";
+  for (var i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+function getConversationIdSafe() {
+  try {
+    var item = Office.context.mailbox.item;
+    return String((item === null || item === void 0 ? void 0 : item.conversationId) || (item === null || item === void 0 ? void 0 : item.conversationKey) || "").trim();
+  } catch (_a) {
+    return "";
+  }
+}
+function persistFiledCtx(caseId, emailDocId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var cid, did, payload, _a, convId, _b;
+    return __generator(this, function (_c) {
+      switch (_c.label) {
+        case 0:
+          cid = String(caseId || "").trim();
+          did = String(emailDocId || "").trim();
+          if (!cid || !did) return [2 /*return*/];
+          payload = JSON.stringify({
+            caseId: cid,
+            emailDocId: did
+          });
+          _c.label = 1;
+        case 1:
+          _c.trys.push([1, 3,, 4]);
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.setStored)(LAST_FILED_CTX_KEY, payload)];
+        case 2:
+          _c.sent();
+          return [3 /*break*/, 4];
+        case 3:
+          _a = _c.sent();
+          return [3 /*break*/, 4];
+        case 4:
+          _c.trys.push([4, 7,, 8]);
+          convId = getConversationIdSafe();
+          if (!convId) return [3 /*break*/, 6];
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.setStored)("".concat(CONV_CTX_KEY_PREFIX).concat(convId), payload)];
+        case 5:
+          _c.sent();
+          _c.label = 6;
+        case 6:
+          return [3 /*break*/, 8];
+        case 7:
+          _b = _c.sent();
+          return [3 /*break*/, 8];
+        case 8:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function getCandidateItemKeysRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var item, keys, direct, asyncId, e_1, conv, created;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          item = Office.context.mailbox.item;
+          if (!item) {
+            console.warn("[getCandidateItemKeysRuntime] No item available");
+            return [2 /*return*/, []];
+          }
+          console.log("[getCandidateItemKeysRuntime] Item properties:", {
+            hasItemId: !!item.itemId,
+            itemId: String(item.itemId || "").substring(0, 20),
+            hasConversationId: !!item.conversationId,
+            conversationId: String(item.conversationId || "").substring(0, 20),
+            hasConversationKey: !!item.conversationKey,
+            hasDateTimeCreated: !!item.dateTimeCreated,
+            hasGetItemIdAsync: typeof item.getItemIdAsync === "function",
+            itemType: item.itemType
+          });
+          keys = [];
+          direct = String(item.itemId || "").trim();
+          if (direct) keys.push(direct);
+          if (!(typeof item.getItemIdAsync === "function")) return [3 /*break*/, 4];
+          _a.label = 1;
+        case 1:
+          _a.trys.push([1, 3,, 4]);
+          return [4 /*yield*/, new Promise(function (resolve) {
+            item.getItemIdAsync(function (res) {
+              if ((res === null || res === void 0 ? void 0 : res.status) === Office.AsyncResultStatus.Succeeded) resolve(String(res.value || ""));else resolve("");
+            });
+          })];
+        case 2:
+          asyncId = _a.sent();
+          if (asyncId) {
+            console.log("[getCandidateItemKeysRuntime] getItemIdAsync returned:", asyncId.substring(0, 20));
+            keys.push(asyncId);
+          }
+          return [3 /*break*/, 4];
+        case 3:
+          e_1 = _a.sent();
+          console.warn("[getCandidateItemKeysRuntime] getItemIdAsync failed:", e_1);
+          return [3 /*break*/, 4];
+        case 4:
+          conv = String(item.conversationId || item.conversationKey || "").trim();
+          if (conv) keys.push("draft:".concat(conv));
+          created = String(item.dateTimeCreated || "").trim();
+          if (created) keys.push("draft:".concat(created));
+          // Always include fallback keys for new compose emails
+          keys.push("draft:current");
+          keys.push("last_compose");
+          console.log("[getCandidateItemKeysRuntime] Generated keys:", keys);
+          return [2 /*return*/, Array.from(new Set(keys.filter(Boolean)))];
+      }
+    });
+  });
+}
+function readIntentAny(itemKeys) {
+  return __awaiter(this, void 0, void 0, function () {
+    var _i, itemKeys_1, k, key, raw, e_2, obj, caseId, autoFileOnSend, filingOnSend, baseCaseId, baseEmailDocId, e_3;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          _i = 0, itemKeys_1 = itemKeys;
+          _b.label = 1;
+        case 1:
+          if (!(_i < itemKeys_1.length)) return [3 /*break*/, 9];
+          k = itemKeys_1[_i];
+          key = "sc_intent:".concat(k);
+          console.log("[readIntentAny] Trying key:", key);
+          _b.label = 2;
+        case 2:
+          _b.trys.push([2, 7,, 8]);
+          raw = null;
+          if (!(typeof OfficeRuntime !== "undefined" && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage))) return [3 /*break*/, 6];
+          _b.label = 3;
+        case 3:
+          _b.trys.push([3, 5,, 6]);
+          return [4 /*yield*/, OfficeRuntime.storage.getItem(key)];
+        case 4:
+          raw = _b.sent();
+          if (raw) console.log("[readIntentAny] Found in OfficeRuntime.storage");
+          return [3 /*break*/, 6];
+        case 5:
+          e_2 = _b.sent();
+          console.warn("[readIntentAny] OfficeRuntime.storage.getItem failed:", e_2);
+          return [3 /*break*/, 6];
+        case 6:
+          if (!raw && ((_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.roamingSettings)) {
+            try {
+              raw = Office.context.roamingSettings.get(key);
+              if (raw) console.log("[readIntentAny] Found in roamingSettings");
+            } catch (e) {
+              console.warn("[readIntentAny] roamingSettings.get failed:", e);
+            }
+          }
+          if (!raw) return [3 /*break*/, 8];
+          obj = JSON.parse(String(raw));
+          caseId = String((obj === null || obj === void 0 ? void 0 : obj.caseId) || "").trim();
+          autoFileOnSend = Boolean(obj === null || obj === void 0 ? void 0 : obj.autoFileOnSend);
+          filingOnSend = String((obj === null || obj === void 0 ? void 0 : obj.filingOnSend) || "").trim();
+          baseCaseId = String((obj === null || obj === void 0 ? void 0 : obj.baseCaseId) || "").trim();
+          baseEmailDocId = String((obj === null || obj === void 0 ? void 0 : obj.baseEmailDocId) || "").trim();
+          if (!caseId) return [3 /*break*/, 8];
+          console.log("[readIntentAny] Intent found:", {
+            itemKey: k,
+            caseId: caseId,
+            autoFileOnSend: autoFileOnSend,
+            filingOnSend: filingOnSend,
+            hasBase: !!(baseCaseId && baseEmailDocId)
+          });
+          return [2 /*return*/, {
+            itemKey: k,
+            caseId: caseId,
+            autoFileOnSend: autoFileOnSend,
+            filingOnSend: filingOnSend,
+            baseCaseId: baseCaseId || undefined,
+            baseEmailDocId: baseEmailDocId || undefined
+          }];
+        case 7:
+          e_3 = _b.sent();
+          console.warn("[readIntentAny] Failed to read intent for key:", key, e_3);
+          return [3 /*break*/, 8];
+        case 8:
+          _i++;
+          return [3 /*break*/, 1];
+        case 9:
+          console.warn("[readIntentAny] No intent found for any key");
+          return [2 /*return*/, null];
+      }
+    });
+  });
+}
+function getSubjectRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var item, subj, v;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          item = Office.context.mailbox.item;
+          if (!item) {
+            console.warn("[getSubjectRuntime] No item available");
+            return [2 /*return*/, ""];
+          }
+          console.log("[getSubjectRuntime] Item type:", item.itemType, "Mode:", item.itemClass);
+          if (typeof item.subject === "string") {
+            subj = String(item.subject || "");
+            console.log("[getSubjectRuntime] Direct string subject:", subj);
+            return [2 /*return*/, subj];
+          }
+          if (!((_a = item === null || item === void 0 ? void 0 : item.subject) === null || _a === void 0 ? void 0 : _a.getAsync)) return [3 /*break*/, 2];
+          return [4 /*yield*/, new Promise(function (resolve) {
+            item.subject.getAsync(function (res) {
+              if ((res === null || res === void 0 ? void 0 : res.status) === Office.AsyncResultStatus.Succeeded) {
+                var subj = String(res.value || "");
+                console.log("[getSubjectRuntime] Async subject:", subj);
+                resolve(subj);
+              } else {
+                console.warn("[getSubjectRuntime] getAsync failed:", res === null || res === void 0 ? void 0 : res.error);
+                resolve("");
+              }
+            });
+          })];
+        case 1:
+          v = _b.sent();
+          return [2 /*return*/, v || ""];
+        case 2:
+          console.warn("[getSubjectRuntime] No subject API available");
+          return [2 /*return*/, ""];
+      }
+    });
+  });
+}
+function getBodyTextRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var item, text;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          item = Office.context.mailbox.item;
+          if (!((_a = item === null || item === void 0 ? void 0 : item.body) === null || _a === void 0 ? void 0 : _a.getAsync)) return [2 /*return*/, ""];
+          return [4 /*yield*/, new Promise(function (resolve) {
+            item.body.getAsync(Office.CoercionType.Text, function (res) {
+              if ((res === null || res === void 0 ? void 0 : res.status) === Office.AsyncResultStatus.Succeeded) resolve(String(res.value || ""));else resolve("");
+            });
+          })];
+        case 1:
+          text = _b.sent();
+          return [2 /*return*/, String(text || "")];
+      }
+    });
+  });
+}
+function getRecipientsRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var item, readField, _a, to, cc, bcc;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          item = Office.context.mailbox.item;
+          if (!item) return [2 /*return*/, []];
+          readField = function readField(field) {
+            if (!field) return Promise.resolve([]);
+            if (typeof field.getAsync === "function") {
+              return new Promise(function (resolve) {
+                field.getAsync(function (res) {
+                  if ((res === null || res === void 0 ? void 0 : res.status) === Office.AsyncResultStatus.Succeeded) {
+                    resolve((res.value || []).map(function (r) {
+                      return String((r === null || r === void 0 ? void 0 : r.emailAddress) || "").toLowerCase().trim();
+                    }).filter(Boolean));
+                  } else {
+                    resolve([]);
+                  }
+                });
+              });
+            }
+            if (Array.isArray(field)) {
+              return Promise.resolve(field.map(function (r) {
+                return String((r === null || r === void 0 ? void 0 : r.emailAddress) || "").toLowerCase().trim();
+              }).filter(Boolean));
+            }
+            return Promise.resolve([]);
+          };
+          return [4 /*yield*/, Promise.all([readField(item.to), readField(item.cc), readField(item.bcc)])];
+        case 1:
+          _a = _b.sent(), to = _a[0], cc = _a[1], bcc = _a[2];
+          return [2 /*return*/, Array.from(new Set(__spreadArray(__spreadArray(__spreadArray([], to, true), cc, true), bcc, true)))];
+      }
+    });
+  });
+}
+function showInfo(message) {
+  return __awaiter(this, void 0, void 0, function () {
+    var item_1, _a;
+    var _b;
+    return __generator(this, function (_c) {
+      switch (_c.label) {
+        case 0:
+          _c.trys.push([0, 2,, 3]);
+          item_1 = Office.context.mailbox.item;
+          if (!((_b = item_1 === null || item_1 === void 0 ? void 0 : item_1.notificationMessages) === null || _b === void 0 ? void 0 : _b.replaceAsync)) return [2 /*return*/];
+          return [4 /*yield*/, new Promise(function (resolve) {
+            item_1.notificationMessages.replaceAsync("sc_send", {
+              type: "informationalMessage",
+              message: message,
+              icon: "Icon.16x16",
+              persistent: false
+            }, function () {
+              return resolve();
+            });
+          })];
+        case 1:
+          _c.sent();
+          return [3 /*break*/, 3];
+        case 2:
+          _a = _c.sent();
+          return [3 /*break*/, 3];
+        case 3:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function onMessageSendHandler(event) {
+  return __awaiter(this, void 0, void 0, function () {
+    var done, finish, keys, intent, subjectForPending, convForPending, e_4, shouldFile, isFallbackKey, realItemId, intentValue, realKey, fallbackKey, e_5, token, hostRaw, host, subject, bodyText, itemFrom, fromEmail, fromName, conversationId, baseName, emailText, emailBase64, existingDoc, e_6, shouldUploadVersion, dupMode, convForPending, e_7, recipients, e_8, conversationId_1, created, docs, createdDocId, recipients, e_9, conversationId_2, e_10, msg, errorHint, _a;
+    var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
+    return __generator(this, function (_t) {
+      switch (_t.label) {
+        case 0:
+          console.log("[onMessageSendHandler] Handler fired");
+          console.log("[onMessageSendHandler] Platform info", {
+            hasOfficeRuntime: typeof OfficeRuntime !== "undefined",
+            hasOfficeRuntimeStorage: typeof (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage) !== "undefined",
+            hasRoamingSettings: !!((_b = Office === null || Office === void 0 ? void 0 : Office.context) === null || _b === void 0 ? void 0 : _b.roamingSettings),
+            host: (_e = (_d = (_c = Office === null || Office === void 0 ? void 0 : Office.context) === null || _c === void 0 ? void 0 : _c.mailbox) === null || _d === void 0 ? void 0 : _d.diagnostics) === null || _e === void 0 ? void 0 : _e.hostName,
+            hostVersion: (_h = (_g = (_f = Office === null || Office === void 0 ? void 0 : Office.context) === null || _f === void 0 ? void 0 : _f.mailbox) === null || _g === void 0 ? void 0 : _g.diagnostics) === null || _h === void 0 ? void 0 : _h.hostVersion
+          });
+          done = false;
+          finish = function finish(allowEvent, errorMessage) {
+            if (done) return;
+            done = true;
+            console.log("[onMessageSendHandler] Finishing", {
+              allowEvent: allowEvent,
+              hasErrorMessage: !!errorMessage
+            });
+            try {
+              if (errorMessage) event.completed({
+                allowEvent: allowEvent,
+                errorMessage: errorMessage
+              });else event.completed({
+                allowEvent: allowEvent
+              });
+            } catch (e) {
+              console.error("[onMessageSendHandler] Error in event.completed:", e);
+            }
+          };
+          _t.label = 1;
+        case 1:
+          _t.trys.push([1, 69,, 74]);
+          console.log("[onMessageSendHandler] Clearing expired auth");
+          return [4 /*yield*/, withTimeout((0,_services_auth__WEBPACK_IMPORTED_MODULE_0__.clearAuthIfExpiredRuntime)(), 700)];
+        case 2:
+          _t.sent();
+          console.log("[onMessageSendHandler] Getting candidate item keys");
+          return [4 /*yield*/, withTimeout(getCandidateItemKeysRuntime(), T_ITEMKEY_MS)];
+        case 3:
+          keys = _t.sent();
+          console.log("[onMessageSendHandler] Item keys:", keys);
+          if (keys.length === 0) {
+            console.log("[onMessageSendHandler] No item keys found, skipping");
+            finish(true);
+            return [2 /*return*/];
+          }
+          console.log("[onMessageSendHandler] Reading intent from storage", {
+            storageType: typeof OfficeRuntime !== "undefined" && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage) ? "OfficeRuntime" : "roamingSettings",
+            keysToTry: keys
+          });
+          return [4 /*yield*/, withTimeout(readIntentAny(keys), T_STORAGE_MS)];
+        case 4:
+          intent = _t.sent();
+          console.log("[onMessageSendHandler] Intent:", intent, {
+            found: !!intent,
+            foundUnderKey: intent === null || intent === void 0 ? void 0 : intent.itemKey
+          });
+          if (!(intent === null || intent === void 0 ? void 0 : intent.caseId)) {
+            console.log("[onMessageSendHandler] No case ID in intent, skipping");
+            finish(true);
+            return [2 /*return*/];
+          }
+          if (!(intent.filingOnSend === "warn" || intent.filingOnSend === "ask")) return [3 /*break*/, 11];
+          console.log("[onMessageSendHandler] warn mode — storing pending filing intent without filing");
+          _t.label = 5;
+        case 5:
+          _t.trys.push([5, 8,, 9]);
+          return [4 /*yield*/, withTimeout(getSubjectRuntime(), T_SUBJECT_MS)];
+        case 6:
+          subjectForPending = _t.sent();
+          convForPending = getConversationIdSafe();
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.setStored)("sc_pending_filing", JSON.stringify({
+            caseId: intent.caseId,
+            subject: subjectForPending,
+            conversationId: convForPending,
+            sentAt: new Date().toISOString()
+          }))];
+        case 7:
+          _t.sent();
+          console.log("[onMessageSendHandler] Pending filing stored", {
+            caseId: intent.caseId
+          });
+          return [3 /*break*/, 9];
+        case 8:
+          e_4 = _t.sent();
+          console.warn("[onMessageSendHandler] Failed to store pending filing:", e_4);
+          return [3 /*break*/, 9];
+        case 9:
+          return [4 /*yield*/, showInfo("SingleCase: otevřete panel a potvrďte zařazení.")];
+        case 10:
+          _t.sent();
+          finish(true);
+          return [2 /*return*/];
+        case 11:
+          shouldFile = intent.filingOnSend === "always" || intent.autoFileOnSend;
+          if (!shouldFile) {
+            console.log("[onMessageSendHandler] Filing not requested (mode=off or autoFileOnSend=false), skipping");
+            finish(true);
+            return [2 /*return*/];
+          }
+          _t.label = 12;
+        case 12:
+          _t.trys.push([12, 21,, 22]);
+          isFallbackKey = intent.itemKey === "draft:current" || intent.itemKey === "last_compose";
+          if (!isFallbackKey) return [3 /*break*/, 20];
+          realItemId = keys.find(function (k) {
+            return !k.startsWith("draft:") && k !== "last_compose";
+          });
+          if (!realItemId) return [3 /*break*/, 20];
+          console.log("[onMessageSendHandler] Migrating intent from fallback", {
+            from: intent.itemKey,
+            to: realItemId
+          });
+          intentValue = JSON.stringify({
+            caseId: intent.caseId,
+            autoFileOnSend: intent.autoFileOnSend,
+            baseCaseId: intent.baseCaseId || "",
+            baseEmailDocId: intent.baseEmailDocId || ""
+          });
+          realKey = "sc_intent:".concat(realItemId);
+          if (!(typeof OfficeRuntime !== "undefined" && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage))) return [3 /*break*/, 14];
+          return [4 /*yield*/, OfficeRuntime.storage.setItem(realKey, intentValue)];
+        case 13:
+          _t.sent();
+          console.log("[onMessageSendHandler] Migrated to OfficeRuntime.storage");
+          return [3 /*break*/, 16];
+        case 14:
+          if (!((_j = Office === null || Office === void 0 ? void 0 : Office.context) === null || _j === void 0 ? void 0 : _j.roamingSettings)) return [3 /*break*/, 16];
+          Office.context.roamingSettings.set(realKey, intentValue);
+          return [4 /*yield*/, new Promise(function (resolve) {
+            Office.context.roamingSettings.saveAsync(function () {
+              return resolve();
+            });
+          })];
+        case 15:
+          _t.sent();
+          console.log("[onMessageSendHandler] Migrated to roamingSettings");
+          _t.label = 16;
+        case 16:
+          fallbackKey = "sc_intent:".concat(intent.itemKey);
+          if (!(typeof OfficeRuntime !== "undefined" && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage))) return [3 /*break*/, 18];
+          return [4 /*yield*/, OfficeRuntime.storage.removeItem(fallbackKey)];
+        case 17:
+          _t.sent();
+          console.log("[onMessageSendHandler] Cleared fallback key from OfficeRuntime.storage");
+          return [3 /*break*/, 20];
+        case 18:
+          if (!((_k = Office === null || Office === void 0 ? void 0 : Office.context) === null || _k === void 0 ? void 0 : _k.roamingSettings)) return [3 /*break*/, 20];
+          Office.context.roamingSettings.remove(fallbackKey);
+          return [4 /*yield*/, new Promise(function (resolve) {
+            Office.context.roamingSettings.saveAsync(function () {
+              return resolve();
+            });
+          })];
+        case 19:
+          _t.sent();
+          console.log("[onMessageSendHandler] Cleared fallback key from roamingSettings");
+          _t.label = 20;
+        case 20:
+          return [3 /*break*/, 22];
+        case 21:
+          e_5 = _t.sent();
+          console.warn("[onMessageSendHandler] Intent migration failed (non-critical):", e_5);
+          return [3 /*break*/, 22];
+        case 22:
+          console.log("[onMessageSendHandler] Getting auth token");
+          return [4 /*yield*/, withTimeout((0,_services_auth__WEBPACK_IMPORTED_MODULE_0__.getAuthRuntime)(), 900)];
+        case 23:
+          token = _t.sent().token;
+          if (!!token) return [3 /*break*/, 25];
+          console.error("[onMessageSendHandler] No auth token available");
+          return [4 /*yield*/, showInfo("SingleCase: chybí přihlášení, nelze zařadit při odeslání.")];
+        case 24:
+          _t.sent();
+          finish(true);
+          return [2 /*return*/];
+        case 25:
+          console.log("[onMessageSendHandler] Token retrieved", {
+            tokenPrefix: token.slice(0, 10)
+          });
+          console.log("[onMessageSendHandler] Getting workspace host");
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.getStored)(_utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.workspaceHost)];
+        case 26:
+          hostRaw = _t.sent() || "";
+          host = normalizeHost(hostRaw);
+          console.log("[onMessageSendHandler] Workspace host", {
+            hostRaw: hostRaw,
+            normalized: host
+          });
+          if (!!host) return [3 /*break*/, 28];
+          console.error("[onMessageSendHandler] No workspace host configured");
+          return [4 /*yield*/, showInfo("SingleCase: chybí workspace URL, nelze zařadit při odeslání.")];
+        case 27:
+          _t.sent();
+          finish(true);
+          return [2 /*return*/];
+        case 28:
+          console.log("[onMessageSendHandler] Skipping pre-flight check, proceeding to upload");
+          console.log("[onMessageSendHandler] Reading email metadata");
+          console.log("[onMessageSendHandler] Current item info:", {
+            itemType: (_l = Office.context.mailbox.item) === null || _l === void 0 ? void 0 : _l.itemType,
+            itemClass: (_m = Office.context.mailbox.item) === null || _m === void 0 ? void 0 : _m.itemClass,
+            hasSubject: !!((_o = Office.context.mailbox.item) === null || _o === void 0 ? void 0 : _o.subject)
+          });
+          return [4 /*yield*/, withTimeout(getSubjectRuntime(), T_SUBJECT_MS)];
+        case 29:
+          subject = _t.sent();
+          return [4 /*yield*/, withTimeout(getBodyTextRuntime(), T_BODY_MS)];
+        case 30:
+          bodyText = _t.sent();
+          itemFrom = (_p = Office.context.mailbox.item) === null || _p === void 0 ? void 0 : _p.from;
+          fromEmail = String((itemFrom === null || itemFrom === void 0 ? void 0 : itemFrom.emailAddress) || ((_q = Office.context.mailbox.userProfile) === null || _q === void 0 ? void 0 : _q.emailAddress) || "");
+          fromName = String((itemFrom === null || itemFrom === void 0 ? void 0 : itemFrom.displayName) || ((_r = Office.context.mailbox.userProfile) === null || _r === void 0 ? void 0 : _r.displayName) || "");
+          conversationId = getConversationIdSafe();
+          console.log("[onMessageSendHandler] Email metadata", {
+            subject: subject,
+            fromEmail: fromEmail,
+            fromName: fromName,
+            bodyLength: bodyText.length,
+            hasConversationId: !!conversationId,
+            conversationIdPreview: conversationId ? conversationId.substring(0, 30) + "..." : "(none)"
+          });
+          baseName = safeFileName(subject || "email");
+          emailText = "From: ".concat(fromName, " <").concat(fromEmail, ">\r\n") + "To: SingleCase <noreply@singlecase>\r\n" + "Subject: ".concat(subject, "\r\n") + "Date: ".concat(new Date().toUTCString(), "\r\n") + "Message-ID: <".concat(keys[0], "@outlook>\r\n") + "MIME-Version: 1.0\r\n" + "Content-Type: text/plain; charset=UTF-8\r\n" + "Content-Transfer-Encoding: 8bit\r\n" + "\r\n" + "".concat((bodyText || "").trim(), "\r\n");
+          emailBase64 = toBase64Utf8(emailText);
+          console.log("[onMessageSendHandler] EML built", {
+            length: emailBase64.length
+          });
+          existingDoc = null;
+          _t.label = 31;
+        case 31:
+          _t.trys.push([31, 33,, 34]);
+          console.log("[onMessageSendHandler] Checking for existing document with same subject");
+          return [4 /*yield*/, withTimeout((0,_services_singlecaseDocuments__WEBPACK_IMPORTED_MODULE_3__.findDocumentBySubject)(intent.caseId, subject), T_FETCH_MS)];
+        case 32:
+          existingDoc = _t.sent();
+          if (existingDoc) {
+            console.log("[onMessageSendHandler] Found existing document", {
+              docId: existingDoc.id,
+              docName: existingDoc.name,
+              docSubject: existingDoc.subject
+            });
+          } else {
+            console.log("[onMessageSendHandler] No existing document with this subject found");
+          }
+          return [3 /*break*/, 34];
+        case 33:
+          e_6 = _t.sent();
+          console.warn("[onMessageSendHandler] Failed to check for existing document:", e_6);
+          // Continue with new document creation on error
+          existingDoc = null;
+          return [3 /*break*/, 34];
+        case 34:
+          shouldUploadVersion = !!existingDoc;
+          console.log("[onMessageSendHandler] Version decision", {
+            caseId: intent.caseId,
+            subject: subject,
+            existingDocId: existingDoc === null || existingDoc === void 0 ? void 0 : existingDoc.id,
+            existingDocName: existingDoc === null || existingDoc === void 0 ? void 0 : existingDoc.name,
+            shouldUploadVersion: shouldUploadVersion
+          });
+          dupMode = String(intent.duplicates || "warn");
+          if (!(shouldUploadVersion && dupMode !== "off")) return [3 /*break*/, 42];
+          if (!(dupMode === "block")) return [3 /*break*/, 36];
+          console.log("[onMessageSendHandler] Duplicate=block: skipping filing");
+          return [4 /*yield*/, showInfo("SingleCase: this email already exists in the case. Filing was skipped (duplicate blocked).")];
+        case 35:
+          _t.sent();
+          finish(true); // email still sends
+          return [2 /*return*/];
+        case 36:
+          if (!(dupMode === "warn")) return [3 /*break*/, 42];
+          console.log("[onMessageSendHandler] Duplicate=warn: deferring filing to user");
+          _t.label = 37;
+        case 37:
+          _t.trys.push([37, 39,, 40]);
+          convForPending = getConversationIdSafe();
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.setStored)("sc_pending_filing", JSON.stringify({
+            caseId: intent.caseId,
+            subject: subject,
+            conversationId: convForPending,
+            sentAt: new Date().toISOString()
+          }))];
+        case 38:
+          _t.sent();
+          return [3 /*break*/, 40];
+        case 39:
+          e_7 = _t.sent();
+          console.warn("[onMessageSendHandler] Failed to store pending filing for duplicate:", e_7);
+          return [3 /*break*/, 40];
+        case 40:
+          return [4 /*yield*/, showInfo("SingleCase: a duplicate was detected. Open the panel to confirm filing.")];
+        case 41:
+          _t.sent();
+          finish(true);
+          return [2 /*return*/];
+        case 42:
+          if (!(shouldUploadVersion && existingDoc)) return [3 /*break*/, 55];
+          // Upload as new version of existing document
+          console.log("[onMessageSendHandler] Uploading as version of existing document:", existingDoc.id);
+          return [4 /*yield*/, withTimeout((0,_services_singlecaseDocuments__WEBPACK_IMPORTED_MODULE_3__.uploadDocumentVersion)({
+            documentId: existingDoc.id,
+            fileName: "".concat(baseName, ".eml"),
+            mimeType: "message/rfc822",
+            dataBase64: emailBase64
+          }), T_FETCH_MS)];
+        case 43:
+          _t.sent();
+          console.log("[onMessageSendHandler] Version uploaded successfully");
+          _t.label = 44;
+        case 44:
+          _t.trys.push([44, 48,, 49]);
+          return [4 /*yield*/, getRecipientsRuntime()];
+        case 45:
+          recipients = _t.sent();
+          if (!(recipients.length > 0)) return [3 /*break*/, 47];
+          return [4 /*yield*/, (0,_utils_recipientHistory__WEBPACK_IMPORTED_MODULE_5__.recordRecipientsFiledToCase)(recipients, intent.caseId)];
+        case 46:
+          _t.sent();
+          console.log("[onMessageSendHandler] Recipient history recorded (version)", {
+            count: recipients.length
+          });
+          _t.label = 47;
+        case 47:
+          return [3 /*break*/, 49];
+        case 48:
+          e_8 = _t.sent();
+          console.warn("[onMessageSendHandler] Failed to record recipient history:", e_8);
+          return [3 /*break*/, 49];
+        case 49:
+          // Update filed context with the existing document ID
+          return [4 /*yield*/, persistFiledCtx(intent.caseId, existingDoc.id)];
+        case 50:
+          // Update filed context with the existing document ID
+          _t.sent();
+          conversationId_1 = getConversationIdSafe();
+          if (!conversationId_1) return [3 /*break*/, 52];
+          return [4 /*yield*/, (0,_utils_filedCache__WEBPACK_IMPORTED_MODULE_4__.cacheFiledEmail)(conversationId_1, intent.caseId, existingDoc.id, subject)];
+        case 51:
+          _t.sent();
+          console.log("[onMessageSendHandler] Cached filed email (version)", {
+            conversationId: conversationId_1.substring(0, 20) + "..."
+          });
+          return [3 /*break*/, 54];
+        case 52:
+          // Fallback: Cache by subject when conversationId not available (new compose emails)
+          return [4 /*yield*/, (0,_utils_filedCache__WEBPACK_IMPORTED_MODULE_4__.cacheFiledEmailBySubject)(subject, intent.caseId, existingDoc.id)];
+        case 53:
+          // Fallback: Cache by subject when conversationId not available (new compose emails)
+          _t.sent();
+          console.log("[onMessageSendHandler] Cached filed email by subject (version)", {
+            subject: subject
+          });
+          _t.label = 54;
+        case 54:
+          return [3 /*break*/, 67];
+        case 55:
+          // Upload as new document
+          console.log("[onMessageSendHandler] Uploading as new document");
+          return [4 /*yield*/, withTimeout((0,_services_singlecaseDocuments__WEBPACK_IMPORTED_MODULE_3__.uploadDocumentToCase)({
+            caseId: intent.caseId,
+            fileName: "".concat(baseName, ".eml"),
+            mimeType: "message/rfc822",
+            dataBase64: emailBase64,
+            metadata: {
+              subject: subject,
+              fromEmail: fromEmail,
+              fromName: fromName,
+              conversationId: conversationId || undefined // Cross-mailbox identifier
+            }
+          }), T_FETCH_MS)];
+        case 56:
+          created = _t.sent();
+          docs = created === null || created === void 0 ? void 0 : created.documents;
+          createdDocId = Array.isArray(docs) && ((_s = docs[0]) === null || _s === void 0 ? void 0 : _s.id) ? String(docs[0].id) : "";
+          console.log("[onMessageSendHandler] Created docId", {
+            createdDocId: createdDocId,
+            rawResponse: created
+          });
+          if (!createdDocId) return [3 /*break*/, 67];
+          _t.label = 57;
+        case 57:
+          _t.trys.push([57, 61,, 62]);
+          return [4 /*yield*/, getRecipientsRuntime()];
+        case 58:
+          recipients = _t.sent();
+          if (!(recipients.length > 0)) return [3 /*break*/, 60];
+          return [4 /*yield*/, (0,_utils_recipientHistory__WEBPACK_IMPORTED_MODULE_5__.recordRecipientsFiledToCase)(recipients, intent.caseId)];
+        case 59:
+          _t.sent();
+          console.log("[onMessageSendHandler] Recipient history recorded (new doc)", {
+            count: recipients.length
+          });
+          _t.label = 60;
+        case 60:
+          return [3 /*break*/, 62];
+        case 61:
+          e_9 = _t.sent();
+          console.warn("[onMessageSendHandler] Failed to record recipient history:", e_9);
+          return [3 /*break*/, 62];
+        case 62:
+          return [4 /*yield*/, persistFiledCtx(intent.caseId, createdDocId)];
+        case 63:
+          _t.sent();
+          conversationId_2 = getConversationIdSafe();
+          if (!conversationId_2) return [3 /*break*/, 65];
+          return [4 /*yield*/, (0,_utils_filedCache__WEBPACK_IMPORTED_MODULE_4__.cacheFiledEmail)(conversationId_2, intent.caseId, createdDocId, subject)];
+        case 64:
+          _t.sent();
+          console.log("[onMessageSendHandler] Cached filed email (new doc)", {
+            conversationId: conversationId_2.substring(0, 20) + "..."
+          });
+          return [3 /*break*/, 67];
+        case 65:
+          // Fallback: Cache by subject when conversationId not available (new compose emails)
+          return [4 /*yield*/, (0,_utils_filedCache__WEBPACK_IMPORTED_MODULE_4__.cacheFiledEmailBySubject)(subject, intent.caseId, createdDocId)];
+        case 66:
+          // Fallback: Cache by subject when conversationId not available (new compose emails)
+          _t.sent();
+          console.log("[onMessageSendHandler] Cached filed email by subject (new doc)", {
+            subject: subject
+          });
+          _t.label = 67;
+        case 67:
+          console.log("[onMessageSendHandler] Upload successful");
+          return [4 /*yield*/, showInfo("SingleCase: email uložen při odeslání.")];
+        case 68:
+          _t.sent();
+          finish(true);
+          return [3 /*break*/, 74];
+        case 69:
+          e_10 = _t.sent();
+          console.error("[onMessageSendHandler] Error during filing", e_10);
+          _t.label = 70;
+        case 70:
+          _t.trys.push([70, 72,, 73]);
+          msg = e_10 instanceof Error ? e_10.message : String(e_10);
+          errorHint = "";
+          if (msg.includes("timeout")) errorHint = " (timeout)";else if (msg.toLowerCase().includes("workspace")) errorHint = " (není nastaven workspace)";else if (msg.toLowerCase().includes("token")) errorHint = " (přihlaste se znovu)";else if (msg.toLowerCase().includes("network")) errorHint = " (problém se sítí)";
+          return [4 /*yield*/, showInfo("SingleCase: nepoda\u0159ilo se ulo\u017Eit".concat(errorHint))];
+        case 71:
+          _t.sent();
+          return [3 /*break*/, 73];
+        case 72:
+          _a = _t.sent();
+          return [3 /*break*/, 73];
+        case 73:
+          finish(true);
+          return [3 /*break*/, 74];
+        case 74:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./src/services/auth.ts":
+/*!******************************!*\
+  !*** ./src/services/auth.ts ***!
+  \******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   clearAuth: function() { return /* binding */ clearAuth; },
+/* harmony export */   clearAuthIfExpired: function() { return /* binding */ clearAuthIfExpired; },
+/* harmony export */   clearAuthIfExpiredRuntime: function() { return /* binding */ clearAuthIfExpiredRuntime; },
+/* harmony export */   getAuth: function() { return /* binding */ getAuth; },
+/* harmony export */   getAuthRuntime: function() { return /* binding */ getAuthRuntime; },
+/* harmony export */   isLoggedIn: function() { return /* binding */ isLoggedIn; },
+/* harmony export */   isLoggedInRuntime: function() { return /* binding */ isLoggedInRuntime; },
+/* harmony export */   setAuth: function() { return /* binding */ setAuth; }
+/* harmony export */ });
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+/* global OfficeRuntime */
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+var TOKEN_KEY = "singlecase_token";
+var USER_KEY = "singlecase_user_email";
+var ISSUED_AT_KEY = "singlecase_auth_issued_at";
+// Mirror keys into OfficeRuntime.storage so Commands runtime can read them
+var RT_TOKEN_KEY = "sc_token";
+var RT_USER_KEY = "sc_user_email";
+var RT_ISSUED_AT_KEY = "sc_auth_issued_at";
+// Typical session TTL: 8 hours. Adjust as you like.
+var SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+function normalizeEmail(email) {
+  var v = (email || "").trim().toLowerCase();
+  return v.length > 0 ? v : "unknown@singlecase.local";
+}
+function rtGet(key) {
+  return __awaiter(this, void 0, void 0, function () {
+    var v, e_1, v;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          if (!(typeof OfficeRuntime !== 'undefined' && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage))) return [3 /*break*/, 4];
+          _b.label = 1;
+        case 1:
+          _b.trys.push([1, 3,, 4]);
+          return [4 /*yield*/, OfficeRuntime.storage.getItem(key)];
+        case 2:
+          v = _b.sent();
+          if (typeof v === "string") return [2 /*return*/, v];
+          return [3 /*break*/, 4];
+        case 3:
+          e_1 = _b.sent();
+          console.warn("[rtGet] OfficeRuntime.storage.getItem failed:", e_1);
+          return [3 /*break*/, 4];
+        case 4:
+          // Fallback to Office.context.roamingSettings (Outlook-specific, works cross-context)
+          if ((_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.roamingSettings) {
+            try {
+              v = Office.context.roamingSettings.get(key);
+              if (typeof v === "string") return [2 /*return*/, v];
+            } catch (e) {
+              console.warn("[rtGet] roamingSettings.get failed:", e);
+            }
+          }
+          return [2 /*return*/, null];
+      }
+    });
+  });
+}
+// Returns true if saved to OfficeRuntime.storage, false if staged to roamingSettings
+// (caller must call saveAsync once after all keys are staged).
+function rtSet(key, value) {
+  return __awaiter(this, void 0, void 0, function () {
+    var e_2;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          if (!(typeof OfficeRuntime !== 'undefined' && (OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage))) return [3 /*break*/, 4];
+          _b.label = 1;
+        case 1:
+          _b.trys.push([1, 3,, 4]);
+          return [4 /*yield*/, OfficeRuntime.storage.setItem(key, value)];
+        case 2:
+          _b.sent();
+          console.log("[rtSet] Saved to OfficeRuntime.storage:", key);
+          return [2 /*return*/, true];
+        case 3:
+          e_2 = _b.sent();
+          console.warn("[rtSet] OfficeRuntime.storage.setItem failed:", e_2);
+          return [3 /*break*/, 4];
+        case 4:
+          // Fallback: stage the value; caller flushes with a single saveAsync
+          if ((_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.roamingSettings) {
+            try {
+              Office.context.roamingSettings.set(key, value);
+              console.log("[rtSet] Staged to roamingSettings:", key);
+            } catch (e) {
+              console.error("[rtSet] roamingSettings.set failed:", e);
+            }
+          }
+          return [2 /*return*/, false];
+        // needs saveAsync flush
+      }
+    });
+  });
+}
+function rtRemove(key) {
+  return __awaiter(this, void 0, void 0, function () {
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          _b.trys.push([0, 2,, 3]);
+          return [4 /*yield*/, OfficeRuntime.storage.removeItem(key)];
+        case 1:
+          _b.sent();
+          return [3 /*break*/, 3];
+        case 2:
+          _a = _b.sent();
+          return [3 /*break*/, 3];
+        case 3:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function getAuth() {
+  var token = sessionStorage.getItem(TOKEN_KEY);
+  var emailRaw = sessionStorage.getItem(USER_KEY);
+  var issuedAtStr = sessionStorage.getItem(ISSUED_AT_KEY);
+  return {
+    token: token,
+    email: normalizeEmail(emailRaw),
+    issuedAt: issuedAtStr ? Number(issuedAtStr) : 0
+  };
+}
+// Async version for runtimes that cannot access sessionStorage (eg Commands)
+function getAuthRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var _a, token, emailRaw, issuedAtStr;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          return [4 /*yield*/, Promise.all([rtGet(RT_TOKEN_KEY), rtGet(RT_USER_KEY), rtGet(RT_ISSUED_AT_KEY)])];
+        case 1:
+          _a = _b.sent(), token = _a[0], emailRaw = _a[1], issuedAtStr = _a[2];
+          return [2 /*return*/, {
+            token: token,
+            email: normalizeEmail(emailRaw),
+            issuedAt: issuedAtStr ? Number(issuedAtStr) : 0
+          }];
+      }
+    });
+  });
+}
+// Make this async so you can await the mirror write when needed.
+function setAuth(token, email) {
+  return __awaiter(this, void 0, void 0, function () {
+    var emailNorm, issuedAt, results, e_3;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          emailNorm = normalizeEmail(email);
+          issuedAt = Date.now();
+          sessionStorage.setItem(TOKEN_KEY, token);
+          sessionStorage.setItem(USER_KEY, emailNorm);
+          sessionStorage.setItem(ISSUED_AT_KEY, String(issuedAt));
+          return [4 /*yield*/, Promise.all([rtSet(RT_TOKEN_KEY, token), rtSet(RT_USER_KEY, emailNorm), rtSet(RT_ISSUED_AT_KEY, String(issuedAt))])];
+        case 1:
+          results = _b.sent();
+          if (!(results.some(function (r) {
+            return !r;
+          }) && ((_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.roamingSettings))) return [3 /*break*/, 5];
+          _b.label = 2;
+        case 2:
+          _b.trys.push([2, 4,, 5]);
+          return [4 /*yield*/, new Promise(function (resolve, reject) {
+            Office.context.roamingSettings.saveAsync(function (result) {
+              var _a;
+              if (result.status === Office.AsyncResultStatus.Succeeded) {
+                console.log("[setAuth] roamingSettings flushed (1 saveAsync for all keys)");
+                resolve();
+              } else {
+                console.error("[setAuth] roamingSettings.saveAsync failed:", result.error);
+                reject(new Error(((_a = result.error) === null || _a === void 0 ? void 0 : _a.message) || "saveAsync failed"));
+              }
+            });
+          })];
+        case 3:
+          _b.sent();
+          return [3 /*break*/, 5];
+        case 4:
+          e_3 = _b.sent();
+          console.error("[setAuth] roamingSettings flush failed:", e_3);
+          return [3 /*break*/, 5];
+        case 5:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function clearAuthIfExpired() {
+  var _a = getAuth(),
+    token = _a.token,
+    issuedAt = _a.issuedAt;
+  if (!token) return;
+  var ageMs = Date.now() - (issuedAt || 0);
+  if (!issuedAt || ageMs > SESSION_TTL_MS) {
+    void clearAuth();
+  }
+}
+function clearAuthIfExpiredRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var _a, token, issuedAt, ageMs;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          return [4 /*yield*/, getAuthRuntime()];
+        case 1:
+          _a = _b.sent(), token = _a.token, issuedAt = _a.issuedAt;
+          if (!token) return [2 /*return*/];
+          ageMs = Date.now() - (issuedAt || 0);
+          if (!(!issuedAt || ageMs > SESSION_TTL_MS)) return [3 /*break*/, 3];
+          return [4 /*yield*/, clearAuth()];
+        case 2:
+          _b.sent();
+          _b.label = 3;
+        case 3:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function clearAuth() {
+  return __awaiter(this, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          sessionStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem(USER_KEY);
+          sessionStorage.removeItem(ISSUED_AT_KEY);
+          return [4 /*yield*/, Promise.all([rtRemove(RT_TOKEN_KEY), rtRemove(RT_USER_KEY), rtRemove(RT_ISSUED_AT_KEY)])];
+        case 1:
+          _a.sent();
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function isLoggedIn() {
+  var _a = getAuth(),
+    token = _a.token,
+    issuedAt = _a.issuedAt;
+  if (!token) return false;
+  var ageMs = Date.now() - (issuedAt || 0);
+  return Boolean(issuedAt && ageMs <= SESSION_TTL_MS);
+}
+function isLoggedInRuntime() {
+  return __awaiter(this, void 0, void 0, function () {
+    var _a, token, issuedAt, ageMs;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          return [4 /*yield*/, getAuthRuntime()];
+        case 1:
+          _a = _b.sent(), token = _a.token, issuedAt = _a.issuedAt;
+          if (!token) return [2 /*return*/, false];
+          ageMs = Date.now() - (issuedAt || 0);
+          return [2 /*return*/, Boolean(issuedAt && ageMs <= SESSION_TTL_MS)];
+      }
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./src/services/singlecaseDocuments.ts":
+/*!*********************************************!*\
+  !*** ./src/services/singlecaseDocuments.ts ***!
+  \*********************************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   checkDuplicateFilename: function() { return /* binding */ checkDuplicateFilename; },
+/* harmony export */   checkFiledStatusByConversationAndSubject: function() { return /* binding */ checkFiledStatusByConversationAndSubject; },
+/* harmony export */   createDirectory: function() { return /* binding */ createDirectory; },
+/* harmony export */   ensureOutlookAddinFolder: function() { return /* binding */ ensureOutlookAddinFolder; },
+/* harmony export */   findDocumentBySubject: function() { return /* binding */ findDocumentBySubject; },
+/* harmony export */   getCaseRootDirectoryId: function() { return /* binding */ getCaseRootDirectoryId; },
+/* harmony export */   getDocumentMeta: function() { return /* binding */ getDocumentMeta; },
+/* harmony export */   getDocumentMetaRaw: function() { return /* binding */ getDocumentMetaRaw; },
+/* harmony export */   isDocumentLockedError: function() { return /* binding */ isDocumentLockedError; },
+/* harmony export */   listDirectory: function() { return /* binding */ listDirectory; },
+/* harmony export */   normalizeSubject: function() { return /* binding */ normalizeSubject; },
+/* harmony export */   renameDocument: function() { return /* binding */ renameDocument; },
+/* harmony export */   uploadDocumentToCase: function() { return /* binding */ uploadDocumentToCase; },
+/* harmony export */   uploadDocumentVersion: function() { return /* binding */ uploadDocumentVersion; }
+/* harmony export */ });
+/* harmony import */ var _auth__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./auth */ "./src/services/auth.ts");
+/* harmony import */ var _utils_storage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/storage */ "./src/utils/storage.ts");
+/* harmony import */ var _utils_constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/constants */ "./src/utils/constants.ts");
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+var __extends = undefined && undefined.__extends || function () {
+  var _extendStatics = function extendStatics(d, b) {
+    _extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+    return _extendStatics(d, b);
+  };
+  return function (d, b) {
+    if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+    _extendStatics(d, b);
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+var __assign = undefined && undefined.__assign || function () {
+  __assign = Object.assign || function (t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+      s = arguments[i];
+      for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+    }
+    return t;
+  };
+  return __assign.apply(this, arguments);
+};
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+
+
+
+function normalizeHost(host) {
+  var v = (host || "").trim().toLowerCase();
+  if (!v) return "";
+  return v.replace(/^https?:\/\//i, "").split("/")[0];
+}
+function resolveApiBaseUrl() {
+  return __awaiter(this, void 0, void 0, function () {
+    var storedHostRaw, host, baseUrl;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          console.log("[resolveApiBaseUrl] Reading workspaceHost from storage key:", _utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.workspaceHost);
+          return [4 /*yield*/, (0,_utils_storage__WEBPACK_IMPORTED_MODULE_1__.getStored)(_utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.workspaceHost)];
+        case 1:
+          storedHostRaw = _a.sent();
+          console.log("[resolveApiBaseUrl] Raw stored host:", storedHostRaw);
+          host = normalizeHost(storedHostRaw || "");
+          console.log("[resolveApiBaseUrl] Normalized host:", host);
+          if (!host) {
+            console.error("[resolveApiBaseUrl] Workspace host is missing");
+            throw new Error("Workspace host is missing.");
+          }
+          baseUrl = "/singlecase/".concat(encodeURIComponent(host), "/publicapi/v1");
+          console.log("[resolveApiBaseUrl] Resolved base URL:", baseUrl);
+          return [2 /*return*/, baseUrl];
+      }
+    });
+  });
+}
+function getToken() {
+  return __awaiter(this, void 0, void 0, function () {
+    var auth, rt;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          auth = (0,_auth__WEBPACK_IMPORTED_MODULE_0__.getAuth)();
+          if (auth === null || auth === void 0 ? void 0 : auth.token) {
+            console.log("[getToken] Using sessionStorage token");
+            return [2 /*return*/, auth.token];
+          }
+          console.log("[getToken] sessionStorage token not available, trying OfficeRuntime.storage");
+          return [4 /*yield*/, (0,_auth__WEBPACK_IMPORTED_MODULE_0__.getAuthRuntime)()];
+        case 1:
+          rt = _a.sent();
+          if (rt === null || rt === void 0 ? void 0 : rt.token) {
+            console.log("[getToken] Using OfficeRuntime.storage token");
+            return [2 /*return*/, rt.token];
+          }
+          console.error("[getToken] No token found in either sessionStorage or OfficeRuntime.storage");
+          throw new Error("Missing auth token.");
+      }
+    });
+  });
+}
+var DocumentLockedError = /** @class */function (_super) {
+  __extends(DocumentLockedError, _super);
+  function DocumentLockedError(message) {
+    var _this = _super.call(this, message) || this;
+    _this.isLockError = true;
+    _this.name = "DocumentLockedError";
+    return _this;
+  }
+  return DocumentLockedError;
+}(Error);
+function isDocumentLockedError(e) {
+  return e instanceof DocumentLockedError || _typeof(e) === "object" && e !== null && e.isLockError === true;
+}
+function expectJson(res, errorPrefix) {
+  return __awaiter(this, void 0, void 0, function () {
+    var text, contentType;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, res.text().catch(function () {
+            return "";
+          })];
+        case 1:
+          text = _a.sent();
+          if (!res.ok) {
+            if (res.status === 423) {
+              throw new DocumentLockedError("Dokument je momentálně uzamčen. Někdo jej právě upravuje. Počkejte prosím, než se dokument odemkne, a zkuste to znovu.");
+            }
+            throw new Error("".concat(errorPrefix, " (").concat(res.status, "): ").concat(text || res.statusText));
+          }
+          contentType = res.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            throw new Error("".concat(errorPrefix, ": expected JSON but got ").concat(contentType || "no content-type", "."));
+          }
+          return [2 /*return*/, JSON.parse(text)];
+      }
+    });
+  });
+}
+function getDocumentMeta(documentId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, url, res, json;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          url = "".concat(base, "/documents/").concat(encodeURIComponent(String(documentId)));
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 3:
+          res = _a.sent();
+          if (res.status === 404) return [2 /*return*/, null];
+          return [4 /*yield*/, expectJson(res, "Get document failed")];
+        case 4:
+          json = _a.sent();
+          return [2 /*return*/, {
+            id: String(json.id || documentId),
+            name: String(json.name || ""),
+            case_id: String(json.case_id || "")
+          }];
+      }
+    });
+  });
+}
+/**
+ * Returns the full raw JSON from the document endpoint (no field stripping).
+ * Use this when you need lock info or other fields beyond the basic DocumentMeta shape.
+ */
+function getDocumentMetaRaw(documentId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, url, res;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          url = "".concat(base, "/documents/").concat(encodeURIComponent(String(documentId)));
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 3:
+          res = _a.sent();
+          if (res.status === 404) return [2 /*return*/, null];
+          return [2 /*return*/, expectJson(res, "Get document failed")];
+      }
+    });
+  });
+}
+function uploadDocumentVersion(params) {
+  return __awaiter(this, void 0, void 0, function () {
+    var documentId, fileName, mimeType, dataBase64, directoryId, correlationId, token, base, id, bodyData, body, candidates, lastErr, versionHeaders, _i, candidates_1, c, res, json;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          documentId = params.documentId, fileName = params.fileName, mimeType = params.mimeType, dataBase64 = params.dataBase64, directoryId = params.directoryId, correlationId = params.correlationId;
+          // Hard block: never upload an empty version. An empty data_base64 string
+          // would silently create a zero-byte document version on the server.
+          if (!dataBase64 || dataBase64.trim() === "") {
+            throw new Error("[uploadDocumentVersion] Blocked zero-byte upload for document ".concat(documentId, " (\"").concat(fileName, "\"). dataBase64 is empty."));
+          }
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          id = encodeURIComponent(String(documentId));
+          bodyData = {
+            name: fileName,
+            mime_type: mimeType,
+            data_base64: dataBase64
+          };
+          // Add dir_id if provided (though versions typically inherit parent directory)
+          if (directoryId) {
+            bodyData.dir_id = directoryId;
+          }
+          body = JSON.stringify(bodyData);
+          candidates = [{
+            url: "".concat(base, "/documents/").concat(id, "/version"),
+            method: "POST"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/versions"),
+            method: "POST"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/versions"),
+            method: "PUT"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/version"),
+            method: "PUT"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/versions"),
+            method: "PATCH"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/version"),
+            method: "PATCH"
+          }];
+          lastErr = null;
+          versionHeaders = {
+            "Content-Type": "application/json",
+            Authentication: token,
+            "Accept-Encoding": "identity"
+          };
+          if (correlationId) versionHeaders["X-Correlation-ID"] = correlationId;
+          _i = 0, candidates_1 = candidates;
+          _a.label = 3;
+        case 3:
+          if (!(_i < candidates_1.length)) return [3 /*break*/, 7];
+          c = candidates_1[_i];
+          return [4 /*yield*/, fetch(c.url, {
+            method: c.method,
+            headers: versionHeaders,
+            body: body
+          })];
+        case 4:
+          res = _a.sent();
+          if (res.status === 404 || res.status === 405) {
+            lastErr = new Error("Endpoint not available: ".concat(c.method, " ").concat(c.url, " (").concat(res.status, ")"));
+            return [3 /*break*/, 6];
+          }
+          return [4 /*yield*/, expectJson(res, "Upload version failed")];
+        case 5:
+          json = _a.sent();
+          return [2 /*return*/, json];
+        case 6:
+          _i++;
+          return [3 /*break*/, 3];
+        case 7:
+          throw lastErr instanceof Error ? lastErr : new Error("Upload version failed: no supported endpoint found");
+      }
+    });
+  });
+}
+function uploadDocumentToCase(params) {
+  return __awaiter(this, void 0, void 0, function () {
+    var caseId, fileName, mimeType, dataBase64, directoryId, correlationId, metadata, token, e_1, base, e_2, url, payload, uploadHeaders, res, e_3, text, snippet, json;
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          caseId = params.caseId, fileName = params.fileName, mimeType = params.mimeType, dataBase64 = params.dataBase64, directoryId = params.directoryId, correlationId = params.correlationId, metadata = params.metadata;
+          console.log("[uploadDocumentToCase] Starting upload", {
+            caseId: caseId,
+            fileName: fileName,
+            mimeType: mimeType,
+            dataLength: dataBase64.length
+          });
+          _b.label = 1;
+        case 1:
+          _b.trys.push([1, 3,, 4]);
+          return [4 /*yield*/, getToken()];
+        case 2:
+          token = _b.sent();
+          console.log("[uploadDocumentToCase] Token retrieved", {
+            hasToken: !!token,
+            tokenPrefix: token.slice(0, 10)
+          });
+          return [3 /*break*/, 4];
+        case 3:
+          e_1 = _b.sent();
+          console.error("[uploadDocumentToCase] Failed to get token:", e_1);
+          throw e_1;
+        case 4:
+          _b.trys.push([4, 6,, 7]);
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 5:
+          base = _b.sent();
+          console.log("[uploadDocumentToCase] Base URL resolved:", base);
+          return [3 /*break*/, 7];
+        case 6:
+          e_2 = _b.sent();
+          console.error("[uploadDocumentToCase] Failed to resolve base URL:", e_2);
+          throw e_2;
+        case 7:
+          url = "".concat(base, "/documents");
+          console.log("[uploadDocumentToCase] Full URL:", url);
+          payload = {
+            case_id: caseId,
+            documents: [__assign(__assign({
+              name: fileName,
+              mime_type: mimeType,
+              data_base64: dataBase64
+            }, directoryId ? {
+              dir_id: directoryId
+            } : {}), metadata ? {
+              metadata: metadata
+            } : {})]
+          };
+          console.log("[uploadDocumentToCase] Payload structure:", {
+            case_id: payload.case_id,
+            documentCount: payload.documents.length,
+            firstDoc: {
+              name: payload.documents[0].name,
+              mime_type: payload.documents[0].mime_type,
+              data_base64_length: payload.documents[0].data_base64.length
+            }
+          });
+          uploadHeaders = {
+            "Content-Type": "application/json",
+            Authentication: token,
+            "Accept-Encoding": "identity"
+          };
+          if (correlationId) uploadHeaders["X-Correlation-ID"] = correlationId;
+          _b.label = 8;
+        case 8:
+          _b.trys.push([8, 10,, 11]);
+          return [4 /*yield*/, fetch(url, {
+            method: "POST",
+            headers: uploadHeaders,
+            body: JSON.stringify(payload)
+          })];
+        case 9:
+          res = _b.sent();
+          console.log("[uploadDocumentToCase] Fetch completed", {
+            status: res.status,
+            statusText: res.statusText,
+            ok: res.ok
+          });
+          return [3 /*break*/, 11];
+        case 10:
+          e_3 = _b.sent();
+          console.error("[uploadDocumentToCase] Fetch failed:", e_3);
+          throw new Error("Network request failed: ".concat(e_3 instanceof Error ? e_3.message : String(e_3)));
+        case 11:
+          if (!!res.ok) return [3 /*break*/, 13];
+          return [4 /*yield*/, res.text().catch(function () {
+            return "";
+          })];
+        case 12:
+          text = _b.sent();
+          snippet = text.slice(0, 300);
+          console.error("[uploadDocumentToCase] Upload failed", {
+            status: res.status,
+            statusText: res.statusText,
+            url: url,
+            responseSnippet: snippet
+          });
+          _b.label = 13;
+        case 13:
+          return [4 /*yield*/, expectJson(res, "Upload failed")];
+        case 14:
+          json = _b.sent();
+          console.log("[uploadDocumentToCase] Upload successful", {
+            documentIds: (_a = json.documents) === null || _a === void 0 ? void 0 : _a.map(function (d) {
+              return d.id;
+            })
+          });
+          return [2 /*return*/, json];
+      }
+    });
+  });
+}
+function tryRename(url, method, token, name) {
+  return __awaiter(this, void 0, void 0, function () {
+    var res, contentType, text;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, fetch(url, {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+              Authentication: token,
+              "Accept-Encoding": "identity"
+            },
+            body: JSON.stringify({
+              name: name
+            })
+          })];
+        case 1:
+          res = _a.sent();
+          if (res.ok) {
+            contentType = res.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) return [2 /*return*/, res.json()];
+            return [2 /*return*/, {}];
+          }
+          if (res.status === 404 || res.status === 405) return [2 /*return*/, null];
+          return [4 /*yield*/, res.text().catch(function () {
+            return "";
+          })];
+        case 2:
+          text = _a.sent();
+          throw new Error("Rename document failed (".concat(res.status, "): ").concat(text || res.statusText));
+      }
+    });
+  });
+}
+function renameDocument(params) {
+  return __awaiter(this, void 0, void 0, function () {
+    var base, id, candidates, _i, candidates_2, c, ok;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 1:
+          base = _a.sent();
+          id = encodeURIComponent(String(params.documentId));
+          candidates = [{
+            url: "".concat(base, "/documents/").concat(id),
+            method: "PUT"
+          }, {
+            url: "".concat(base, "/documents/").concat(id),
+            method: "PATCH"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/rename"),
+            method: "POST"
+          }, {
+            url: "".concat(base, "/documents/").concat(id, "/name"),
+            method: "PUT"
+          }];
+          _i = 0, candidates_2 = candidates;
+          _a.label = 2;
+        case 2:
+          if (!(_i < candidates_2.length)) return [3 /*break*/, 5];
+          c = candidates_2[_i];
+          return [4 /*yield*/, tryRename(c.url, c.method, params.token, params.name)];
+        case 3:
+          ok = _a.sent();
+          if (ok) return [2 /*return*/, ok];
+          _a.label = 4;
+        case 4:
+          _i++;
+          return [3 /*break*/, 2];
+        case 5:
+          throw new Error("Rename document failed: API endpoint not found or not allowed");
+      }
+    });
+  });
+}
+// ============================================================================
+// Folder/Directory Management for "Outlook add-in" folder
+// ============================================================================
+var OUTLOOK_FOLDER_NAME = "Outlook add-in";
+/**
+ * Get cached folder ID for a case, if available.
+ * Uses localStorage directly — folder cache is device-local state, no cross-device sync needed.
+ */
+function getCachedFolderId(caseId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var raw, cache, folderId;
+    return __generator(this, function (_a) {
+      try {
+        raw = typeof localStorage !== "undefined" ? localStorage.getItem(_utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.outlookFolderCache) : null;
+        if (!raw) return [2 /*return*/, null];
+        cache = JSON.parse(String(raw));
+        folderId = cache[String(caseId)];
+        return [2 /*return*/, folderId ? String(folderId) : null];
+      } catch (_b) {
+        return [2 /*return*/, null];
+      }
+      // removed by dead control flow
+
+    });
+  });
+}
+/**
+ * Cache folder ID for a case.
+ * Uses localStorage directly — avoids roamingSettings 32KB overflow in OWA.
+ */
+function cacheFolderId(caseId, folderId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var raw, cache;
+    return __generator(this, function (_a) {
+      try {
+        raw = typeof localStorage !== "undefined" ? localStorage.getItem(_utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.outlookFolderCache) : null;
+        cache = raw ? JSON.parse(String(raw)) : {};
+        cache[String(caseId)] = String(folderId);
+        if (typeof localStorage !== "undefined") localStorage.setItem(_utils_constants__WEBPACK_IMPORTED_MODULE_2__.STORAGE_KEYS.outlookFolderCache, JSON.stringify(cache));
+      } catch (e) {
+        console.warn("[cacheFolderId] Failed to cache folder ID:", e);
+      }
+      return [2 /*return*/];
+    });
+  });
+}
+/**
+ * Get the root directory ID for a case
+ * Returns null if case has no documents directory yet
+ */
+function getCaseRootDirectoryId(caseId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, url, res, json, rootDirId;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          url = "".concat(base, "/cases/").concat(encodeURIComponent(caseId));
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 3:
+          res = _a.sent();
+          if (!res.ok) {
+            console.warn("[getCaseRootDirectoryId] Failed to get case:", res.status);
+            return [2 /*return*/, null];
+          }
+          return [4 /*yield*/, res.json()];
+        case 4:
+          json = _a.sent();
+          rootDirId = (json === null || json === void 0 ? void 0 : json.root_directory_id) || (json === null || json === void 0 ? void 0 : json.documents_directory_id);
+          return [2 /*return*/, rootDirId ? String(rootDirId) : null];
+      }
+    });
+  });
+}
+/**
+ * List contents of a directory
+ */
+function listDirectory(directoryId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, url, res, json, items, rawItems, _i, rawItems_1, item;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          url = "".concat(base, "/directories/").concat(encodeURIComponent(directoryId));
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 3:
+          res = _a.sent();
+          if (!res.ok) {
+            throw new Error("List directory failed (".concat(res.status, "): ").concat(res.statusText));
+          }
+          return [4 /*yield*/, res.json()];
+        case 4:
+          json = _a.sent();
+          items = [];
+          rawItems = (json === null || json === void 0 ? void 0 : json.items) || (json === null || json === void 0 ? void 0 : json.children) || [];
+          for (_i = 0, rawItems_1 = rawItems; _i < rawItems_1.length; _i++) {
+            item = rawItems_1[_i];
+            items.push({
+              id: String(item.id || item._id),
+              name: String(item.name || ""),
+              type: item.type === "directory" || item.is_directory ? "directory" : "file",
+              parent_id: item.parent_id
+            });
+          }
+          return [2 /*return*/, {
+            items: items,
+            parent_id: json === null || json === void 0 ? void 0 : json.id
+          }];
+      }
+    });
+  });
+}
+/**
+ * Create a new directory
+ */
+function createDirectory(parentId, name) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, payload, candidates, lastError, _i, candidates_3, candidate, res, text, json, e_4;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _a.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _a.sent();
+          payload = {
+            name: name,
+            parent_id: parentId
+          };
+          candidates = [{
+            url: "".concat(base, "/directories"),
+            method: "POST"
+          }, {
+            url: "".concat(base, "/directories/").concat(encodeURIComponent(parentId), "/subdirectories"),
+            method: "POST"
+          }, {
+            url: "".concat(base, "/folders"),
+            method: "POST"
+          }];
+          lastError = null;
+          _i = 0, candidates_3 = candidates;
+          _a.label = 3;
+        case 3:
+          if (!(_i < candidates_3.length)) return [3 /*break*/, 11];
+          candidate = candidates_3[_i];
+          _a.label = 4;
+        case 4:
+          _a.trys.push([4, 9,, 10]);
+          return [4 /*yield*/, fetch(candidate.url, {
+            method: candidate.method,
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            },
+            body: JSON.stringify(payload)
+          })];
+        case 5:
+          res = _a.sent();
+          if (res.status === 404 || res.status === 405) {
+            return [3 /*break*/, 10]; // Try next endpoint
+          }
+          if (!!res.ok) return [3 /*break*/, 7];
+          return [4 /*yield*/, res.text().catch(function () {
+            return "";
+          })];
+        case 6:
+          text = _a.sent();
+          lastError = new Error("Create directory failed (".concat(res.status, "): ").concat(text || res.statusText));
+          return [3 /*break*/, 10];
+        case 7:
+          return [4 /*yield*/, res.json()];
+        case 8:
+          json = _a.sent();
+          return [2 /*return*/, {
+            id: String(json.id || json._id),
+            name: String(json.name || name),
+            parent_id: json.parent_id
+          }];
+        case 9:
+          e_4 = _a.sent();
+          lastError = e_4 instanceof Error ? e_4 : new Error(String(e_4));
+          return [3 /*break*/, 10];
+        case 10:
+          _i++;
+          return [3 /*break*/, 3];
+        case 11:
+          throw lastError || new Error("Create directory failed: no supported endpoint found");
+      }
+    });
+  });
+}
+/**
+ * Ensure the "Outlook add-in" folder exists in the case
+ * Returns the folder's directory ID
+ *
+ * This function is idempotent and handles concurrent calls safely
+ */
+function ensureOutlookAddinFolder(caseId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var cachedId, rootDirId, listing, existing, created, e_5;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          console.log("[ensureOutlookAddinFolder] Starting for case:", caseId);
+          return [4 /*yield*/, getCachedFolderId(caseId)];
+        case 1:
+          cachedId = _a.sent();
+          if (cachedId) {
+            console.log("[ensureOutlookAddinFolder] Using cached folder ID:", cachedId);
+            return [2 /*return*/, cachedId];
+          }
+          return [4 /*yield*/, getCaseRootDirectoryId(caseId)];
+        case 2:
+          rootDirId = _a.sent();
+          if (!rootDirId) {
+            console.warn("[ensureOutlookAddinFolder] Case has no root directory");
+            return [2 /*return*/, null];
+          }
+          console.log("[ensureOutlookAddinFolder] Root directory ID:", rootDirId);
+          _a.label = 3;
+        case 3:
+          _a.trys.push([3, 9,, 10]);
+          return [4 /*yield*/, listDirectory(rootDirId)];
+        case 4:
+          listing = _a.sent();
+          console.log("[ensureOutlookAddinFolder] Found", listing.items.length, "items in root");
+          existing = listing.items.find(function (item) {
+            return item.type === "directory" && item.name === OUTLOOK_FOLDER_NAME;
+          });
+          if (!existing) return [3 /*break*/, 6];
+          console.log("[ensureOutlookAddinFolder] Folder already exists:", existing.id);
+          return [4 /*yield*/, cacheFolderId(caseId, String(existing.id))];
+        case 5:
+          _a.sent();
+          return [2 /*return*/, String(existing.id)];
+        case 6:
+          // 5. Create the folder
+          console.log("[ensureOutlookAddinFolder] Creating folder:", OUTLOOK_FOLDER_NAME);
+          return [4 /*yield*/, createDirectory(rootDirId, OUTLOOK_FOLDER_NAME)];
+        case 7:
+          created = _a.sent();
+          console.log("[ensureOutlookAddinFolder] Folder created:", created.id);
+          return [4 /*yield*/, cacheFolderId(caseId, String(created.id))];
+        case 8:
+          _a.sent();
+          return [2 /*return*/, String(created.id)];
+        case 9:
+          e_5 = _a.sent();
+          console.error("[ensureOutlookAddinFolder] Failed:", e_5);
+          // Return null - uploads will go to root if folder creation fails
+          return [2 /*return*/, null];
+        case 10:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+// ============================================================================
+// Subject-Based Document Matching (for email versioning)
+// ============================================================================
+/**
+ * Normalize email subject for matching
+ * - Trim whitespace
+ * - Lowercase
+ * - Collapse multiple spaces
+ * - Optionally strip Re:/Fw:/Fwd: prefixes
+ */
+function normalizeSubject(subject, stripPrefixes) {
+  if (stripPrefixes === void 0) {
+    stripPrefixes = true;
+  }
+  if (!subject) return "";
+  var normalized = subject.trim().toLowerCase();
+  // Collapse multiple spaces to single space
+  normalized = normalized.replace(/\s+/g, " ");
+  // Optionally strip common reply/forward prefixes
+  if (stripPrefixes) {
+    // Remove Re:, RE:, Fw:, FW:, Fwd:, FWD: (with optional spaces and colons)
+    // Handle multiple nested prefixes like "Re: Fw: Re: Subject"
+    var prevLength = void 0;
+    do {
+      prevLength = normalized.length;
+      normalized = normalized.replace(/^(re|fw|fwd):\s*/i, "");
+    } while (normalized.length !== prevLength && normalized.length > 0);
+  }
+  return normalized.trim();
+}
+/**
+ * Search for existing email documents in a case by matching subject
+ * Returns the document ID if found, null otherwise
+ *
+ * This function:
+ * 1. Lists all documents in the case
+ * 2. Filters for .eml files
+ * 3. Compares normalized subjects
+ * 4. Returns the first match (or null)
+ */
+function findDocumentBySubject(caseId, subject) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, candidates, documents, _i, candidates_4, url, res, json, _a, normalizedSearchSubject, _b, documents_1, doc, fileName, docSubject, normalizedDocSubject;
+    var _c, _d;
+    return __generator(this, function (_e) {
+      switch (_e.label) {
+        case 0:
+          console.log("[findDocumentBySubject] Searching for subject in case", {
+            caseId: caseId,
+            subject: subject
+          });
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _e.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _e.sent();
+          candidates = ["".concat(base, "/cases/").concat(encodeURIComponent(caseId), "/documents"), "".concat(base, "/documents?case_id=").concat(encodeURIComponent(caseId)), "".concat(base, "/cases/").concat(encodeURIComponent(caseId), "/files")];
+          documents = [];
+          _i = 0, candidates_4 = candidates;
+          _e.label = 3;
+        case 3:
+          if (!(_i < candidates_4.length)) return [3 /*break*/, 9];
+          url = candidates_4[_i];
+          _e.label = 4;
+        case 4:
+          _e.trys.push([4, 7,, 8]);
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 5:
+          res = _e.sent();
+          if (res.status === 404 || res.status === 405) {
+            return [3 /*break*/, 8]; // Try next endpoint
+          }
+          if (!res.ok) {
+            return [3 /*break*/, 8];
+          }
+          return [4 /*yield*/, res.json()];
+        case 6:
+          json = _e.sent();
+          // Handle different response structures
+          documents = Array.isArray(json) ? json : Array.isArray(json.documents) ? json.documents : Array.isArray(json.files) ? json.files : Array.isArray(json.items) ? json.items : [];
+          if (documents.length >= 0) {
+            console.log("[findDocumentBySubject] Found", documents.length, "documents in case");
+            return [3 /*break*/, 9]; // Success
+          }
+          return [3 /*break*/, 8];
+        case 7:
+          _a = _e.sent();
+          return [3 /*break*/, 8];
+        case 8:
+          _i++;
+          return [3 /*break*/, 3];
+        case 9:
+          if (documents.length === 0) {
+            console.log("[findDocumentBySubject] No documents found in case");
+            return [2 /*return*/, null];
+          }
+          normalizedSearchSubject = normalizeSubject(subject);
+          console.log("[findDocumentBySubject] Normalized search subject:", normalizedSearchSubject);
+          if (!normalizedSearchSubject) {
+            console.warn("[findDocumentBySubject] Empty normalized subject, skipping");
+            return [2 /*return*/, null];
+          }
+          // Search for .eml files with matching subject
+          for (_b = 0, documents_1 = documents; _b < documents_1.length; _b++) {
+            doc = documents_1[_b];
+            fileName = String(doc.name || doc.filename || "");
+            if (!fileName.toLowerCase().endsWith(".eml")) {
+              continue;
+            }
+            docSubject = ((_c = doc.metadata) === null || _c === void 0 ? void 0 : _c.subject) ||
+            // Metadata field (if we stored it)
+            doc.subject || (
+            // Direct field
+            (_d = doc.properties) === null || _d === void 0 ? void 0 : _d.subject) ||
+            // Properties object
+            "";
+            // Fallback: extract from filename (remove .eml extension)
+            if (!docSubject) {
+              docSubject = fileName.replace(/\.eml$/i, "");
+            }
+            normalizedDocSubject = normalizeSubject(docSubject);
+            console.log("[findDocumentBySubject] Comparing", {
+              fileName: fileName,
+              docSubject: docSubject,
+              normalizedDocSubject: normalizedDocSubject,
+              matches: normalizedDocSubject === normalizedSearchSubject
+            });
+            if (normalizedDocSubject === normalizedSearchSubject) {
+              console.log("[findDocumentBySubject] Match found!", {
+                id: doc.id,
+                name: fileName
+              });
+              return [2 /*return*/, {
+                id: String(doc.id || doc._id),
+                name: fileName,
+                subject: docSubject
+              }];
+            }
+          }
+          console.log("[findDocumentBySubject] No matching document found");
+          return [2 /*return*/, null];
+      }
+    });
+  });
+}
+/**
+ * Returns true if a document with the given filename already exists in the case.
+ * Fails open (returns false) on any network or API error so that filing is never
+ * blocked by a transient connectivity issue.
+ */
+function checkDuplicateFilename(caseId, filename) {
+  return __awaiter(this, void 0, void 0, function () {
+    var token, base, normalized, candidates, _i, candidates_5, url, res, _a, json, docs;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          if (!caseId || !filename) return [2 /*return*/, false];
+          return [4 /*yield*/, getToken()];
+        case 1:
+          token = _b.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 2:
+          base = _b.sent();
+          normalized = filename.trim().toLowerCase();
+          candidates = ["".concat(base, "/cases/").concat(encodeURIComponent(caseId), "/documents"), "".concat(base, "/documents?case_id=").concat(encodeURIComponent(caseId)), "".concat(base, "/cases/").concat(encodeURIComponent(caseId), "/files")];
+          _i = 0, candidates_5 = candidates;
+          _b.label = 3;
+        case 3:
+          if (!(_i < candidates_5.length)) return [3 /*break*/, 10];
+          url = candidates_5[_i];
+          res = void 0;
+          _b.label = 4;
+        case 4:
+          _b.trys.push([4, 6,, 7]);
+          return [4 /*yield*/, fetch(url, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 5:
+          // eslint-disable-next-line no-await-in-loop
+          res = _b.sent();
+          return [3 /*break*/, 7];
+        case 6:
+          _a = _b.sent();
+          return [3 /*break*/, 9];
+        case 7:
+          if (res.status === 404 || res.status === 405) return [3 /*break*/, 9];
+          if (!res.ok) return [3 /*break*/, 9];
+          return [4 /*yield*/, res.json().catch(function () {
+            return null;
+          })];
+        case 8:
+          json = _b.sent();
+          if (!json) return [3 /*break*/, 9];
+          docs = Array.isArray(json) ? json : Array.isArray(json.documents) ? json.documents : Array.isArray(json.files) ? json.files : Array.isArray(json.items) ? json.items : Array.isArray(json.data) ? json.data : [];
+          // Found a valid document list — check for filename match and return.
+          return [2 /*return*/, docs.some(function (doc) {
+            return String((doc === null || doc === void 0 ? void 0 : doc.name) || (doc === null || doc === void 0 ? void 0 : doc.filename) || "").trim().toLowerCase() === normalized;
+          })];
+        case 9:
+          _i++;
+          return [3 /*break*/, 3];
+        case 10:
+          // All endpoints failed or returned nothing — fail open.
+          return [2 /*return*/, false];
+      }
+    });
+  });
+}
+/**
+ * Check if an email with this conversationId and subject is already filed
+ * Searches across all cases in the workspace
+ *
+ * This is the definitive server-side check for "already filed" status
+ * Uses conversationId + normalized subject for reliable cross-mailbox matching
+ *
+ * @param conversationId - Office.js conversationId (available at send time)
+ * @param subject - Email subject for additional matching
+ * @returns Document info if found, null otherwise
+ */
+function checkFiledStatusByConversationAndSubject(conversationId, subject) {
+  return __awaiter(this, void 0, void 0, function () {
+    var normalizedSearchSubject, token, base, listUrl, documents, res, json, e_6, _i, documents_2, doc, fileName, docConversationId, docSubject, normalizedDocSubject, e_7;
+    var _a, _b;
+    return __generator(this, function (_c) {
+      switch (_c.label) {
+        case 0:
+          if (!conversationId) {
+            console.log("[checkFiledStatusByConversationAndSubject] No conversationId provided");
+            return [2 /*return*/, null];
+          }
+          if (!subject) {
+            console.log("[checkFiledStatusByConversationAndSubject] No subject provided");
+            return [2 /*return*/, null];
+          }
+          normalizedSearchSubject = normalizeSubject(subject);
+          console.log("[checkFiledStatusByConversationAndSubject] Checking:", {
+            conversationId: conversationId.substring(0, 30) + "...",
+            subject: subject,
+            normalizedSubject: normalizedSearchSubject
+          });
+          _c.label = 1;
+        case 1:
+          _c.trys.push([1, 11,, 12]);
+          return [4 /*yield*/, getToken()];
+        case 2:
+          token = _c.sent();
+          return [4 /*yield*/, resolveApiBaseUrl()];
+        case 3:
+          base = _c.sent();
+          // Search for documents by conversationId in metadata
+          // Since backend may not support metadata search, we'll list recent documents and filter manually
+          console.log("[checkFiledStatusByConversationAndSubject] Fetching recent documents for matching");
+          listUrl = "".concat(base, "/documents?limit=200&sort=-modified_at");
+          documents = [];
+          _c.label = 4;
+        case 4:
+          _c.trys.push([4, 9,, 10]);
+          return [4 /*yield*/, fetch(listUrl, {
+            method: "GET",
+            headers: {
+              Authentication: token,
+              "Content-Type": "application/json",
+              "Accept-Encoding": "identity"
+            }
+          })];
+        case 5:
+          res = _c.sent();
+          if (!res.ok) return [3 /*break*/, 7];
+          return [4 /*yield*/, res.json()];
+        case 6:
+          json = _c.sent();
+          documents = Array.isArray(json) ? json : Array.isArray(json.documents) ? json.documents : [];
+          console.log("[checkFiledStatusByConversationAndSubject] Fetched", documents.length, "documents for manual search");
+          return [3 /*break*/, 8];
+        case 7:
+          console.warn("[checkFiledStatusByConversationAndSubject] Failed to fetch documents:", res.status);
+          return [2 /*return*/, null];
+        case 8:
+          return [3 /*break*/, 10];
+        case 9:
+          e_6 = _c.sent();
+          console.error("[checkFiledStatusByConversationAndSubject] Fetch failed:", e_6);
+          return [2 /*return*/, null];
+        case 10:
+          // Search through documents for matching conversationId AND normalized subject
+          for (_i = 0, documents_2 = documents; _i < documents_2.length; _i++) {
+            doc = documents_2[_i];
+            fileName = String(doc.name || doc.filename || "");
+            if (!fileName.toLowerCase().endsWith(".eml")) {
+              continue;
+            }
+            docConversationId = (_a = doc.metadata) === null || _a === void 0 ? void 0 : _a.conversationId;
+            if (!docConversationId || String(docConversationId).trim() !== conversationId.trim()) {
+              continue;
+            }
+            docSubject = ((_b = doc.metadata) === null || _b === void 0 ? void 0 : _b.subject) || doc.subject || "";
+            if (!docSubject) {
+              // Fallback: extract from filename
+              docSubject = fileName.replace(/\.eml$/i, "");
+            }
+            normalizedDocSubject = normalizeSubject(docSubject);
+            if (normalizedDocSubject === normalizedSearchSubject) {
+              console.log("[checkFiledStatusByConversationAndSubject] Match found!", {
+                documentId: doc.id,
+                caseId: doc.case_id,
+                subject: docSubject,
+                conversationIdMatch: true,
+                subjectMatch: true
+              });
+              return [2 /*return*/, {
+                documentId: String(doc.id || doc._id),
+                caseId: String(doc.case_id || doc.caseId),
+                caseName: doc.case_name || doc.caseName,
+                caseKey: doc.case_key || doc.caseKey,
+                subject: docSubject
+              }];
+            }
+          }
+          console.log("[checkFiledStatusByConversationAndSubject] No match found (checked", documents.length, "documents)");
+          return [2 /*return*/, null];
+        case 11:
+          e_7 = _c.sent();
+          console.error("[checkFiledStatusByConversationAndSubject] Error:", e_7);
+          return [2 /*return*/, null];
+        case 12:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./src/utils/constants.ts":
+/*!********************************!*\
+  !*** ./src/utils/constants.ts ***!
+  \********************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   STORAGE_KEYS: function() { return /* binding */ STORAGE_KEYS; }
+/* harmony export */ });
+var STORAGE_KEYS = {
+  onboardingDone: "sc:onboardingDone",
+  workspaceId: "sc:workspaceId",
+  workspaceName: "sc:workspaceName",
+  workspaceHost: "sc:workspaceHost",
+  agreementAccepted: "sc:agreementAccepted",
+  publicToken: "sc:publicToken",
+  recipientHistory: "recipientHistory",
+  outlookFolderCache: "sc:outlookFolderCache"
+};
+
+/***/ }),
+
+/***/ "./src/utils/filedCache.ts":
+/*!*********************************!*\
+  !*** ./src/utils/filedCache.ts ***!
+  \*********************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   cacheFiledEmail: function() { return /* binding */ cacheFiledEmail; },
+/* harmony export */   cacheFiledEmailBySubject: function() { return /* binding */ cacheFiledEmailBySubject; },
+/* harmony export */   findFiledEmailBySubject: function() { return /* binding */ findFiledEmailBySubject; },
+/* harmony export */   getFiledEmailFromCache: function() { return /* binding */ getFiledEmailFromCache; },
+/* harmony export */   removeFiledEmailFromCache: function() { return /* binding */ removeFiledEmailFromCache; }
+/* harmony export */ });
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+// filedCache.ts uses localStorage directly (not setStored/getStored) because:
+// - Filed email cache is per-device duplicate detection state — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA (OfficeRuntime.storage is Desktop-only),
+//   and writing sc:filedEmailsCache to roamingSettings contributes to the 32KB overflow.
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+var FILED_CACHE_KEY = "sc:filedEmailsCache";
+function lsGet() {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(FILED_CACHE_KEY) : null;
+  } catch (_a) {
+    return null;
+  }
+}
+function lsSet(value) {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(FILED_CACHE_KEY, value);
+    }
+  } catch (_a) {
+    // localStorage full or unavailable — silently ignore, cache is non-critical
+  }
+}
+/**
+ * Store filed email info by conversationId
+ * This enables "already filed" detection for self-sent emails and replies
+ *
+ * Works for:
+ * - Self-sent emails (sender opens received copy)
+ * - Sent items (user reopens their own sent email)
+ * - Replies in same thread (same conversationId)
+ */
+function cacheFiledEmail(conversationId, caseId, documentId, subject, caseName, caseKey) {
+  return __awaiter(this, void 0, void 0, function () {
+    var platform, raw, cache, entries, keep, newCache_1, verification, verifiedCache, writeSuccess;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+      if (!conversationId) {
+        console.warn("[cacheFiledEmail] No conversationId provided, skipping cache");
+        return [2 /*return*/];
+      }
+      try {
+        platform = {
+          host: (_c = (_b = (_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.mailbox) === null || _b === void 0 ? void 0 : _b.diagnostics) === null || _c === void 0 ? void 0 : _c.hostName,
+          hostVersion: (_f = (_e = (_d = Office === null || Office === void 0 ? void 0 : Office.context) === null || _d === void 0 ? void 0 : _d.mailbox) === null || _e === void 0 ? void 0 : _e.diagnostics) === null || _f === void 0 ? void 0 : _f.hostVersion,
+          platform: (_g = Office === null || Office === void 0 ? void 0 : Office.context) === null || _g === void 0 ? void 0 : _g.platform
+        };
+        console.log("[cacheFiledEmail] Platform info:", platform);
+        raw = lsGet();
+        cache = raw ? JSON.parse(String(raw)) : {};
+        console.log("[cacheFiledEmail] Current cache size:", Object.keys(cache).length);
+        cache[conversationId] = {
+          caseId: caseId,
+          documentId: documentId,
+          subject: subject,
+          caseName: caseName,
+          caseKey: caseKey,
+          filedAt: Date.now()
+        };
+        entries = Object.entries(cache);
+        entries.sort(function (a, b) {
+          return b[1].filedAt - a[1].filedAt;
+        });
+        keep = entries.slice(0, 8);
+        newCache_1 = {};
+        keep.forEach(function (_a) {
+          var key = _a[0],
+            val = _a[1];
+          newCache_1[key] = val;
+        });
+        lsSet(JSON.stringify(newCache_1));
+        if (entries.length > 8) {
+          console.log("[cacheFiledEmail] Pruned cache from", entries.length, "to 8 entries");
+        }
+        verification = lsGet();
+        verifiedCache = verification ? JSON.parse(String(verification)) : {};
+        writeSuccess = !!verifiedCache[conversationId];
+        console.log("[cacheFiledEmail] Write verification:", {
+          success: writeSuccess,
+          cacheSize: Object.keys(verifiedCache).length
+        });
+        console.log("[cacheFiledEmail] Cached filed email", {
+          conversationId: conversationId.substring(0, 20) + "...",
+          caseId: caseId,
+          documentId: documentId,
+          subject: subject,
+          writeVerified: writeSuccess
+        });
+      } catch (e) {
+        console.warn("[cacheFiledEmail] Failed to cache:", e);
+        // Non-critical, don't throw
+      }
+      return [2 /*return*/];
+    });
+  });
+}
+/**
+ * Check if email with this conversationId was filed
+ * Returns cached info if found, null otherwise
+ */
+function getFiledEmailFromCache(conversationId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var platform, raw, cache, cacheKeys, entry;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+      if (!conversationId) {
+        return [2 /*return*/, null];
+      }
+      try {
+        platform = {
+          host: (_c = (_b = (_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.mailbox) === null || _b === void 0 ? void 0 : _b.diagnostics) === null || _c === void 0 ? void 0 : _c.hostName,
+          hostVersion: (_f = (_e = (_d = Office === null || Office === void 0 ? void 0 : Office.context) === null || _d === void 0 ? void 0 : _d.mailbox) === null || _e === void 0 ? void 0 : _e.diagnostics) === null || _f === void 0 ? void 0 : _f.hostVersion,
+          platform: (_g = Office === null || Office === void 0 ? void 0 : Office.context) === null || _g === void 0 ? void 0 : _g.platform
+        };
+        console.log("[getFiledEmailFromCache] Platform info:", platform);
+        raw = lsGet();
+        if (!raw) {
+          console.log("[getFiledEmailFromCache] No cache found in storage");
+          return [2 /*return*/, null];
+        }
+        cache = JSON.parse(String(raw));
+        cacheKeys = Object.keys(cache);
+        console.log("[getFiledEmailFromCache] Cache size:", cacheKeys.length, "keys");
+        console.log("[getFiledEmailFromCache] Looking for conversationId:", conversationId.substring(0, 30) + "...");
+        console.log("[getFiledEmailFromCache] Sample cache keys:", cacheKeys.slice(0, 3).map(function (k) {
+          return k.substring(0, 30) + "...";
+        }));
+        entry = cache[conversationId];
+        if (entry) {
+          console.log("[getFiledEmailFromCache] ✅ Found cache entry", {
+            conversationId: conversationId.substring(0, 20) + "...",
+            caseId: entry.caseId,
+            documentId: entry.documentId,
+            filedAt: new Date(entry.filedAt).toISOString(),
+            subject: entry.subject
+          });
+          return [2 /*return*/, entry];
+        }
+        console.log("[getFiledEmailFromCache] ❌ No entry for this conversationId");
+        return [2 /*return*/, null];
+      } catch (e) {
+        console.warn("[getFiledEmailFromCache] Failed to read cache:", e);
+        return [2 /*return*/, null];
+      }
+      // removed by dead control flow
+
+    });
+  });
+}
+/**
+ * Cache filed email by subject (fallback when conversationId not available at send time)
+ * Used for NEW compose emails where conversationId isn't assigned until after send
+ */
+function cacheFiledEmailBySubject(subject, caseId, documentId, caseName, caseKey) {
+  return __awaiter(this, void 0, void 0, function () {
+    var platform, raw, cache, tempKey, entries, keep, newCache_2, verification, verifiedCache, writeSuccess;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+      if (!subject) {
+        console.warn("[cacheFiledEmailBySubject] No subject provided, skipping cache");
+        return [2 /*return*/];
+      }
+      try {
+        platform = {
+          host: (_c = (_b = (_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.mailbox) === null || _b === void 0 ? void 0 : _b.diagnostics) === null || _c === void 0 ? void 0 : _c.hostName,
+          hostVersion: (_f = (_e = (_d = Office === null || Office === void 0 ? void 0 : Office.context) === null || _d === void 0 ? void 0 : _d.mailbox) === null || _e === void 0 ? void 0 : _e.diagnostics) === null || _f === void 0 ? void 0 : _f.hostVersion,
+          platform: (_g = Office === null || Office === void 0 ? void 0 : Office.context) === null || _g === void 0 ? void 0 : _g.platform
+        };
+        console.log("[cacheFiledEmailBySubject] Platform info:", platform);
+        raw = lsGet();
+        cache = raw ? JSON.parse(String(raw)) : {};
+        console.log("[cacheFiledEmailBySubject] Current cache size:", Object.keys(cache).length);
+        tempKey = "subj:".concat(subject.trim().toLowerCase());
+        console.log("[cacheFiledEmailBySubject] Using temp key:", tempKey);
+        cache[tempKey] = {
+          caseId: caseId,
+          documentId: documentId,
+          subject: subject,
+          caseName: caseName,
+          caseKey: caseKey,
+          filedAt: Date.now()
+        };
+        entries = Object.entries(cache);
+        entries.sort(function (a, b) {
+          return b[1].filedAt - a[1].filedAt;
+        });
+        keep = entries.slice(0, 8);
+        newCache_2 = {};
+        keep.forEach(function (_a) {
+          var key = _a[0],
+            val = _a[1];
+          newCache_2[key] = val;
+        });
+        lsSet(JSON.stringify(newCache_2));
+        if (entries.length > 8) {
+          console.log("[cacheFiledEmailBySubject] Pruned cache from", entries.length, "to 8 entries");
+        }
+        verification = lsGet();
+        verifiedCache = verification ? JSON.parse(String(verification)) : {};
+        writeSuccess = !!verifiedCache[tempKey];
+        console.log("[cacheFiledEmailBySubject] Write verification:", {
+          success: writeSuccess,
+          cacheSize: Object.keys(verifiedCache).length,
+          tempKey: tempKey
+        });
+        console.log("[cacheFiledEmailBySubject] Cached filed email by subject", {
+          subject: subject,
+          caseId: caseId,
+          documentId: documentId,
+          writeVerified: writeSuccess
+        });
+      } catch (e) {
+        console.warn("[cacheFiledEmailBySubject] Failed to cache:", e);
+      }
+      return [2 /*return*/];
+    });
+  });
+}
+/**
+ * Search cache by subject (fallback when conversationId lookup fails)
+ * Also upgrades the cache entry to use conversationId for future lookups
+ */
+function findFiledEmailBySubject(subject, conversationId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var platform, raw, cache, cacheKeys, tempKey, entry, verification, verifiedCache, upgradeSuccess;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+      if (!subject) {
+        return [2 /*return*/, null];
+      }
+      try {
+        platform = {
+          host: (_c = (_b = (_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.mailbox) === null || _b === void 0 ? void 0 : _b.diagnostics) === null || _c === void 0 ? void 0 : _c.hostName,
+          hostVersion: (_f = (_e = (_d = Office === null || Office === void 0 ? void 0 : Office.context) === null || _d === void 0 ? void 0 : _d.mailbox) === null || _e === void 0 ? void 0 : _e.diagnostics) === null || _f === void 0 ? void 0 : _f.hostVersion,
+          platform: (_g = Office === null || Office === void 0 ? void 0 : Office.context) === null || _g === void 0 ? void 0 : _g.platform
+        };
+        console.log("[findFiledEmailBySubject] Platform info:", platform);
+        raw = lsGet();
+        if (!raw) {
+          console.log("[findFiledEmailBySubject] No cache found in storage");
+          return [2 /*return*/, null];
+        }
+        cache = JSON.parse(String(raw));
+        cacheKeys = Object.keys(cache);
+        console.log("[findFiledEmailBySubject] Cache size:", cacheKeys.length, "keys");
+        tempKey = "subj:".concat(subject.trim().toLowerCase());
+        console.log("[findFiledEmailBySubject] Looking for temp key:", tempKey);
+        console.log("[findFiledEmailBySubject] Subject-based keys in cache:", cacheKeys.filter(function (k) {
+          return k.startsWith("subj:");
+        }).length);
+        entry = cache[tempKey];
+        if (entry) {
+          console.log("[findFiledEmailBySubject] ✅ Found cache entry by subject", {
+            subject: subject,
+            caseId: entry.caseId,
+            documentId: entry.documentId,
+            filedAt: new Date(entry.filedAt).toISOString()
+          });
+          // Upgrade cache: If we now have conversationId, store under that key too
+          if (conversationId) {
+            console.log("[findFiledEmailBySubject] Upgrading cache with conversationId:", conversationId.substring(0, 30) + "...");
+            cache[conversationId] = entry;
+            // Keep the subject-based entry for a while (don't delete)
+            lsSet(JSON.stringify(cache));
+            verification = lsGet();
+            verifiedCache = verification ? JSON.parse(String(verification)) : {};
+            upgradeSuccess = !!verifiedCache[conversationId];
+            console.log("[findFiledEmailBySubject] Cache upgrade verification:", {
+              success: upgradeSuccess,
+              cacheSize: Object.keys(verifiedCache).length
+            });
+          }
+          return [2 /*return*/, entry];
+        }
+        console.log("[findFiledEmailBySubject] ❌ No entry for this subject");
+        return [2 /*return*/, null];
+      } catch (e) {
+        console.warn("[findFiledEmailBySubject] Failed:", e);
+        return [2 /*return*/, null];
+      }
+      // removed by dead control flow
+
+    });
+  });
+}
+/**
+ * Remove filed email from cache (e.g., if document was deleted)
+ */
+function removeFiledEmailFromCache(conversationId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var raw, cache;
+    return __generator(this, function (_a) {
+      if (!conversationId) {
+        return [2 /*return*/];
+      }
+      try {
+        raw = lsGet();
+        if (!raw) return [2 /*return*/];
+        cache = JSON.parse(String(raw));
+        delete cache[conversationId];
+        lsSet(JSON.stringify(cache));
+        console.log("[removeFiledEmailFromCache] Removed entry", {
+          conversationId: conversationId.substring(0, 20) + "..."
+        });
+      } catch (e) {
+        console.warn("[removeFiledEmailFromCache] Failed:", e);
+      }
+      return [2 /*return*/];
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./src/utils/recipientHistory.ts":
+/*!***************************************!*\
+  !*** ./src/utils/recipientHistory.ts ***!
+  \***************************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   findBestCaseForRecipients: function() { return /* binding */ findBestCaseForRecipients; },
+/* harmony export */   recordRecipientsFiledToCase: function() { return /* binding */ recordRecipientsFiledToCase; }
+/* harmony export */ });
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ "./src/utils/constants.ts");
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+// recipientHistory uses localStorage directly (not setStored) because:
+// - Recipient → case history is per-device suggestion state — no cross-device sync needed.
+// - setStored falls back to roamingSettings in OWA and triggers 32KB overflow errors.
+
+function normEmail(v) {
+  return String(v || "").trim().toLowerCase();
+}
+function loadMap() {
+  return __awaiter(this, void 0, void 0, function () {
+    var raw, obj;
+    return __generator(this, function (_a) {
+      try {
+        raw = typeof localStorage !== "undefined" ? localStorage.getItem(_constants__WEBPACK_IMPORTED_MODULE_0__.STORAGE_KEYS.recipientHistory) : null;
+        if (!raw) return [2 /*return*/, {}];
+        obj = JSON.parse(String(raw));
+        return [2 /*return*/, obj && _typeof(obj) === "object" ? obj : {}];
+      } catch (_b) {
+        return [2 /*return*/, {}];
+      }
+      // removed by dead control flow
+
+    });
+  });
+}
+function saveMap(map) {
+  return __awaiter(this, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+      try {
+        if (typeof localStorage !== "undefined") localStorage.setItem(_constants__WEBPACK_IMPORTED_MODULE_0__.STORAGE_KEYS.recipientHistory, JSON.stringify(map));
+      } catch (/* ignore */_b) {/* ignore */}
+      return [2 /*return*/];
+    });
+  });
+}
+function recordRecipientsFiledToCase(emails, caseId) {
+  return __awaiter(this, void 0, void 0, function () {
+    var cid, nowIso, map, _i, emails_1, e, email, prev, next;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          cid = String(caseId || "").trim();
+          if (!cid) return [2 /*return*/];
+          nowIso = new Date().toISOString();
+          return [4 /*yield*/, loadMap()];
+        case 1:
+          map = _a.sent();
+          for (_i = 0, emails_1 = emails; _i < emails_1.length; _i++) {
+            e = emails_1[_i];
+            email = normEmail(e);
+            if (!email) continue;
+            prev = map[email];
+            next = {
+              email: email,
+              caseId: cid,
+              count: ((prev === null || prev === void 0 ? void 0 : prev.caseId) === cid ? (prev === null || prev === void 0 ? void 0 : prev.count) || 0 : 0) + 1,
+              lastUsedIso: nowIso
+            };
+            map[email] = next;
+          }
+          return [4 /*yield*/, saveMap(map)];
+        case 2:
+          _a.sent();
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function findBestCaseForRecipients(emails) {
+  return __awaiter(this, void 0, void 0, function () {
+    var map, votes, _i, emails_2, e, email, hit, w, bestId, bestScore, _a, _b, _c, caseId, score;
+    return __generator(this, function (_d) {
+      switch (_d.label) {
+        case 0:
+          return [4 /*yield*/, loadMap()];
+        case 1:
+          map = _d.sent();
+          votes = {};
+          for (_i = 0, emails_2 = emails; _i < emails_2.length; _i++) {
+            e = emails_2[_i];
+            email = normEmail(e);
+            if (!email) continue;
+            hit = map[email];
+            if (!(hit === null || hit === void 0 ? void 0 : hit.caseId)) continue;
+            w = Math.min(10, Math.max(1, Number(hit.count || 1)));
+            votes[hit.caseId] = (votes[hit.caseId] || 0) + w;
+          }
+          bestId = "";
+          bestScore = 0;
+          for (_a = 0, _b = Object.entries(votes); _a < _b.length; _a++) {
+            _c = _b[_a], caseId = _c[0], score = _c[1];
+            if (score > bestScore) {
+              bestScore = score;
+              bestId = caseId;
+            }
+          }
+          if (!bestId) return [2 /*return*/, null];
+          return [2 /*return*/, {
+            caseId: bestId,
+            score: bestScore
+          }];
+      }
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./src/utils/storage.ts":
+/*!******************************!*\
+  !*** ./src/utils/storage.ts ***!
+  \******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   clearDebugLog: function() { return /* binding */ clearDebugLog; },
+/* harmony export */   getDebugLog: function() { return /* binding */ getDebugLog; },
+/* harmony export */   getStored: function() { return /* binding */ getStored; },
+/* harmony export */   removeStored: function() { return /* binding */ removeStored; },
+/* harmony export */   setStored: function() { return /* binding */ setStored; }
+/* harmony export */ });
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+// src/utils/storage.ts
+/* global Office, OfficeRuntime */
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+// Feature flag: Set to false to silence verbose logging (helps with render loops)
+var VERBOSE_LOGGING = false;
+// Debug log that persists across sessions
+var DEBUG_LOG_KEY = "sc:debugLog";
+function getDebugLog() {
+  return __awaiter(this, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+      try {
+        if (hasRoamingSettings()) {
+          return [2 /*return*/, String(Office.context.roamingSettings.get(DEBUG_LOG_KEY) || "")];
+        } else if (typeof localStorage !== "undefined") {
+          return [2 /*return*/, localStorage.getItem(DEBUG_LOG_KEY) || ""];
+        }
+        return [2 /*return*/, ""];
+      } catch (_b) {
+        return [2 /*return*/, ""];
+      }
+      // removed by dead control flow
+
+    });
+  });
+}
+function clearDebugLog() {
+  return __awaiter(this, void 0, void 0, function () {
+    var _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          _b.trys.push([0, 4,, 5]);
+          if (!hasRoamingSettings()) return [3 /*break*/, 2];
+          Office.context.roamingSettings.remove(DEBUG_LOG_KEY);
+          return [4 /*yield*/, saveRoamingSettings()];
+        case 1:
+          _b.sent();
+          return [3 /*break*/, 3];
+        case 2:
+          if (typeof localStorage !== "undefined") {
+            localStorage.removeItem(DEBUG_LOG_KEY);
+          }
+          _b.label = 3;
+        case 3:
+          return [3 /*break*/, 5];
+        case 4:
+          _a = _b.sent();
+          return [3 /*break*/, 5];
+        case 5:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function hasOfficeRuntimeStorage() {
+  try {
+    return typeof OfficeRuntime !== "undefined" && !!(OfficeRuntime === null || OfficeRuntime === void 0 ? void 0 : OfficeRuntime.storage);
+  } catch (_a) {
+    return false;
+  }
+}
+function hasRoamingSettings() {
+  var _a;
+  try {
+    return !!((_a = Office === null || Office === void 0 ? void 0 : Office.context) === null || _a === void 0 ? void 0 : _a.roamingSettings);
+  } catch (_b) {
+    return false;
+  }
+}
+/**
+ * Emergency in-memory pruning when roamingSettings hits the 32KB limit.
+ * Removes old individual sc:sent:* / sc_conv_ctx:* keys (via internal _data access),
+ * prunes the sentPills blob and the filed-email cache to 3 entries each.
+ * Does NOT call saveAsync — caller must do that after this returns.
+ */
+function emergencyPruneRoamingSettings() {
+  var _a, _b, _c;
+  // 1. Remove debug log
+  try {
+    Office.context.roamingSettings.remove(DEBUG_LOG_KEY);
+  } catch (/* ignore */_d) {/* ignore */}
+  // 2. Try to enumerate all in-memory keys via internal _data and remove legacy per-email entries.
+  //    roamingSettings._data is not part of the public API but is the underlying store in all
+  //    known Office.js web/desktop builds. This cleans up old sc:sent:* keys accumulated before
+  //    the blob-based sentPillStore was introduced.
+  try {
+    var settings = Office.context.roamingSettings;
+    var dataStore = (_c = (_a = settings._data) !== null && _a !== void 0 ? _a : (_b = settings._settings) === null || _b === void 0 ? void 0 : _b.data) !== null && _c !== void 0 ? _c : null;
+    if (dataStore && _typeof(dataStore) === "object") {
+      var allKeys = Object.keys(dataStore);
+      var removedCount = 0;
+      for (var _i = 0, allKeys_1 = allKeys; _i < allKeys_1.length; _i++) {
+        var k = allKeys_1[_i];
+        if (k.startsWith("sc:sent:") || k.startsWith("sc_conv_ctx:") || k.startsWith("sc:uploadedLinks:") || k === DEBUG_LOG_KEY) {
+          try {
+            Office.context.roamingSettings.remove(k);
+            removedCount++;
+          } catch (/* ignore */_e) {/* ignore */}
+        }
+      }
+      if (removedCount > 0) {
+        console.warn("[emergencyPrune] Removed", removedCount, "legacy individual storage entries");
+      }
+    }
+  } catch (/* ignore if internal API not available */_f) {/* ignore if internal API not available */}
+  // 3. Prune sc:sentPills blob to 3 most recent
+  try {
+    var raw = Office.context.roamingSettings.get("sc:sentPills");
+    if (raw) {
+      var blob = JSON.parse(String(raw));
+      var entries = Object.entries(blob);
+      if (entries.length > 3) {
+        entries.sort(function (a, b) {
+          return (b[1]._savedAt || 0) - (a[1]._savedAt || 0);
+        });
+        var pruned_1 = {};
+        entries.slice(0, 3).forEach(function (_a) {
+          var k = _a[0],
+            v = _a[1];
+          pruned_1[k] = v;
+        });
+        Office.context.roamingSettings.set("sc:sentPills", JSON.stringify(pruned_1));
+        console.warn("[emergencyPrune] Pruned sentPills from", entries.length, "to 3 entries");
+      }
+    }
+  } catch (/* ignore */_g) {/* ignore */}
+  // 4. Prune sc:filedEmailsCache to 3 most recent
+  try {
+    var raw = Office.context.roamingSettings.get("sc:filedEmailsCache");
+    if (raw) {
+      var cache = JSON.parse(String(raw));
+      var entries = Object.entries(cache);
+      if (entries.length > 3) {
+        entries.sort(function (a, b) {
+          return (b[1].filedAt || 0) - (a[1].filedAt || 0);
+        });
+        var pruned_2 = {};
+        entries.slice(0, 3).forEach(function (_a) {
+          var k = _a[0],
+            v = _a[1];
+          pruned_2[k] = v;
+        });
+        Office.context.roamingSettings.set("sc:filedEmailsCache", JSON.stringify(pruned_2));
+        console.warn("[emergencyPrune] Pruned filedCache from", entries.length, "to 3 entries");
+      }
+    }
+  } catch (/* ignore */_h) {/* ignore */}
+}
+function saveRoamingSettings() {
+  return __awaiter(this, void 0, void 0, function () {
+    var startTime;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          startTime = Date.now();
+          if (VERBOSE_LOGGING) console.log("[saveRoamingSettings] Starting saveAsync...");
+          return [4 /*yield*/, new Promise(function (resolve, reject) {
+            try {
+              Office.context.roamingSettings.saveAsync(function (res) {
+                var _a, _b, _c;
+                var duration = Date.now() - startTime;
+                if ((res === null || res === void 0 ? void 0 : res.status) === Office.AsyncResultStatus.Succeeded) {
+                  if (VERBOSE_LOGGING) console.log("[saveRoamingSettings] \u2705 Succeeded in ".concat(duration, "ms"));
+                  resolve();
+                } else {
+                  var errorMsg = ((_a = res === null || res === void 0 ? void 0 : res.error) === null || _a === void 0 ? void 0 : _a.message) || "roamingSettings.saveAsync failed";
+                  console.error("[saveRoamingSettings] \u274C Failed in ".concat(duration, "ms:"), errorMsg, {
+                    status: res === null || res === void 0 ? void 0 : res.status,
+                    errorCode: (_b = res === null || res === void 0 ? void 0 : res.error) === null || _b === void 0 ? void 0 : _b.code,
+                    errorName: (_c = res === null || res === void 0 ? void 0 : res.error) === null || _c === void 0 ? void 0 : _c.name
+                  });
+                  reject(new Error(errorMsg));
+                }
+              });
+            } catch (e) {
+              var duration = Date.now() - startTime;
+              console.error("[saveRoamingSettings] \u274C Exception in ".concat(duration, "ms:"), e);
+              reject(e);
+            }
+          })];
+        case 1:
+          _a.sent();
+          // CRITICAL FOR DESKTOP OUTLOOK: Add small delay to ensure operation completes
+          // Desktop Outlook may close compose window immediately after send,
+          // interrupting async operations. This delay ensures saveAsync completes.
+          return [4 /*yield*/, new Promise(function (resolve) {
+            return setTimeout(resolve, 100);
+          })];
+        case 2:
+          // CRITICAL FOR DESKTOP OUTLOOK: Add small delay to ensure operation completes
+          // Desktop Outlook may close compose window immediately after send,
+          // interrupting async operations. This delay ensures saveAsync completes.
+          _a.sent();
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function getStored(key_1) {
+  return __awaiter(this, arguments, void 0, function (key, forceFresh) {
+    var k, storageBackend, shouldLog, lsGet, v_1, rv, v_2, v, e_1;
+    if (forceFresh === void 0) {
+      forceFresh = false;
+    }
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          k = String(key || "").trim();
+          if (!k) return [2 /*return*/, null];
+          storageBackend = hasOfficeRuntimeStorage() ? "OfficeRuntime.storage" : hasRoamingSettings() ? "roamingSettings" : "localStorage";
+          shouldLog = VERBOSE_LOGGING && !k.includes("recipientHistory") && !k.includes("recentCases");
+          if (shouldLog) {
+            console.log("[getStored] Using storage backend:", storageBackend, "for key:", k, forceFresh ? "(force fresh)" : "");
+          }
+          lsGet = function lsGet() {
+            try {
+              return typeof localStorage !== "undefined" ? localStorage.getItem(k) : null;
+            } catch (_a) {
+              return null;
+            }
+          };
+          _a.label = 1;
+        case 1:
+          _a.trys.push([1, 7,, 8]);
+          if (!hasOfficeRuntimeStorage()) return [3 /*break*/, 3];
+          return [4 /*yield*/, OfficeRuntime.storage.getItem(k)];
+        case 2:
+          v_1 = _a.sent();
+          if (shouldLog) {
+            console.log("[getStored] Got from OfficeRuntime.storage:", k, v_1 ? "found (".concat(v_1.length, " chars)") : "not found");
+          }
+          if (typeof v_1 === "string") return [2 /*return*/, v_1];
+          // setStored may have fallen back to localStorage (e.g. if OfficeRuntime.storage threw).
+          // Also check roamingSettings in case another client wrote there (cross-context sync).
+          if (hasRoamingSettings()) {
+            rv = Office.context.roamingSettings.get(k);
+            if (typeof rv === "string") return [2 /*return*/, rv];
+          }
+          return [2 /*return*/, lsGet()];
+        case 3:
+          if (!hasRoamingSettings()) return [3 /*break*/, 6];
+          if (!(forceFresh && VERBOSE_LOGGING)) return [3 /*break*/, 5];
+          console.log("[getStored] Waiting 500ms for roamingSettings sync...");
+          return [4 /*yield*/, new Promise(function (resolve) {
+            return setTimeout(resolve, 500);
+          })];
+        case 4:
+          _a.sent();
+          _a.label = 5;
+        case 5:
+          v_2 = Office.context.roamingSettings.get(k);
+          if (shouldLog) {
+            console.log("[getStored] Got from roamingSettings:", k, v_2 ? "found (".concat(String(v_2).length, " chars)") : "not found");
+          }
+          if (typeof v_2 === "string") return [2 /*return*/, v_2];
+          // setStored may have fallen back to localStorage on saveAsync failure.
+          return [2 /*return*/, lsGet()];
+        case 6:
+          v = localStorage.getItem(k);
+          if (shouldLog) {
+            console.warn("[getStored] No Office storage, using localStorage:", k, v ? "found (".concat(v.length, " chars)") : "not found");
+          }
+          return [2 /*return*/, v];
+        case 7:
+          e_1 = _a.sent();
+          console.warn("[getStored] Failed, falling back to localStorage:", e_1);
+          return [2 /*return*/, lsGet()];
+        case 8:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function setStored(key_1, value_1) {
+  return __awaiter(this, arguments, void 0, function (key, value, retryCount) {
+    var k, v, MAX_RETRIES, storageBackend, lsSet, saveError_1, isOverflow, _a, delay_1, e_2;
+    var _b, _c;
+    if (retryCount === void 0) {
+      retryCount = 0;
+    }
+    return __generator(this, function (_d) {
+      switch (_d.label) {
+        case 0:
+          k = String(key || "").trim();
+          if (!k) return [2 /*return*/];
+          v = String(value !== null && value !== void 0 ? value : "");
+          MAX_RETRIES = 2;
+          storageBackend = hasOfficeRuntimeStorage() ? "OfficeRuntime.storage" : hasRoamingSettings() ? "roamingSettings" : "localStorage";
+          if (VERBOSE_LOGGING) {
+            console.log("[setStored] Using storage backend:", storageBackend, "for key:", k, "(".concat(v.length, " chars)"), retryCount > 0 ? "[retry ".concat(retryCount, "]") : "");
+          }
+          lsSet = function lsSet() {
+            try {
+              if (typeof localStorage !== "undefined") localStorage.setItem(k, v);
+            } catch (/* ignore */_a) {/* ignore */}
+          };
+          _d.label = 1;
+        case 1:
+          _d.trys.push([1, 15,, 16]);
+          if (!hasOfficeRuntimeStorage()) return [3 /*break*/, 3];
+          if (VERBOSE_LOGGING) console.log("[setStored] Writing to OfficeRuntime.storage...");
+          return [4 /*yield*/, OfficeRuntime.storage.setItem(k, v)];
+        case 2:
+          _d.sent();
+          lsSet();
+          if (VERBOSE_LOGGING) console.log("[setStored] ✅ Write to OfficeRuntime.storage completed");
+          return [2 /*return*/];
+        case 3:
+          if (!hasRoamingSettings()) return [3 /*break*/, 14];
+          if (VERBOSE_LOGGING) console.log("[setStored] Writing to roamingSettings...");
+          Office.context.roamingSettings.set(k, v);
+          if (VERBOSE_LOGGING) console.log("[setStored] Calling saveAsync...");
+          _d.label = 4;
+        case 4:
+          _d.trys.push([4, 6,, 14]);
+          return [4 /*yield*/, saveRoamingSettings()];
+        case 5:
+          _d.sent();
+          lsSet();
+          if (VERBOSE_LOGGING) console.log("[setStored] ✅ saveAsync completed");
+          return [2 /*return*/];
+        case 6:
+          saveError_1 = _d.sent();
+          isOverflow = ((_b = saveError_1 === null || saveError_1 === void 0 ? void 0 : saveError_1.message) === null || _b === void 0 ? void 0 : _b.includes("32 KB")) || ((_c = saveError_1 === null || saveError_1 === void 0 ? void 0 : saveError_1.message) === null || _c === void 0 ? void 0 : _c.includes("size limit"));
+          if (!isOverflow) return [3 /*break*/, 11];
+          if (!(retryCount === 0)) return [3 /*break*/, 10];
+          emergencyPruneRoamingSettings();
+          _d.label = 7;
+        case 7:
+          _d.trys.push([7, 9,, 10]);
+          return [4 /*yield*/, saveRoamingSettings()];
+        case 8:
+          _d.sent();
+          lsSet();
+          if (VERBOSE_LOGGING) console.log("[setStored] ✅ saveAsync succeeded after emergency prune");
+          return [2 /*return*/];
+        case 9:
+          _a = _d.sent();
+          return [3 /*break*/, 10];
+        case 10:
+          lsSet();
+          return [2 /*return*/];
+        case 11:
+          console.error("[setStored] saveAsync failed:", saveError_1);
+          if (!(retryCount < MAX_RETRIES)) return [3 /*break*/, 13];
+          delay_1 = 200 * (retryCount + 1);
+          if (VERBOSE_LOGGING) console.log("[setStored] Retrying in ".concat(delay_1, "ms..."));
+          return [4 /*yield*/, new Promise(function (resolve) {
+            return setTimeout(resolve, delay_1);
+          })];
+        case 12:
+          _d.sent();
+          return [2 /*return*/, setStored(key, value, retryCount + 1)];
+        case 13:
+          throw saveError_1;
+        case 14:
+          if (VERBOSE_LOGGING) console.warn("[setStored] No Office storage, using localStorage for key:", k);
+          localStorage.setItem(k, v);
+          return [3 /*break*/, 16];
+        case 15:
+          e_2 = _d.sent();
+          console.warn("[setStored] ❌ Failed after retries, falling back to localStorage:", e_2);
+          localStorage.setItem(k, v);
+          return [3 /*break*/, 16];
+        case 16:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+function removeStored(key) {
+  return __awaiter(this, void 0, void 0, function () {
+    var k, _a;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          k = String(key || "").trim();
+          if (!k) return [2 /*return*/];
+          _b.label = 1;
+        case 1:
+          _b.trys.push([1, 6,, 7]);
+          if (!hasOfficeRuntimeStorage()) return [3 /*break*/, 3];
+          return [4 /*yield*/, OfficeRuntime.storage.removeItem(k)];
+        case 2:
+          _b.sent();
+          return [2 /*return*/];
+        case 3:
+          if (!hasRoamingSettings()) return [3 /*break*/, 5];
+          Office.context.roamingSettings.remove(k);
+          return [4 /*yield*/, saveRoamingSettings()];
+        case 4:
+          _b.sent();
+          return [2 /*return*/];
+        case 5:
+          localStorage.removeItem(k);
+          return [3 /*break*/, 7];
+        case 6:
+          _a = _b.sent();
+          localStorage.removeItem(k);
+          return [3 /*break*/, 7];
+        case 7:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+
+/***/ }),
+
+/***/ "./node_modules/es6-promise/dist/es6-promise.js":
+/*!******************************************************!*\
+  !*** ./node_modules/es6-promise/dist/es6-promise.js ***!
+  \******************************************************/
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+/*!
+ * @overview es6-promise - a tiny implementation of Promises/A+.
+ * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
+ * @license   Licensed under MIT license
+ *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
+ * @version   v4.2.8+1e68dce6
+ */
+
+(function (global, factory) {
+	 true ? module.exports = factory() :
+	0;
+}(this, (function () { 'use strict';
+
+function objectOrFunction(x) {
+  var type = typeof x;
+  return x !== null && (type === 'object' || type === 'function');
+}
+
+function isFunction(x) {
+  return typeof x === 'function';
+}
+
+
+
+var _isArray = void 0;
+if (Array.isArray) {
+  _isArray = Array.isArray;
+} else {
+  _isArray = function (x) {
+    return Object.prototype.toString.call(x) === '[object Array]';
+  };
+}
+
+var isArray = _isArray;
+
+var len = 0;
+var vertxNext = void 0;
+var customSchedulerFn = void 0;
+
+var asap = function asap(callback, arg) {
+  queue[len] = callback;
+  queue[len + 1] = arg;
+  len += 2;
+  if (len === 2) {
+    // If len is 2, that means that we need to schedule an async flush.
+    // If additional callbacks are queued before the queue is flushed, they
+    // will be processed by this flush that we are scheduling.
+    if (customSchedulerFn) {
+      customSchedulerFn(flush);
+    } else {
+      scheduleFlush();
+    }
+  }
+};
+
+function setScheduler(scheduleFn) {
+  customSchedulerFn = scheduleFn;
+}
+
+function setAsap(asapFn) {
+  asap = asapFn;
+}
+
+var browserWindow = typeof window !== 'undefined' ? window : undefined;
+var browserGlobal = browserWindow || {};
+var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+
+// test for web worker but not in IE10
+var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+
+// node
+function useNextTick() {
+  // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+  // see https://github.com/cujojs/when/issues/410 for details
+  return function () {
+    return process.nextTick(flush);
+  };
+}
+
+// vertx
+function useVertxTimer() {
+  if (typeof vertxNext !== 'undefined') {
+    return function () {
+      vertxNext(flush);
+    };
+  }
+
+  return useSetTimeout();
+}
+
+function useMutationObserver() {
+  var iterations = 0;
+  var observer = new BrowserMutationObserver(flush);
+  var node = document.createTextNode('');
+  observer.observe(node, { characterData: true });
+
+  return function () {
+    node.data = iterations = ++iterations % 2;
+  };
+}
+
+// web worker
+function useMessageChannel() {
+  var channel = new MessageChannel();
+  channel.port1.onmessage = flush;
+  return function () {
+    return channel.port2.postMessage(0);
+  };
+}
+
+function useSetTimeout() {
+  // Store setTimeout reference so es6-promise will be unaffected by
+  // other code modifying setTimeout (like sinon.useFakeTimers())
+  var globalSetTimeout = setTimeout;
+  return function () {
+    return globalSetTimeout(flush, 1);
+  };
+}
+
+var queue = new Array(1000);
+function flush() {
+  for (var i = 0; i < len; i += 2) {
+    var callback = queue[i];
+    var arg = queue[i + 1];
+
+    callback(arg);
+
+    queue[i] = undefined;
+    queue[i + 1] = undefined;
+  }
+
+  len = 0;
+}
+
+function attemptVertx() {
+  try {
+    var vertx = Function('return this')().require('vertx');
+    vertxNext = vertx.runOnLoop || vertx.runOnContext;
+    return useVertxTimer();
+  } catch (e) {
+    return useSetTimeout();
+  }
+}
+
+var scheduleFlush = void 0;
+// Decide what async method to use to triggering processing of queued callbacks:
+if (isNode) {
+  scheduleFlush = useNextTick();
+} else if (BrowserMutationObserver) {
+  scheduleFlush = useMutationObserver();
+} else if (isWorker) {
+  scheduleFlush = useMessageChannel();
+} else if (browserWindow === undefined && "function" === 'function') {
+  scheduleFlush = attemptVertx();
+} else {
+  scheduleFlush = useSetTimeout();
+}
+
+function then(onFulfillment, onRejection) {
+  var parent = this;
+
+  var child = new this.constructor(noop);
+
+  if (child[PROMISE_ID] === undefined) {
+    makePromise(child);
+  }
+
+  var _state = parent._state;
+
+
+  if (_state) {
+    var callback = arguments[_state - 1];
+    asap(function () {
+      return invokeCallback(_state, child, callback, parent._result);
+    });
+  } else {
+    subscribe(parent, child, onFulfillment, onRejection);
+  }
+
+  return child;
+}
+
+/**
+  `Promise.resolve` returns a promise that will become resolved with the
+  passed `value`. It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    resolve(1);
+  });
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.resolve(1);
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  @method resolve
+  @static
+  @param {Any} value value that the returned promise will be resolved with
+  Useful for tooling.
+  @return {Promise} a promise that will become fulfilled with the given
+  `value`
+*/
+function resolve$1(object) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (object && typeof object === 'object' && object.constructor === Constructor) {
+    return object;
+  }
+
+  var promise = new Constructor(noop);
+  resolve(promise, object);
+  return promise;
+}
+
+var PROMISE_ID = Math.random().toString(36).substring(2);
+
+function noop() {}
+
+var PENDING = void 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+
+function selfFulfillment() {
+  return new TypeError("You cannot resolve a promise with itself");
+}
+
+function cannotReturnOwn() {
+  return new TypeError('A promises callback cannot return that same promise.');
+}
+
+function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
+  try {
+    then$$1.call(value, fulfillmentHandler, rejectionHandler);
+  } catch (e) {
+    return e;
+  }
+}
+
+function handleForeignThenable(promise, thenable, then$$1) {
+  asap(function (promise) {
+    var sealed = false;
+    var error = tryThen(then$$1, thenable, function (value) {
+      if (sealed) {
+        return;
+      }
+      sealed = true;
+      if (thenable !== value) {
+        resolve(promise, value);
+      } else {
+        fulfill(promise, value);
+      }
+    }, function (reason) {
+      if (sealed) {
+        return;
+      }
+      sealed = true;
+
+      reject(promise, reason);
+    }, 'Settle: ' + (promise._label || ' unknown promise'));
+
+    if (!sealed && error) {
+      sealed = true;
+      reject(promise, error);
+    }
+  }, promise);
+}
+
+function handleOwnThenable(promise, thenable) {
+  if (thenable._state === FULFILLED) {
+    fulfill(promise, thenable._result);
+  } else if (thenable._state === REJECTED) {
+    reject(promise, thenable._result);
+  } else {
+    subscribe(thenable, undefined, function (value) {
+      return resolve(promise, value);
+    }, function (reason) {
+      return reject(promise, reason);
+    });
+  }
+}
+
+function handleMaybeThenable(promise, maybeThenable, then$$1) {
+  if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
+    handleOwnThenable(promise, maybeThenable);
+  } else {
+    if (then$$1 === undefined) {
+      fulfill(promise, maybeThenable);
+    } else if (isFunction(then$$1)) {
+      handleForeignThenable(promise, maybeThenable, then$$1);
+    } else {
+      fulfill(promise, maybeThenable);
+    }
+  }
+}
+
+function resolve(promise, value) {
+  if (promise === value) {
+    reject(promise, selfFulfillment());
+  } else if (objectOrFunction(value)) {
+    var then$$1 = void 0;
+    try {
+      then$$1 = value.then;
+    } catch (error) {
+      reject(promise, error);
+      return;
+    }
+    handleMaybeThenable(promise, value, then$$1);
+  } else {
+    fulfill(promise, value);
+  }
+}
+
+function publishRejection(promise) {
+  if (promise._onerror) {
+    promise._onerror(promise._result);
+  }
+
+  publish(promise);
+}
+
+function fulfill(promise, value) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+
+  promise._result = value;
+  promise._state = FULFILLED;
+
+  if (promise._subscribers.length !== 0) {
+    asap(publish, promise);
+  }
+}
+
+function reject(promise, reason) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+  promise._state = REJECTED;
+  promise._result = reason;
+
+  asap(publishRejection, promise);
+}
+
+function subscribe(parent, child, onFulfillment, onRejection) {
+  var _subscribers = parent._subscribers;
+  var length = _subscribers.length;
+
+
+  parent._onerror = null;
+
+  _subscribers[length] = child;
+  _subscribers[length + FULFILLED] = onFulfillment;
+  _subscribers[length + REJECTED] = onRejection;
+
+  if (length === 0 && parent._state) {
+    asap(publish, parent);
+  }
+}
+
+function publish(promise) {
+  var subscribers = promise._subscribers;
+  var settled = promise._state;
+
+  if (subscribers.length === 0) {
+    return;
+  }
+
+  var child = void 0,
+      callback = void 0,
+      detail = promise._result;
+
+  for (var i = 0; i < subscribers.length; i += 3) {
+    child = subscribers[i];
+    callback = subscribers[i + settled];
+
+    if (child) {
+      invokeCallback(settled, child, callback, detail);
+    } else {
+      callback(detail);
+    }
+  }
+
+  promise._subscribers.length = 0;
+}
+
+function invokeCallback(settled, promise, callback, detail) {
+  var hasCallback = isFunction(callback),
+      value = void 0,
+      error = void 0,
+      succeeded = true;
+
+  if (hasCallback) {
+    try {
+      value = callback(detail);
+    } catch (e) {
+      succeeded = false;
+      error = e;
+    }
+
+    if (promise === value) {
+      reject(promise, cannotReturnOwn());
+      return;
+    }
+  } else {
+    value = detail;
+  }
+
+  if (promise._state !== PENDING) {
+    // noop
+  } else if (hasCallback && succeeded) {
+    resolve(promise, value);
+  } else if (succeeded === false) {
+    reject(promise, error);
+  } else if (settled === FULFILLED) {
+    fulfill(promise, value);
+  } else if (settled === REJECTED) {
+    reject(promise, value);
+  }
+}
+
+function initializePromise(promise, resolver) {
+  try {
+    resolver(function resolvePromise(value) {
+      resolve(promise, value);
+    }, function rejectPromise(reason) {
+      reject(promise, reason);
+    });
+  } catch (e) {
+    reject(promise, e);
+  }
+}
+
+var id = 0;
+function nextId() {
+  return id++;
+}
+
+function makePromise(promise) {
+  promise[PROMISE_ID] = id++;
+  promise._state = undefined;
+  promise._result = undefined;
+  promise._subscribers = [];
+}
+
+function validationError() {
+  return new Error('Array Methods must be provided an Array');
+}
+
+var Enumerator = function () {
+  function Enumerator(Constructor, input) {
+    this._instanceConstructor = Constructor;
+    this.promise = new Constructor(noop);
+
+    if (!this.promise[PROMISE_ID]) {
+      makePromise(this.promise);
+    }
+
+    if (isArray(input)) {
+      this.length = input.length;
+      this._remaining = input.length;
+
+      this._result = new Array(this.length);
+
+      if (this.length === 0) {
+        fulfill(this.promise, this._result);
+      } else {
+        this.length = this.length || 0;
+        this._enumerate(input);
+        if (this._remaining === 0) {
+          fulfill(this.promise, this._result);
+        }
+      }
+    } else {
+      reject(this.promise, validationError());
+    }
+  }
+
+  Enumerator.prototype._enumerate = function _enumerate(input) {
+    for (var i = 0; this._state === PENDING && i < input.length; i++) {
+      this._eachEntry(input[i], i);
+    }
+  };
+
+  Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
+    var c = this._instanceConstructor;
+    var resolve$$1 = c.resolve;
+
+
+    if (resolve$$1 === resolve$1) {
+      var _then = void 0;
+      var error = void 0;
+      var didError = false;
+      try {
+        _then = entry.then;
+      } catch (e) {
+        didError = true;
+        error = e;
+      }
+
+      if (_then === then && entry._state !== PENDING) {
+        this._settledAt(entry._state, i, entry._result);
+      } else if (typeof _then !== 'function') {
+        this._remaining--;
+        this._result[i] = entry;
+      } else if (c === Promise$1) {
+        var promise = new c(noop);
+        if (didError) {
+          reject(promise, error);
+        } else {
+          handleMaybeThenable(promise, entry, _then);
+        }
+        this._willSettleAt(promise, i);
+      } else {
+        this._willSettleAt(new c(function (resolve$$1) {
+          return resolve$$1(entry);
+        }), i);
+      }
+    } else {
+      this._willSettleAt(resolve$$1(entry), i);
+    }
+  };
+
+  Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
+    var promise = this.promise;
+
+
+    if (promise._state === PENDING) {
+      this._remaining--;
+
+      if (state === REJECTED) {
+        reject(promise, value);
+      } else {
+        this._result[i] = value;
+      }
+    }
+
+    if (this._remaining === 0) {
+      fulfill(promise, this._result);
+    }
+  };
+
+  Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
+    var enumerator = this;
+
+    subscribe(promise, undefined, function (value) {
+      return enumerator._settledAt(FULFILLED, i, value);
+    }, function (reason) {
+      return enumerator._settledAt(REJECTED, i, reason);
+    });
+  };
+
+  return Enumerator;
+}();
+
+/**
+  `Promise.all` accepts an array of promises, and returns a new promise which
+  is fulfilled with an array of fulfillment values for the passed promises, or
+  rejected with the reason of the first passed promise to be rejected. It casts all
+  elements of the passed iterable to promises as it runs this algorithm.
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = resolve(2);
+  let promise3 = resolve(3);
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // The array here would be [ 1, 2, 3 ];
+  });
+  ```
+
+  If any of the `promises` given to `all` are rejected, the first promise
+  that is rejected will be given as an argument to the returned promises's
+  rejection handler. For example:
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = reject(new Error("2"));
+  let promise3 = reject(new Error("3"));
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // Code here never runs because there are rejected promises!
+  }, function(error) {
+    // error.message === "2"
+  });
+  ```
+
+  @method all
+  @static
+  @param {Array} entries array of promises
+  @param {String} label optional string for labeling the promise.
+  Useful for tooling.
+  @return {Promise} promise that is fulfilled when all `promises` have been
+  fulfilled, or rejected if any of them become rejected.
+  @static
+*/
+function all(entries) {
+  return new Enumerator(this, entries).promise;
+}
+
+/**
+  `Promise.race` returns a new promise which is settled in the same way as the
+  first passed promise to settle.
+
+  Example:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 2');
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // result === 'promise 2' because it was resolved before promise1
+    // was resolved.
+  });
+  ```
+
+  `Promise.race` is deterministic in that only the state of the first
+  settled promise matters. For example, even if other promises given to the
+  `promises` array argument are resolved, but the first settled promise has
+  become rejected before the other promises became fulfilled, the returned
+  promise will become rejected:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      reject(new Error('promise 2'));
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // Code here never runs
+  }, function(reason){
+    // reason.message === 'promise 2' because promise 2 became rejected before
+    // promise 1 became fulfilled
+  });
+  ```
+
+  An example real-world use case is implementing timeouts:
+
+  ```javascript
+  Promise.race([ajax('foo.json'), timeout(5000)])
+  ```
+
+  @method race
+  @static
+  @param {Array} promises array of promises to observe
+  Useful for tooling.
+  @return {Promise} a promise which settles in the same way as the first passed
+  promise to settle.
+*/
+function race(entries) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (!isArray(entries)) {
+    return new Constructor(function (_, reject) {
+      return reject(new TypeError('You must pass an array to race.'));
+    });
+  } else {
+    return new Constructor(function (resolve, reject) {
+      var length = entries.length;
+      for (var i = 0; i < length; i++) {
+        Constructor.resolve(entries[i]).then(resolve, reject);
+      }
+    });
+  }
+}
+
+/**
+  `Promise.reject` returns a promise rejected with the passed `reason`.
+  It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    reject(new Error('WHOOPS'));
+  });
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.reject(new Error('WHOOPS'));
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  @method reject
+  @static
+  @param {Any} reason value that the returned promise will be rejected with.
+  Useful for tooling.
+  @return {Promise} a promise rejected with the given `reason`.
+*/
+function reject$1(reason) {
+  /*jshint validthis:true */
+  var Constructor = this;
+  var promise = new Constructor(noop);
+  reject(promise, reason);
+  return promise;
+}
+
+function needsResolver() {
+  throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+}
+
+function needsNew() {
+  throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+}
+
+/**
+  Promise objects represent the eventual result of an asynchronous operation. The
+  primary way of interacting with a promise is through its `then` method, which
+  registers callbacks to receive either a promise's eventual value or the reason
+  why the promise cannot be fulfilled.
+
+  Terminology
+  -----------
+
+  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+  - `thenable` is an object or function that defines a `then` method.
+  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+  - `exception` is a value that is thrown using the throw statement.
+  - `reason` is a value that indicates why a promise was rejected.
+  - `settled` the final resting state of a promise, fulfilled or rejected.
+
+  A promise can be in one of three states: pending, fulfilled, or rejected.
+
+  Promises that are fulfilled have a fulfillment value and are in the fulfilled
+  state.  Promises that are rejected have a rejection reason and are in the
+  rejected state.  A fulfillment value is never a thenable.
+
+  Promises can also be said to *resolve* a value.  If this value is also a
+  promise, then the original promise's settled state will match the value's
+  settled state.  So a promise that *resolves* a promise that rejects will
+  itself reject, and a promise that *resolves* a promise that fulfills will
+  itself fulfill.
+
+
+  Basic Usage:
+  ------------
+
+  ```js
+  let promise = new Promise(function(resolve, reject) {
+    // on success
+    resolve(value);
+
+    // on failure
+    reject(reason);
+  });
+
+  promise.then(function(value) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Advanced Usage:
+  ---------------
+
+  Promises shine when abstracting away asynchronous interactions such as
+  `XMLHttpRequest`s.
+
+  ```js
+  function getJSON(url) {
+    return new Promise(function(resolve, reject){
+      let xhr = new XMLHttpRequest();
+
+      xhr.open('GET', url);
+      xhr.onreadystatechange = handler;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            resolve(this.response);
+          } else {
+            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+          }
+        }
+      };
+    });
+  }
+
+  getJSON('/posts.json').then(function(json) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Unlike callbacks, promises are great composable primitives.
+
+  ```js
+  Promise.all([
+    getJSON('/posts'),
+    getJSON('/comments')
+  ]).then(function(values){
+    values[0] // => postsJSON
+    values[1] // => commentsJSON
+
+    return values;
+  });
+  ```
+
+  @class Promise
+  @param {Function} resolver
+  Useful for tooling.
+  @constructor
+*/
+
+var Promise$1 = function () {
+  function Promise(resolver) {
+    this[PROMISE_ID] = nextId();
+    this._result = this._state = undefined;
+    this._subscribers = [];
+
+    if (noop !== resolver) {
+      typeof resolver !== 'function' && needsResolver();
+      this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+    }
+  }
+
+  /**
+  The primary way of interacting with a promise is through its `then` method,
+  which registers callbacks to receive either a promise's eventual value or the
+  reason why the promise cannot be fulfilled.
+   ```js
+  findUser().then(function(user){
+    // user is available
+  }, function(reason){
+    // user is unavailable, and you are given the reason why
+  });
+  ```
+   Chaining
+  --------
+   The return value of `then` is itself a promise.  This second, 'downstream'
+  promise is resolved with the return value of the first promise's fulfillment
+  or rejection handler, or rejected if the handler throws an exception.
+   ```js
+  findUser().then(function (user) {
+    return user.name;
+  }, function (reason) {
+    return 'default name';
+  }).then(function (userName) {
+    // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+    // will be `'default name'`
+  });
+   findUser().then(function (user) {
+    throw new Error('Found user, but still unhappy');
+  }, function (reason) {
+    throw new Error('`findUser` rejected and we're unhappy');
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+    // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+  });
+  ```
+  If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+   ```js
+  findUser().then(function (user) {
+    throw new PedagogicalException('Upstream error');
+  }).then(function (value) {
+    // never reached
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // The `PedgagocialException` is propagated all the way down to here
+  });
+  ```
+   Assimilation
+  ------------
+   Sometimes the value you want to propagate to a downstream promise can only be
+  retrieved asynchronously. This can be achieved by returning a promise in the
+  fulfillment or rejection handler. The downstream promise will then be pending
+  until the returned promise is settled. This is called *assimilation*.
+   ```js
+  findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // The user's comments are now available
+  });
+  ```
+   If the assimliated promise rejects, then the downstream promise will also reject.
+   ```js
+  findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // If `findCommentsByAuthor` fulfills, we'll have the value here
+  }, function (reason) {
+    // If `findCommentsByAuthor` rejects, we'll have the reason here
+  });
+  ```
+   Simple Example
+  --------------
+   Synchronous Example
+   ```javascript
+  let result;
+   try {
+    result = findResult();
+    // success
+  } catch(reason) {
+    // failure
+  }
+  ```
+   Errback Example
+   ```js
+  findResult(function(result, err){
+    if (err) {
+      // failure
+    } else {
+      // success
+    }
+  });
+  ```
+   Promise Example;
+   ```javascript
+  findResult().then(function(result){
+    // success
+  }, function(reason){
+    // failure
+  });
+  ```
+   Advanced Example
+  --------------
+   Synchronous Example
+   ```javascript
+  let author, books;
+   try {
+    author = findAuthor();
+    books  = findBooksByAuthor(author);
+    // success
+  } catch(reason) {
+    // failure
+  }
+  ```
+   Errback Example
+   ```js
+   function foundBooks(books) {
+   }
+   function failure(reason) {
+   }
+   findAuthor(function(author, err){
+    if (err) {
+      failure(err);
+      // failure
+    } else {
+      try {
+        findBoooksByAuthor(author, function(books, err) {
+          if (err) {
+            failure(err);
+          } else {
+            try {
+              foundBooks(books);
+            } catch(reason) {
+              failure(reason);
+            }
+          }
+        });
+      } catch(error) {
+        failure(err);
+      }
+      // success
+    }
+  });
+  ```
+   Promise Example;
+   ```javascript
+  findAuthor().
+    then(findBooksByAuthor).
+    then(function(books){
+      // found books
+  }).catch(function(reason){
+    // something went wrong
+  });
+  ```
+   @method then
+  @param {Function} onFulfilled
+  @param {Function} onRejected
+  Useful for tooling.
+  @return {Promise}
+  */
+
+  /**
+  `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+  as the catch block of a try/catch statement.
+  ```js
+  function findAuthor(){
+  throw new Error('couldn't find that author');
+  }
+  // synchronous
+  try {
+  findAuthor();
+  } catch(reason) {
+  // something went wrong
+  }
+  // async with promises
+  findAuthor().catch(function(reason){
+  // something went wrong
+  });
+  ```
+  @method catch
+  @param {Function} onRejection
+  Useful for tooling.
+  @return {Promise}
+  */
+
+
+  Promise.prototype.catch = function _catch(onRejection) {
+    return this.then(null, onRejection);
+  };
+
+  /**
+    `finally` will be invoked regardless of the promise's fate just as native
+    try/catch/finally behaves
+  
+    Synchronous example:
+  
+    ```js
+    findAuthor() {
+      if (Math.random() > 0.5) {
+        throw new Error();
+      }
+      return new Author();
+    }
+  
+    try {
+      return findAuthor(); // succeed or fail
+    } catch(error) {
+      return findOtherAuther();
+    } finally {
+      // always runs
+      // doesn't affect the return value
+    }
+    ```
+  
+    Asynchronous example:
+  
+    ```js
+    findAuthor().catch(function(reason){
+      return findOtherAuther();
+    }).finally(function(){
+      // author was either found, or not
+    });
+    ```
+  
+    @method finally
+    @param {Function} callback
+    @return {Promise}
+  */
+
+
+  Promise.prototype.finally = function _finally(callback) {
+    var promise = this;
+    var constructor = promise.constructor;
+
+    if (isFunction(callback)) {
+      return promise.then(function (value) {
+        return constructor.resolve(callback()).then(function () {
+          return value;
+        });
+      }, function (reason) {
+        return constructor.resolve(callback()).then(function () {
+          throw reason;
+        });
+      });
+    }
+
+    return promise.then(callback, callback);
+  };
+
+  return Promise;
+}();
+
+Promise$1.prototype.then = then;
+Promise$1.all = all;
+Promise$1.race = race;
+Promise$1.resolve = resolve$1;
+Promise$1.reject = reject$1;
+Promise$1._setScheduler = setScheduler;
+Promise$1._setAsap = setAsap;
+Promise$1._asap = asap;
+
+/*global self*/
+function polyfill() {
+  var local = void 0;
+
+  if (typeof __webpack_require__.g !== 'undefined') {
+    local = __webpack_require__.g;
+  } else if (typeof self !== 'undefined') {
+    local = self;
+  } else {
+    try {
+      local = Function('return this')();
+    } catch (e) {
+      throw new Error('polyfill failed because global object is unavailable in this environment');
+    }
+  }
+
+  var P = local.Promise;
+
+  if (P) {
+    var promiseToString = null;
+    try {
+      promiseToString = Object.prototype.toString.call(P.resolve());
+    } catch (e) {
+      // silently ignored
+    }
+
+    if (promiseToString === '[object Promise]' && !P.cast) {
+      return;
+    }
+  }
+
+  local.Promise = Promise$1;
+}
+
+// Strange compat..
+Promise$1.polyfill = polyfill;
+Promise$1.Promise = Promise$1;
+
+return Promise$1;
+
+})));
+
+
+
+//# sourceMappingURL=es6-promise.map
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		if (!(moduleId in __webpack_modules__)) {
+/******/ 			delete __webpack_module_cache__[moduleId];
+/******/ 			var e = new Error("Cannot find module '" + moduleId + "'");
+/******/ 			e.code = 'MODULE_NOT_FOUND';
+/******/ 			throw e;
+/******/ 		}
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	!function() {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = function(exports, definition) {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	}();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	!function() {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	}();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	!function() {
+/******/ 		__webpack_require__.o = function(obj, prop) { return Object.prototype.hasOwnProperty.call(obj, prop); }
+/******/ 	}();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	!function() {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = function(exports) {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	}();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
+!function() {
+"use strict";
+/*!**********************************!*\
+  !*** ./src/commands/commands.ts ***!
+  \**********************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _onMessageSendHandler__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./onMessageSendHandler */ "./src/commands/onMessageSendHandler.ts");
+/* provided dependency */ var Promise = __webpack_require__(/*! es6-promise */ "./node_modules/es6-promise/dist/es6-promise.js")["Promise"];
+/* global Office */
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+      label: 0,
+      sent: function sent() {
+        if (t[0] & 1) throw t[1];
+        return t[1];
+      },
+      trys: [],
+      ops: []
+    },
+    f,
+    y,
+    t,
+    g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op[0] && (_ = 0)), _) try {
+      if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+      if (y = 0, t) op = [op[0] & 2, t.value];
+      switch (op[0]) {
+        case 0:
+        case 1:
+          t = op;
+          break;
+        case 4:
+          _.label++;
+          return {
+            value: op[1],
+            done: false
+          };
+        case 5:
+          _.label++;
+          y = op[1];
+          op = [0];
+          continue;
+        case 7:
+          op = _.ops.pop();
+          _.trys.pop();
+          continue;
+        default:
+          if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+            _ = 0;
+            continue;
+          }
+          if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+            _.label = op[1];
+            break;
+          }
+          if (op[0] === 6 && _.label < t[1]) {
+            _.label = t[1];
+            t = op;
+            break;
+          }
+          if (t && _.label < t[2]) {
+            _.label = t[2];
+            _.ops.push(op);
+            break;
+          }
+          if (t[2]) _.ops.pop();
+          _.trys.pop();
+          continue;
+      }
+      op = body.call(thisArg, _);
+    } catch (e) {
+      op = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+
+console.log("[commands.ts] Script loaded");
+var associated = false;
+function associateHandlers() {
+  var _a;
+  if (associated) return;
+  associated = true;
+  try {
+    if (!((_a = Office === null || Office === void 0 ? void 0 : Office.actions) === null || _a === void 0 ? void 0 : _a.associate)) {
+      console.warn("[commands.ts] Office.actions.associate not available");
+      return;
+    }
+    console.log("[commands.ts] Associating onMessageSendHandler");
+    Office.actions.associate("onMessageSendHandler", _onMessageSendHandler__WEBPACK_IMPORTED_MODULE_0__.onMessageSendHandler);
+    console.log("[commands.ts] Handler associated successfully");
+  } catch (e) {
+    console.error("[commands.ts] Failed to associate handler:", e);
+  }
+}
+function boot() {
+  return __awaiter(this, void 0, void 0, function () {
+    var e_1;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          _a.trys.push([0, 4, 5, 6]);
+          if (!(typeof (Office === null || Office === void 0 ? void 0 : Office.onReady) === "function")) return [3 /*break*/, 2];
+          return [4 /*yield*/, Office.onReady()];
+        case 1:
+          _a.sent();
+          console.log("[commands.ts] Office.onReady fired");
+          console.log("[commands.ts] Office.context:", Office.context);
+          return [3 /*break*/, 3];
+        case 2:
+          console.warn("[commands.ts] Office.onReady not available");
+          _a.label = 3;
+        case 3:
+          return [3 /*break*/, 6];
+        case 4:
+          e_1 = _a.sent();
+          console.error("[commands.ts] Office.onReady failed:", e_1);
+          return [3 /*break*/, 6];
+        case 5:
+          associateHandlers();
+          return [7 /*endfinally*/];
+        case 6:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+// Start immediately, but also try again onReady.
+// This avoids cases where the script runs before Office runtime is fully initialised.
+boot();
+try {
+  if (typeof (Office === null || Office === void 0 ? void 0 : Office.onReady) === "function") {
+    Office.onReady(function () {
+      associateHandlers();
+    });
+  }
+} catch (_a) {
+  // ignore
+}
+}();
+/******/ })()
+;
 //# sourceMappingURL=commands.js.map
