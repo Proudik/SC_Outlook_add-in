@@ -2102,22 +2102,12 @@ const attachmentIds = React.useMemo(
         return {
           ...prev,
           text: showDontFile
-            ? "This looks like an internal email — would you like to skip filing it?"
+            ? "This looks like an internal email. Would you like to file it to a case?"
             : "This email isn't filed yet. Would you like me to file it to a case?",
         };
       }
       return prev;
     });
-    if (showDontFile) {
-      setQuickActions(prev => {
-        // Only inject if no actions are already set (don't override evaluateItem's actions)
-        if (prev.length > 0) return prev;
-        return [
-          { id: "df1", label: "Don't File", intent: "confirm_dont_file" },
-          { id: "fa1", label: "File anyway", intent: "file_anyway" },
-        ];
-      });
-    }
   }, [composeMode, activeItemId, activeItemKey, settings.internalEmailHandling]);
 
   // Effect: Preselect the last chosen case in read mode when "Remember last selected case" is ON.
@@ -2888,14 +2878,11 @@ React.useEffect(() => {
           setViewMode("prompt");
           setPickStep("case");
           setIsUploadingNewVersion(false);
-          setQuickActions([
-            { id: "df1", label: "Don't File", intent: "confirm_dont_file" },
-            { id: "fa1", label: "File anyway", intent: "file_anyway" },
-          ]);
+          setQuickActions([]);
           setPrompt({
             itemId: itemKey,
             kind: "unfiled",
-            text: "This looks like an internal email — would you like to skip filing it?",
+            text: "This looks like an internal email. Would you like to file it to a case?",
           });
           return;
         }
@@ -3198,26 +3185,13 @@ React.useEffect(() => {
             : false;
 
         const doNotSuggest = internalHandlingRef.current === "doNotSuggest";
-
-        if (internalNow && doNotSuggest) {
-          setQuickActions([
-            { id: "df1", label: "Don't File", intent: "confirm_dont_file" },
-            { id: "fa1", label: "File anyway", intent: "file_anyway" },
-          ]);
-          setPrompt({
-            itemId: itemKey,
-            kind: "unfiled",
-            text: "This looks like an internal email — would you like to skip filing it?",
-          });
-        } else {
-          setPrompt({
-            itemId: itemKey,
-            kind: "unfiled",
-            text: internalNow
-              ? "This looks like an internal email."
-              : "This email isn't filed yet. Would you like me to file it to a case?",
-          });
-        }
+        setPrompt({
+          itemId: itemKey,
+          kind: "unfiled",
+          text: internalNow && doNotSuggest
+            ? "This looks like an internal email. Would you like to file it to a case?"
+            : "This email isn't filed yet. Would you like me to file it to a case?",
+        });
       } else {
         setPrompt({
           itemId: itemKey,
@@ -4684,7 +4658,9 @@ setSelectedSource("manual"); // important
                     })();
 
                     // Show dismissal message with manual filing option
-                    const dismissMsg = "Got it. I'll step back for this email, but you can still file it later.";
+                    const dismissMsg = isInternalEmailDetected
+                      ? "Got it — not filing this internal email. You can still file it manually if needed."
+                      : "Got it. I'll step back for this email, but you can still file it later.";
 
                     setQuickActions([
                       { id: "fm1", label: "File manually", intent: "file_manually" },
@@ -4704,6 +4680,10 @@ setSelectedSource("manual"); // important
                   type="button"
                   onClick={() => {
                     console.log("[UI] Yes, file it - setting refiling override");
+                    // Prevent Priority 0 from re-showing "Don't File" on the next polling cycle.
+                    if (prompt.itemId) internalFiledAnywayRef.current.add(prompt.itemId);
+                    if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
+                    if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
                     setAllowRefilingOverride(true); // Allow bypassing duplicate guard
                     setViewMode("pickCase");
                     setPickStep("case");
