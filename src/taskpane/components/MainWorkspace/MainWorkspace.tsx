@@ -2872,19 +2872,15 @@ React.useEffect(() => {
           ? isInternalEmail(userEmailNow, participantsNow)
           : false;
 
-        // Quick cache check: if the email is already filed, bypass the internal guard.
+        // Quick check: if THIS SPECIFIC email has a sentPill, it was explicitly filed before.
+        // Use loadSentPill(itemKey) — same key as the main evaluateItem flow — so we only
+        // bypass the guard for emails that were actually filed, not just thread-mates.
         if (internalNow && !internalFiledAnywayRef.current.has(itemKey)) {
           try {
-            const { getFiledEmailFromCache } = await import("../../../utils/filedCache");
-            const outlookItem = Office?.context?.mailbox?.item as any;
-            const convId = String(outlookItem?.conversationId || "").trim();
-            if (convId) {
-              const cached = await getFiledEmailFromCache(convId);
-              if (cached) {
-                // Already filed — treat like "file anyway" so the filed card shows normally.
-                internalFiledAnywayRef.current.add(itemKey);
-                console.log("[Priority0] Internal email is already filed — skipping Don't File prompt");
-              }
+            const specificPill = await loadSentPill(itemKey);
+            if (specificPill?.caseId) {
+              internalFiledAnywayRef.current.add(itemKey);
+              console.log("[Priority0] Internal email was previously filed — skipping Don't File prompt");
             }
           } catch { /* ignore — fall through to guard check */ }
         }
