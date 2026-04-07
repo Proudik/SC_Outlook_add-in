@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS: AddinSettings = {
 
   duplicates: "warn",
   filingOnSend: "warn",
-  internalEmailHandling: "treatNormally",
+  internalEmailHandling: "doNotSuggest",
 };
 
 type DialogPayload =

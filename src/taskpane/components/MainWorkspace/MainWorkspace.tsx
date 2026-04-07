@@ -124,7 +124,9 @@ type QuickAction = {
     | "enable_filing_on_send"
     | "confirm_file_now"
     | "skip_pending_filing"
-    | "file_now";
+    | "file_now"
+    | "confirm_dont_file"
+    | "file_anyway";
 };
 
 const FILED_CATEGORY = "SC: Filed";
@@ -1237,6 +1239,14 @@ export default function MainWorkspace({ email, token, settings, onChangeSettings
 
   const dismissedRef = React.useRef<Set<string>>(new Set());
 
+  // Tracks items where the user explicitly clicked "File anyway" on an internal email.
+  // Prevents evaluateItem from re-showing "Don't File" on every polling cycle.
+  const internalFiledAnywayRef = React.useRef<Set<string>>(new Set());
+
+  // Kept in sync every render so evaluateItem ([] deps) can read the current setting.
+  const internalHandlingRef = React.useRef(settings.internalEmailHandling);
+  internalHandlingRef.current = settings.internalEmailHandling;
+
   const chatBodyRef = React.useRef<HTMLDivElement | null>(null);
   const attachmentsRef = React.useRef<HTMLDivElement | null>(null);
   const chatEndRef = React.useRef<HTMLDivElement | null>(null);
@@ -2158,13 +2168,14 @@ React.useEffect(() => {
     setIsInternalEmailDetected(isInternal);
 
     // Immediately update a "Checking…" or generic unfiled prompt to reflect internal status
-    const showBanner = isInternal && settings.internalEmailHandling === "doNotSuggest";
+    const doNotSuggest = settings.internalEmailHandling === "doNotSuggest";
+    const showDontFile = isInternal && doNotSuggest;
     setPrompt(prev => {
       if (prev.kind === "unfiled" && (prev.text === "Checking..." || prev.text.includes("isn't filed yet"))) {
         return {
           ...prev,
-          text: showBanner
-            ? "This looks like an internal email."
+          text: showDontFile
+            ? "This looks like an internal email. Would you like to file it to a case?"
             : "This email isn't filed yet. Would you like me to file it to a case?",
         };
       }
@@ -2229,6 +2240,29 @@ React.useEffect(() => {
 
     const checkIfFiled = async () => {
       try {
+        // Don't run while user is actively picking a case — prevents overriding the case picker.
+        if (viewMode === "pickCase") return;
+
+        // Internal email guard: if the email is internal and "doNotSuggest" is on,
+        // skip filing detection entirely so the "Don't File" prompt is not overridden.
+        if (internalHandlingRef.current === "doNotSuggest") {
+          const userEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+          const fromEmail = getOutlookFromEmail();
+          const recipients = getReadModeRecipientEmails();
+          const participants = Array.from(new Set(
+            [fromEmail, ...recipients].map(e => normEmail(e)).filter(Boolean)
+          ));
+          const isInternalNow = userEmail && participants.length > 0
+            ? isInternalEmail(userEmail, participants)
+            : false;
+          if (isInternalNow && !internalFiledAnywayRef.current.has(activeItemId)) {
+            console.log("[checkIfFiled] Skipping — internal email, doNotSuggest enabled");
+            setFiledStatusChecked(true);
+            setAlreadyFiled(false);
+            return;
+          }
+        }
+
         console.log("[checkIfFiled] Starting CACHE-BASED filed status check");
 
         // Step 1: Get email identifiers from Office API
@@ -2387,6 +2421,23 @@ React.useEffect(() => {
     if (isItemLoading) return;
 
     if (alreadyFiled && alreadyFiledCaseLabel && !composeMode && activeItemId) {
+      // Internal email guard: don't show the filed UI if the user hasn't chosen "File anyway".
+      if (internalHandlingRef.current === "doNotSuggest") {
+        const userEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+        const fromEmail = getOutlookFromEmail();
+        const recipients = getReadModeRecipientEmails();
+        const participants = Array.from(new Set(
+          [fromEmail, ...recipients].map(e => normEmail(e)).filter(Boolean)
+        ));
+        const isInternalNow = userEmail && participants.length > 0
+          ? isInternalEmail(userEmail, participants)
+          : false;
+        if (isInternalNow && !internalFiledAnywayRef.current.has(activeItemId)) {
+          console.log("[useEffect:alreadyFiled] Suppressed — internal email, doNotSuggest enabled");
+          return;
+        }
+      }
+
       console.log("[useEffect:alreadyFiled] Updating UI for filed email", {
         caseLabel: alreadyFiledCaseLabel,
         documentId: alreadyFiledDocumentId,
@@ -2890,6 +2941,53 @@ React.useEffect(() => {
         return;
       }
 
+      // Priority 0: Internal email guard — runs before any filing detection.
+      // When "doNotSuggest" is on and the email is internal, show "Don't File" prompt
+      // immediately, bypassing sentPill / conversation recovery entirely.
+      // EXCEPTION: if the email is already in filedCache (genuinely filed), skip the
+      // guard and let normal filing detection show the filed card.
+      if (internalHandlingRef.current === "doNotSuggest") {
+        const userEmailNow = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+        const fromEmailNow = getOutlookFromEmail();
+        const recipientsNow = getReadModeRecipientEmails();
+        const participantsNow = Array.from(new Set(
+          [fromEmailNow, ...recipientsNow].map(e => normEmail(e)).filter(Boolean)
+        ));
+        const internalNow = userEmailNow && participantsNow.length > 0
+          ? isInternalEmail(userEmailNow, participantsNow)
+          : false;
+
+        // Quick check: if THIS SPECIFIC email has a sentPill, it was explicitly filed before.
+        // Use loadSentPill(itemKey) — same key as the main evaluateItem flow — so we only
+        // bypass the guard for emails that were actually filed, not just thread-mates.
+        if (internalNow && !internalFiledAnywayRef.current.has(itemKey)) {
+          try {
+            const specificPill = await loadSentPill(itemKey);
+            if (specificPill?.caseId) {
+              internalFiledAnywayRef.current.add(itemKey);
+              console.log("[Priority0] Internal email was previously filed — skipping Don't File prompt");
+            }
+          } catch { /* ignore — fall through to guard check */ }
+        }
+
+        if (
+          internalNow &&
+          !dismissedRef.current.has(itemKey) &&
+          !internalFiledAnywayRef.current.has(itemKey)
+        ) {
+          setViewMode("prompt");
+          setPickStep("case");
+          setIsUploadingNewVersion(false);
+          setQuickActions([]);
+          setPrompt({
+            itemId: itemKey,
+            kind: "unfiled",
+            text: "This looks like an internal email. Would you like to file it to a case?",
+          });
+          return;
+        }
+      }
+
       // Priority 1: Already filed (detected via conversationId cache)
       if (alreadyFiled && alreadyFiledCaseLabel) {
         console.log("[evaluateItem] Email already filed", {
@@ -3186,11 +3284,12 @@ React.useEffect(() => {
             ? isInternalEmail(userEmailNow, participantsNow)
             : false;
 
+        const doNotSuggest = internalHandlingRef.current === "doNotSuggest";
         setPrompt({
           itemId: itemKey,
           kind: "unfiled",
-          text: internalNow
-            ? "This looks like an internal email."
+          text: internalNow && doNotSuggest
+            ? "This looks like an internal email. Would you like to file it to a case?"
             : "This email isn't filed yet. Would you like me to file it to a case?",
         });
       } else {
@@ -3519,6 +3618,43 @@ const handleQuickAction = React.useCallback((intent) => {
   dismissedRef.current.delete(activeItemKey);
   dismissedRef.current.delete(activeItemId);
 
+  setViewMode("pickCase");
+  setPickStep("case");
+  setSelectedCaseId("");
+  setSelectedSource("");
+  setSelectedAttachments([]);
+  setIsUploadingNewVersion(false);
+  return;
+}
+
+      if (intent === "confirm_dont_file") {
+  // User confirmed "Don't File" for an internal email — dismiss and show confirmation.
+  if (storeKey) dismissedRef.current.add(storeKey);
+  if (activeItemKey) dismissedRef.current.add(activeItemKey);
+  if (activeItemId) dismissedRef.current.add(activeItemId);
+
+  // Apply the "SC: Unfiled" Outlook category so the email is visually marked.
+  void applyUnfiledCategoryToCurrentEmailOfficeJs().catch(() => {/* non-blocking */});
+
+  setViewMode("prompt");
+  setPickStep("case");
+  setQuickActions([{ id: "fm1", label: "File manually", intent: "file_manually" }]);
+  setPrompt({
+    itemId: activeItemId,
+    kind: "unfiled",
+    text: "Got it — this email won't be filed. You can still file it manually if needed.",
+  });
+  return;
+}
+
+      if (intent === "file_anyway") {
+  // User wants to file despite internal detection — remember this so evaluateItem
+  // does not re-show "Don't File" on the next polling cycle.
+  if (storeKey) internalFiledAnywayRef.current.add(storeKey);
+  if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
+  if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
+
+  dismissedRef.current.delete(storeKey);
   setViewMode("pickCase");
   setPickStep("case");
   setSelectedCaseId("");
@@ -4628,7 +4764,9 @@ setSelectedSource("manual"); // important
                     })();
 
                     // Show dismissal message with manual filing option
-                    const dismissMsg = "Got it. I'll step back for this email, but you can still file it later.";
+                    const dismissMsg = isInternalEmailDetected
+                      ? "Got it — not filing this internal email. You can still file it manually if needed."
+                      : "Got it. I'll step back for this email, but you can still file it later.";
 
                     setQuickActions([
                       { id: "fm1", label: "File manually", intent: "file_manually" },
@@ -4648,6 +4786,10 @@ setSelectedSource("manual"); // important
                   type="button"
                   onClick={() => {
                     console.log("[UI] Yes, file it - setting refiling override");
+                    // Prevent Priority 0 from re-showing "Don't File" on the next polling cycle.
+                    if (prompt.itemId) internalFiledAnywayRef.current.add(prompt.itemId);
+                    if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
+                    if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
                     setAllowRefilingOverride(true); // Allow bypassing duplicate guard
                     setViewMode("pickCase");
                     setPickStep("case");
