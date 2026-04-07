@@ -13,7 +13,7 @@ import {
   markAttached,
   computeEmailFingerprint,
 } from "../../../utils/settingsStorage";
-import { loadSentPill, saveSentPill, SentPillData } from "../../../utils/sentPillStore";
+import { loadSentPill, saveSentPill, clearSentPill, SentPillData } from "../../../utils/sentPillStore";
 import type { AddinSettings, CaseListScope } from "../SettingsModal";
 import CaseSelector from "../CaseSelector";
 import {
@@ -2903,6 +2903,16 @@ React.useEffect(() => {
         }
       }
 
+      // Guard: if the user explicitly opted to file this internal email ("Yes, file it"),
+      // don't let polling override their active filing flow (case picker or confirmation step).
+      if (
+        internalHandlingRef.current === "doNotSuggest" &&
+        internalFiledAnywayRef.current.has(itemKey) &&
+        (viewModeRef.current === "pickCase" || viewModeRef.current === "prompt")
+      ) {
+        return;
+      }
+
       // Priority 1: Already filed (detected via conversationId cache)
       if (alreadyFiled && alreadyFiledCaseLabel) {
         console.log("[evaluateItem] Email already filed", {
@@ -4699,6 +4709,14 @@ setSelectedSource("manual"); // important
                     if (prompt.itemId) internalFiledAnywayRef.current.add(prompt.itemId);
                     if (activeItemKey) internalFiledAnywayRef.current.add(activeItemKey);
                     if (activeItemId) internalFiledAnywayRef.current.add(activeItemId);
+                    // Clear any stale sentPill from a previous session so evaluateItem's
+                    // State A doesn't immediately re-show the wrong case after the case picker closes.
+                    void (async () => {
+                      try {
+                        if (activeItemKey) await clearSentPill(activeItemKey);
+                        if (activeItemId && activeItemId !== activeItemKey) await clearSentPill(activeItemId);
+                      } catch { /* non-critical */ }
+                    })();
                     setAllowRefilingOverride(true); // Allow bypassing duplicate guard
                     setViewMode("pickCase");
                     setPickStep("case");
