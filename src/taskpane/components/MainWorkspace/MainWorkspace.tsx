@@ -2240,12 +2240,6 @@ React.useEffect(() => {
 
     const checkIfFiled = async () => {
       try {
-        // Don't run while user is actively picking a case — prevents overriding the case picker.
-        if (viewMode === "pickCase") return;
-        // Don't run after a fresh in-session filing — prevents stale cache entries from
-        // overwriting the sentPill that was just written by the filing code.
-        if (viewMode === "sent") return;
-
         // Internal email guard: if the email is internal and "doNotSuggest" is on,
         // skip filing detection entirely so the "Don't File" prompt is not overridden.
         if (internalHandlingRef.current === "doNotSuggest") {
@@ -2416,7 +2410,7 @@ React.useEffect(() => {
     };
 
     checkIfFiled();
-  }, [composeMode, activeItemId, token, workspaceHost, viewMode]);
+  }, [composeMode, activeItemId, token, workspaceHost]);
 
   // Update UI when filed status is detected
   React.useEffect(() => {
