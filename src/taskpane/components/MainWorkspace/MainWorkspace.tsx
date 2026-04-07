@@ -2177,6 +2177,26 @@ const attachmentIds = React.useMemo(
 
     const checkIfFiled = async () => {
       try {
+        // Internal email guard: if the email is internal and "doNotSuggest" is on,
+        // skip filing detection entirely so the "Don't File" prompt is not overridden.
+        if (internalHandlingRef.current === "doNotSuggest") {
+          const userEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+          const fromEmail = getOutlookFromEmail();
+          const recipients = getReadModeRecipientEmails();
+          const participants = Array.from(new Set(
+            [fromEmail, ...recipients].map(e => normEmail(e)).filter(Boolean)
+          ));
+          const isInternalNow = userEmail && participants.length > 0
+            ? isInternalEmail(userEmail, participants)
+            : false;
+          if (isInternalNow && !internalFiledAnywayRef.current.has(activeItemId)) {
+            console.log("[checkIfFiled] Skipping — internal email, doNotSuggest enabled");
+            setFiledStatusChecked(true);
+            setAlreadyFiled(false);
+            return;
+          }
+        }
+
         console.log("[checkIfFiled] Starting CACHE-BASED filed status check");
 
         // Step 1: Get email identifiers from Office API
@@ -2326,6 +2346,23 @@ const attachmentIds = React.useMemo(
     if (isItemLoading) return;
 
     if (alreadyFiled && alreadyFiledCaseLabel && !composeMode && activeItemId) {
+      // Internal email guard: don't show the filed UI if the user hasn't chosen "File anyway".
+      if (internalHandlingRef.current === "doNotSuggest") {
+        const userEmail = String(Office?.context?.mailbox?.userProfile?.emailAddress || "");
+        const fromEmail = getOutlookFromEmail();
+        const recipients = getReadModeRecipientEmails();
+        const participants = Array.from(new Set(
+          [fromEmail, ...recipients].map(e => normEmail(e)).filter(Boolean)
+        ));
+        const isInternalNow = userEmail && participants.length > 0
+          ? isInternalEmail(userEmail, participants)
+          : false;
+        if (isInternalNow && !internalFiledAnywayRef.current.has(activeItemId)) {
+          console.log("[useEffect:alreadyFiled] Suppressed — internal email, doNotSuggest enabled");
+          return;
+        }
+      }
+
       console.log("[useEffect:alreadyFiled] Updating UI for filed email", {
         caseLabel: alreadyFiledCaseLabel,
         documentId: alreadyFiledDocumentId,
