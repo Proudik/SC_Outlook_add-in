@@ -47,6 +47,20 @@ function stripDiacritics(s: string): string {
   }
 }
 
+// Returns true only when visId appears in text and is NOT followed by an ID-continuation
+// character (dot, digit, letter). Prevents "2026-0006" from matching inside "2026-0006.001".
+function visIdInText(text: string, visId: string): boolean {
+  if (!visId) return false;
+  let start = 0;
+  while (true) {
+    const idx = text.indexOf(visId, start);
+    if (idx < 0) return false;
+    const after = text[idx + visId.length];
+    if (!after || !/[a-z0-9.]/.test(after)) return true;
+    start = idx + 1;
+  }
+}
+
 // Keeps hyphens (good for IDs), but we will also create a "loose" version for matching titles.
 function normText(s: string): string {
   return safeLower(stripDiacritics(s))
@@ -221,9 +235,9 @@ export function suggestCasesLocal(params: {
     const vis = normText(getCaseVisibleId(anyC));
     if (!caseId || !vis) continue;
 
-    const inSubject = subjectStrict.includes(vis);
-    const inBody = bodyStrict.includes(vis);
-    const inAtt = attachmentNames.some((n) => n.includes(vis));
+    const inSubject = visIdInText(subjectStrict, vis);
+    const inBody = visIdInText(bodyStrict, vis);
+    const inAtt = attachmentNames.some((n) => visIdInText(n, vis));
 
     if (inSubject || inBody || inAtt) {
       add(caseId, 95, "Case reference found in the email.");
@@ -450,8 +464,8 @@ export function suggestCasesByContent(params: {
     const vis = normText(getCaseVisibleId(anyC));
     if (!caseId || !vis) continue;
 
-    const inSubject = subjectStrict.includes(vis);
-    const inBody = bodyStrict.includes(vis);
+    const inSubject = visIdInText(subjectStrict, vis);
+    const inBody = visIdInText(bodyStrict, vis);
 
     if (inSubject || inBody) {
       add(caseId, 95, "Case reference found in email content");

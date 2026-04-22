@@ -8,6 +8,8 @@ export type CaseOption = {
   title: string;
   /** Raw case name without the visible-ID prefix (e.g. "Human Ressource" rather than "2026-0001 · Human Ressource"). Used by the suggestion engine for fuzzy title matching. */
   caseName?: string;
+  /** Visible case ID (e.g. "2026-0006.001"). Used by the suggestion engine for exact-ID matching in subject/body. */
+  caseIdVisible?: string;
 
   clientId?: string;
   client?: string;
@@ -116,6 +118,7 @@ function mapApiCaseToOption(apiCase: any): CaseOption {
     id: String(apiCase.id),
     title,
     caseName: name || undefined,
+    caseIdVisible: visible || undefined,
     clientId,
     client: apiCase.client?.name || apiCase.client_name || undefined,
     status: apiCase.status?.name || apiCase.status || undefined,

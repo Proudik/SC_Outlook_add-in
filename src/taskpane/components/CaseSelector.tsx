@@ -35,7 +35,7 @@ type Row =
   | { kind: "case"; clientLabel: string; caseId: string; label: string; clientId?: string };
 
 function getCaseName(c: any): string {
-  return String(c?.title || c?.name || "");
+  return String(c?.caseName || c?.title || c?.name || "");
 }
 
 function getCaseVisibleId(c: any): string {
